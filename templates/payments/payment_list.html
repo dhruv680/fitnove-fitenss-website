@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}Payments – FitNova SaaS{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-12 d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <div>
+      <h2 class="fw-bold text-dark mb-1">Financial Transactions</h2>
+      <p class="text-muted small mb-0">Track all incoming membership dues, online fees, and invoices.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'payments:payment_create' %}" class="btn btn-fn-accent">
+        <i data-lucide="plus-circle" style="width: 18px;"></i>
+        <span>Record Payment</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="fn-card p-3 d-flex align-items-center gap-3">
+      <div class="fn-stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.12); color: #10B981;">
+        <i data-lucide="dollar-sign" style="width: 22px;"></i>
+      </div>
+      <div>
+        <div class="text-muted small fw-semibold text-uppercase">Total Settled Revenue</div>
+        <div class="fs-4 fw-bold text-success">{{ current_org.currency|default:'$' }}{{ total_revenue|floatformat:2 }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="fn-card p-3 d-flex align-items-center gap-3">
+      <div class="fn-stat-icon-wrapper" style="background: rgba(118, 87, 232, 0.12); color: #7657E8;">
+        <i data-lucide="receipt" style="width: 22px;"></i>
+      </div>
+      <div>
+        <div class="text-muted small fw-semibold text-uppercase">Processed Transactions</div>
+        <div class="fs-4 fw-bold" style="color: #7657E8;">{{ total_payments }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="fn-card p-3 mb-4">
+  <form method="GET" action="{% url 'payments:payment_list' %}" class="row g-2 align-items-center">
+    <div class="col-md-4">
+      <input type="text" name="search" class="fn-input" placeholder="Search by txn ID, athlete name, or member ID..." value="{{ search_query }}">
+    </div>
+    <div class="col-md-3">
+      <select name="method" class="fn-select">
+        <option value="">All Payment Methods</option>
+        <option value="UPI" {% if method_filter == 'UPI' %}selected{% endif %}>UPI / QR</option>
+        <option value="CASH" {% if method_filter == 'CASH' %}selected{% endif %}>Cash</option>
+        <option value="CREDIT_CARD" {% if method_filter == 'CREDIT_CARD' %}selected{% endif %}>Credit Card</option>
+        <option value="DEBIT_CARD" {% if method_filter == 'DEBIT_CARD' %}selected{% endif %}>Debit Card</option>
+        <option value="NET_BANKING" {% if method_filter == 'NET_BANKING' %}selected{% endif %}>Net Banking</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <select name="status" class="fn-select">
+        <option value="">All Statuses</option>
+        <option value="COMPLETED" {% if status_filter == 'COMPLETED' %}selected{% endif %}>Completed</option>
+        <option value="PENDING" {% if status_filter == 'PENDING' %}selected{% endif %}>Pending</option>
+        <option value="REFUNDED" {% if status_filter == 'REFUNDED' %}selected{% endif %}>Refunded</option>
+      </select>
+    </div>
+    <div class="col-md-2 d-flex gap-2">
+      <button type="submit" class="btn btn-fn-primary w-100">Filter</button>
+      <a href="{% url 'payments:payment_list' %}" class="btn btn-fn-outline" title="Reset"><i data-lucide="rotate-ccw" style="width: 16px;"></i></a>
+    </div>
+  </form>
+</div>
+
+<!-- Transactions Table -->
+<div class="fn-table-responsive mb-4">
+  <table class="fn-table">
+    <thead>
+      <tr>
+        <th>Transaction ID</th>
+        <th>Athlete</th>
+        <th>Plan</th>
+        <th>Amount</th>
+        <th>Method</th>
+        <th>Date</th>
+        <th>Status</th>
+        <th class="text-end">Invoice</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in page_obj %}
+      <tr>
+        <td><span class="font-monospace small text-primary fw-semibold">{{ p.transaction_id }}</span></td>
+        <td>
+          <a href="{% url 'members:member_detail' p.member.id %}" class="fw-bold text-dark text-decoration-none hover-primary">{{ p.member.full_name }}</a>
+        </td>
+        <td><small class="text-muted">{{ p.membership.plan.name|default:"General Fee" }}</small></td>
+        <td><span class="fw-bold text-dark">{{ p.organization.currency }}{{ p.total_amount }}</span></td>
+        <td><span class="fn-badge fn-badge-muted">{{ p.get_payment_method_display }}</span></td>
+        <td>{{ p.payment_date|date:"M d, Y" }}</td>
+        <td>
+          {% if p.status == 'COMPLETED' %}
+          <span class="fn-badge fn-badge-success">Completed</span>
+          {% elif p.status == 'PENDING' %}
+          <span class="fn-badge fn-badge-warning">Pending</span>
+          {% else %}
+          <span class="fn-badge fn-badge-danger">{{ p.get_status_display }}</span>
+          {% endif %}
+        </td>
+        <td class="text-end">
+          {% if p.invoice %}
+          <a href="{% url 'payments:invoice_detail' p.invoice.id %}" class="btn btn-sm btn-outline-primary py-1 px-2" style="font-size: 0.75rem;">
+            <i data-lucide="file-text" style="width: 14px;"></i> #{{ p.invoice.invoice_number }}
+          </a>
+          {% else %}
+          <span class="text-muted small">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="8">
+          <div class="fn-empty-state">
+            <div class="fn-empty-icon"><i data-lucide="credit-card"></i></div>
+            <h6 class="fw-bold">No Payments Found</h6>
+            <p class="text-muted small">No payment transactions match your query.</p>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav class="d-flex justify-content-center">
+  <ul class="pagination pagination-sm">
+    {% if page_obj.has_previous %}
+    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&search={{ search_query }}&method={{ method_filter }}&status={{ status_filter }}">Previous</a></li>
+    {% endif %}
+    <li class="page-item active"><span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+    {% if page_obj.has_next %}
+    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&search={{ search_query }}&method={{ method_filter }}&status={{ status_filter }}">Next</a></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+{% endblock %}

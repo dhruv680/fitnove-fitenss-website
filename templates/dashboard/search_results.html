@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Search Results for "{{ query }}" – FitNova{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-12">
+    <h3 class="fw-bold text-dark mb-1">Global Search Results</h3>
+    <p class="text-muted small">Showing {{ total_results }} matches found for query: <strong class="text-dark">"{{ query }}"</strong></p>
+  </div>
+
+  <!-- Members matches -->
+  {% if members %}
+  <div class="col-12">
+    <div class="fn-card">
+      <h5 class="fn-card-title mb-3"><i data-lucide="users" class="me-2 text-primary" style="width: 18px;"></i> Members ({{ members|length }})</h5>
+      <div class="fn-table-responsive">
+        <table class="fn-table">
+          <thead>
+            <tr><th>Name</th><th>ID</th><th>Email</th><th>Phone</th><th>Status</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            {% for m in members %}
+            <tr>
+              <td class="fw-semibold">{{ m.full_name }}</td>
+              <td><span class="badge bg-light text-dark">{{ m.member_id }}</span></td>
+              <td>{{ m.email }}</td>
+              <td>{{ m.phone }}</td>
+              <td><span class="fn-badge fn-badge-success">{{ m.status }}</span></td>
+              <td><a href="{% url 'members:member_detail' m.id %}" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">View</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Trainers matches -->
+  {% if trainers %}
+  <div class="col-12">
+    <div class="fn-card">
+      <h5 class="fn-card-title mb-3"><i data-lucide="user-check" class="me-2 text-primary" style="width: 18px;"></i> Trainers ({{ trainers|length }})</h5>
+      <div class="fn-table-responsive">
+        <table class="fn-table">
+          <thead><tr><th>Name</th><th>Specialization</th><th>Experience</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody>
+            {% for trn in trainers %}
+            <tr>
+              <td class="fw-semibold">{{ trn.full_name }}</td>
+              <td>{{ trn.specialization }}</td>
+              <td>{{ trn.experience_years }} Years</td>
+              <td><span class="fn-badge fn-badge-success">{{ trn.status }}</span></td>
+              <td><a href="{% url 'trainers:trainer_detail' trn.id %}" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">View</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Invoices matches -->
+  {% if invoices %}
+  <div class="col-12">
+    <div class="fn-card">
+      <h5 class="fn-card-title mb-3"><i data-lucide="file-text" class="me-2 text-primary" style="width: 18px;"></i> Invoices ({{ invoices|length }})</h5>
+      <div class="fn-table-responsive">
+        <table class="fn-table">
+          <thead><tr><th>Invoice #</th><th>Member</th><th>Total</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody>
+            {% for inv in invoices %}
+            <tr>
+              <td class="fw-semibold text-primary">{{ inv.invoice_number }}</td>
+              <td>{{ inv.payment.member.full_name }}</td>
+              <td class="fw-bold">{{ inv.payment.organization.currency }}{{ inv.total }}</td>
+              <td><span class="fn-badge fn-badge-success">{{ inv.status }}</span></td>
+              <td><a href="{% url 'payments:invoice_detail' inv.id %}" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">Invoice</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if total_results == 0 %}
+  <div class="col-12">
+    <div class="fn-card text-center py-5">
+      <i data-lucide="search-x" class="text-muted mb-2" style="width: 48px; height: 48px;"></i>
+      <h5 class="text-dark fw-bold">No results found for "{{ query }}"</h5>
+      <p class="text-muted small">Try searching by member name, phone number, member ID or invoice number.</p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

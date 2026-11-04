@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+
+{% block title %}Live QR Attendance Scanner – FitNova{% endblock %}
+
+{% block extra_head %}
+<!-- HTML5 QR Code Scanner Library -->
+<script src="https://unpkg.com/html5-qrcode"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-9">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h3 class="fw-bold text-dark mb-1">Live QR Attendance Desk</h3>
+        <p class="text-muted small mb-0">Scan athlete digital passes or input Member ID for instant check-in/out.</p>
+      </div>
+      <a href="{% url 'attendance:attendance_list' %}" class="btn btn-fn-outline">
+        <i data-lucide="list" style="width: 16px;"></i>
+        <span>View Logs</span>
+      </a>
+    </div>
+
+    <div class="row g-4">
+      <!-- Camera Scanner Window -->
+      <div class="col-md-7">
+        <div class="fn-card text-center p-3">
+          <div id="reader" style="width: 100%; border-radius: 12px; overflow: hidden; min-height: 280px; background: #0F172A;" class="mb-3"></div>
+          <div class="d-flex justify-content-center gap-2">
+            <button id="startScanBtn" class="btn btn-fn-primary btn-sm" onclick="startScanner()">
+              <i data-lucide="camera" style="width: 14px;"></i> Start Camera
+            </button>
+            <button id="stopScanBtn" class="btn btn-fn-outline btn-sm d-none" onclick="stopScanner()">
+              <i data-lucide="camera-off" style="width: 14px;"></i> Stop Camera
+            </button>
+          </div>
+        </div>
+
+        <!-- Manual ID Input -->
+        <div class="fn-card mt-3 p-3">
+          <label class="fn-form-label">Manual ID or Phone Check-In</label>
+          <div class="input-group">
+            <input type="text" id="manualInput" class="fn-input" placeholder="e.g. FN-2026-0001 or +1 555-0192" onkeydown="if(event.key==='Enter') submitManualScan()">
+            <button class="btn btn-fn-accent" type="button" onclick="submitManualScan()">Check In</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Scan Result Card -->
+      <div class="col-md-5">
+        <div class="fn-card h-100 text-center" id="scanResultCard">
+          <div class="py-5" id="idleState">
+            <div class="fn-empty-icon" style="background: rgba(118, 87, 232, 0.1); color: #7657E8;">
+              <i data-lucide="scan-line" style="width: 32px; height: 32px;"></i>
+            </div>
+            <h5 class="fw-bold text-dark mt-2">Ready to Scan</h5>
+            <p class="text-muted small px-3">Point member's digital QR pass to the camera or enter their Member ID.</p>
+          </div>
+
+          <div class="p-3 d-none text-start" id="activeState">
+            <div class="alert text-center fw-bold py-2 px-3 mb-3" id="scanAlert"></div>
+
+            <div class="text-center mb-3">
+              <div class="fn-avatar mx-auto mb-2" id="resAvatar" style="width: 64px; height: 64px; font-size: 1.5rem;"></div>
+              <h5 class="fw-bold text-dark mb-0" id="resName"></h5>
+              <div class="badge bg-light text-dark font-monospace mt-1" id="resMemberId"></div>
+            </div>
+
+            <div class="p-3 bg-light rounded-3 small">
+              <div class="d-flex justify-content-between py-1 border-bottom">
+                <span class="text-muted">Subscription:</span>
+                <span class="fw-bold text-dark" id="resPlan"></span>
+              </div>
+              <div class="d-flex justify-content-between py-1 border-bottom">
+                <span class="text-muted">Check-In Time:</span>
+                <span class="fw-semibold text-primary" id="resCheckIn"></span>
+              </div>
+              <div class="d-flex justify-content-between py-1 border-bottom d-none" id="resCheckOutRow">
+                <span class="text-muted">Check-Out Time:</span>
+                <span class="fw-semibold text-success" id="resCheckOut"></span>
+              </div>
+              <div class="d-flex justify-content-between py-1 d-none" id="resDurationRow">
+                <span class="text-muted">Session Duration:</span>
+                <span class="fw-bold text-dark" id="resDuration"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  let html5QrcodeScanner = null;
+  let isProcessing = false;
+
+  function startScanner() {
+    html5QrcodeScanner = new Html5Qrcode("reader");
+    html5QrcodeScanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 250, height: 250 } },
+      (decodedText) => {
+        if (!isProcessing) {
+          isProcessing = true;
+          handleScanPayload(decodedText);
+        }
+      },
+      (error) => {
+        // scan frame error ignore
+      }
+    ).then(() => {
+      document.getElementById('startScanBtn').classList.add('d-none');
+      document.getElementById('stopScanBtn').classList.remove('d-none');
+    }).catch(err => {
+      alert("Camera access denied or unavailable: " + err);
+    });
+  }
+
+  function stopScanner() {
+    if (html5QrcodeScanner) {
+      html5QrcodeScanner.stop().then(() => {
+        document.getElementById('startScanBtn').classList.remove('d-none');
+        document.getElementById('stopScanBtn').classList.add('d-none');
+      });
+    }
+  }
+
+  function submitManualScan() {
+    const val = document.getElementById('manualInput').value.trim();
+    if (val) {
+      handleScanPayload(val);
+      document.getElementById('manualInput').value = '';
+    }
+  }
+
+  function handleScanPayload(payload) {
+    const formData = new FormData();
+    formData.append('identifier', payload);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    fetch("{% url 'attendance:api_scan' %}", {
+      method: 'POST',
+      body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+      displayScanResult(data);
+      setTimeout(() => { isProcessing = false; }, 2500);
+    })
+    .catch(err => {
+      isProcessing = false;
+      alert("Network error processing scan.");
+    });
+  }
+
+  function displayScanResult(data) {
+    document.getElementById('idleState').classList.add('d-none');
+    const activeBox = document.getElementById('activeState');
+    activeBox.classList.remove('d-none');
+
+    const alertBox = document.getElementById('scanAlert');
+    if (data.success) {
+      alertBox.className = "alert alert-success text-center fw-bold py-2 px-3 mb-3";
+      alertBox.textContent = data.message;
+    } else {
+      alertBox.className = "alert alert-danger text-center fw-bold py-2 px-3 mb-3";
+      alertBox.textContent = data.message;
+    }
+
+    if (data.member) {
+      document.getElementById('resName').textContent = data.member.name;
+      document.getElementById('resMemberId').textContent = data.member.member_id;
+      document.getElementById('resPlan').textContent = data.member.plan;
+      document.getElementById('resCheckIn').textContent = data.member.check_in_time;
+      
+      const avatar = document.getElementById('resAvatar');
+      if (data.member.photo_url) {
+        avatar.innerHTML = `<img src="${data.member.photo_url}" style="width: 100%; height: 100%; object-fit: cover;">`;
+      } else {
+        avatar.textContent = data.member.name.charAt(0);
+      }
+
+      if (data.member.check_out_time) {
+        document.getElementById('resCheckOutRow').classList.remove('d-none');
+        document.getElementById('resCheckOut').textContent = data.member.check_out_time;
+      } else {
+        document.getElementById('resCheckOutRow').classList.add('d-none');
+      }
+
+      if (data.member.duration) {
+        document.getElementById('resDurationRow').classList.remove('d-none');
+        document.getElementById('resDuration').textContent = data.member.duration;
+      } else {
+        document.getElementById('resDurationRow').classList.add('d-none');
+      }
+    }
+  }
+</script>
+{% endblock %}

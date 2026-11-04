@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ member.full_name }} – Member Profile – FitNova{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <!-- Profile Header Card -->
+  <div class="col-12">
+    <div class="fn-card p-4">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="d-flex align-items-center gap-4">
+          <div class="fn-avatar" style="width: 72px; height: 72px; font-size: 1.8rem;">
+            {% if member.user.profile_picture %}
+            <img src="{{ member.user.profile_picture.url }}" alt="{{ member.full_name }}">
+            {% else %}
+            {{ member.user.first_name|default:member.user.username|make_list|first|upper }}
+            {% endif %}
+          </div>
+          <div>
+            <div class="d-flex align-items-center gap-3">
+              <h3 class="fw-bold text-dark mb-0">{{ member.full_name }}</h3>
+              {% if member.status == 'ACTIVE' %}
+              <span class="fn-badge fn-badge-success">Active Member</span>
+              {% elif member.status == 'EXPIRED' %}
+              <span class="fn-badge fn-badge-danger">Expired</span>
+              {% else %}
+              <span class="fn-badge fn-badge-warning">{{ member.get_status_display }}</span>
+              {% endif %}
+            </div>
+            <div class="text-muted small mt-1">
+              Member ID: <span class="font-monospace fw-bold text-dark">{{ member.member_id }}</span> &bull; 
+              Joined: {{ member.joined_date|date:"M d, Y" }} &bull; 
+              Branch: {{ member.branch.name|default:"Main Branch" }}
+            </div>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          {% if not user.is_member %}
+          <a href="{% url 'memberships:membership_renew' member.id %}" class="btn btn-fn-accent">
+            <i data-lucide="repeat" style="width: 16px;"></i>
+            <span>Renew Membership</span>
+          </a>
+          <a href="{% url 'members:member_edit' member.id %}" class="btn btn-fn-outline">
+            <i data-lucide="edit-3" style="width: 16px;"></i>
+            <span>Edit Profile</span>
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Left Column: Details & QR Pass -->
+  <div class="col-lg-4">
+    <!-- QR Pass Card -->
+    <div class="fn-card text-center mb-4">
+      <h6 class="fw-bold text-dark mb-3">Attendance QR Code</h6>
+      <div class="p-3 bg-light rounded-4 d-inline-block border mb-3">
+        {% if member.qr_code %}
+        <img src="{{ member.qr_code.url }}" alt="Member QR" class="img-fluid" style="width: 180px; height: 180px;">
+        {% else %}
+        <div class="p-3 text-muted">QR Pass not ready</div>
+        {% endif %}
+      </div>
+      <div>
+        {% if member.qr_code %}
+        <a href="{{ member.qr_code.url }}" download="FitNova_Pass_{{ member.member_id }}.png" class="btn btn-sm btn-outline-secondary">
+          <i data-lucide="download" style="width: 14px;"></i> Download Digital Pass
+        </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Contact & Emergency Info -->
+    <div class="fn-card mb-4">
+      <h6 class="fw-bold text-dark mb-3">Contact Information</h6>
+      <div class="small">
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Email:</span>
+          <span class="fw-semibold text-dark">{{ member.email }}</span>
+        </div>
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Phone:</span>
+          <span class="fw-semibold text-dark">{{ member.phone }}</span>
+        </div>
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Gender:</span>
+          <span class="fw-semibold text-dark">{{ member.user.get_gender_display }}</span>
+        </div>
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Blood Group:</span>
+          <span class="fw-semibold text-dark">{{ member.blood_group|default:"Not specified" }}</span>
+        </div>
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Emergency Contact:</span>
+          <span class="fw-semibold text-dark">{{ member.emergency_contact_name|default:"—" }}</span>
+        </div>
+        <div class="d-flex justify-content-between py-2">
+          <span class="text-muted">Emergency Phone:</span>
+          <span class="fw-semibold text-dark">{{ member.emergency_contact_phone|default:"—" }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Medical & Coaching Notes -->
+    <div class="fn-card">
+      <h6 class="fw-bold text-dark mb-2">Trainer & Goals</h6>
+      <div class="p-3 bg-light rounded-3 mb-3 small">
+        <div class="fw-semibold text-dark mb-1">Assigned Coach:</div>
+        <div>{{ member.assigned_trainer.full_name|default:"General Gym Supervision" }}</div>
+      </div>
+      <div class="small">
+        <strong class="text-dark d-block mb-1">Fitness Goals:</strong>
+        <p class="text-muted">{{ member.fitness_goals|default:"General health and cardiovascular conditioning." }}</p>
+        <strong class="text-dark d-block mb-1">Medical Records:</strong>
+        <p class="text-muted mb-0">{{ member.medical_history|default:"None reported." }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Subscriptions, Attendances, Payments -->
+  <div class="col-lg-8">
+    <!-- Active Subscription Status Banner -->
+    <div class="fn-card mb-4" style="border-left: 4px solid var(--fn-accent);">
+      <div class="d-flex flex-wrap justify-content-between align-items-center">
+        <div>
+          <span class="text-muted small text-uppercase fw-semibold">Current Subscription</span>
+          <h5 class="fw-bold text-dark mb-0 mt-1">{{ member.current_membership.plan.name|default:"No Active Subscription" }}</h5>
+          {% if member.current_membership %}
+          <div class="text-muted small mt-1">
+            Active: {{ member.current_membership.start_date|date:"M d, Y" }} &rarr; {{ member.current_membership.end_date|date:"M d, Y" }}
+          </div>
+          {% endif %}
+        </div>
+        <div class="text-end">
+          {% if member.current_membership %}
+          <div class="fs-4 fw-bold {% if member.days_until_expiry < 7 %}text-danger{% else %}text-success{% endif %}">
+            {{ member.days_until_expiry }} Days Left
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs for Subscriptions, Attendance, Payments, Progress -->
+    <ul class="nav nav-pills mb-3 gap-2" id="memberTab" role="tablist">
+      <li class="nav-item">
+        <button class="nav-link active rounded-pill px-3 py-2 fw-semibold" id="subs-tab" data-bs-toggle="tab" data-bs-target="#subs-content">Subscription History</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link rounded-pill px-3 py-2 fw-semibold" id="att-tab" data-bs-toggle="tab" data-bs-target="#att-content">Attendance Logs</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link rounded-pill px-3 py-2 fw-semibold" id="pay-tab" data-bs-toggle="tab" data-bs-target="#pay-content">Payments & Invoices</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link rounded-pill px-3 py-2 fw-semibold" id="prog-tab" data-bs-toggle="tab" data-bs-target="#prog-content">Progress Metrics</button>
+      </li>
+    </ul>
+
+    <div class="tab-content" id="memberTabContent">
+      <!-- 1. Subscription History Tab -->
+      <div class="tab-pane fade show active" id="subs-content">
+        <div class="fn-table-responsive">
+          <table class="fn-table">
+            <thead>
+              <tr><th>Plan Name</th><th>Start Date</th><th>End Date</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              {% for sub in subscriptions %}
+              <tr>
+                <td class="fw-semibold text-dark">{{ sub.plan.name }}</td>
+                <td>{{ sub.start_date|date:"M d, Y" }}</td>
+                <td>{{ sub.end_date|date:"M d, Y" }}</td>
+                <td>
+                  {% if sub.status == 'ACTIVE' %}
+                  <span class="fn-badge fn-badge-success">Active</span>
+                  {% else %}
+                  <span class="fn-badge fn-badge-danger">{{ sub.get_status_display }}</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" class="text-center text-muted py-3">No subscription records found.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 2. Attendance Logs Tab -->
+      <div class="tab-pane fade" id="att-content">
+        <div class="fn-table-responsive">
+          <table class="fn-table">
+            <thead>
+              <tr><th>Date</th><th>Check-In</th><th>Check-Out</th><th>Duration</th><th>Method</th></tr>
+            </thead>
+            <tbody>
+              {% for a in attendances %}
+              <tr>
+                <td class="fw-semibold">{{ a.date|date:"M d, Y" }}</td>
+                <td>{{ a.check_in_time|date:"h:i A" }}</td>
+                <td>{{ a.check_out_time|date:"h:i A"|default:"Active / In Gym" }}</td>
+                <td>{{ a.duration_minutes|default:"—" }} mins</td>
+                <td><span class="fn-badge fn-badge-muted">{{ a.get_method_display }}</span></td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="5" class="text-center text-muted py-3">No check-in logs for this athlete.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 3. Payments & Invoices Tab -->
+      <div class="tab-pane fade" id="pay-content">
+        <div class="fn-table-responsive">
+          <table class="fn-table">
+            <thead>
+              <tr><th>Txn ID</th><th>Date</th><th>Amount</th><th>Method</th><th>Invoice</th></tr>
+            </thead>
+            <tbody>
+              {% for p in payments %}
+              <tr>
+                <td class="font-monospace small">{{ p.transaction_id }}</td>
+                <td>{{ p.payment_date|date:"M d, Y" }}</td>
+                <td class="fw-bold text-dark">{{ member.organization.currency }}{{ p.total_amount }}</td>
+                <td><span class="fn-badge fn-badge-muted">{{ p.get_payment_method_display }}</span></td>
+                <td>
+                  {% if p.invoice %}
+                  <a href="{% url 'payments:invoice_detail' p.invoice.id %}" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">View #{{ p.invoice.invoice_number }}</a>
+                  {% else %}
+                  <span class="text-muted small">—</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="5" class="text-center text-muted py-3">No payments recorded.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 4. Progress Metrics Tab -->
+      <div class="tab-pane fade" id="prog-content">
+        <div class="d-flex justify-content-end mb-2">
+          <a href="{% url 'fitness:progress_log' %}?member_id={{ member.id }}" class="btn btn-sm btn-fn-primary">+ Log New Metrics</a>
+        </div>
+        <div class="fn-table-responsive">
+          <table class="fn-table">
+            <thead>
+              <tr><th>Date</th><th>Weight (kg)</th><th>Body Fat %</th><th>Chest (cm)</th><th>Waist (cm)</th></tr>
+            </thead>
+            <tbody>
+              {% for prg in progress_logs %}
+              <tr>
+                <td class="fw-semibold">{{ prg.date|date:"M d, Y" }}</td>
+                <td class="fw-bold">{{ prg.weight_kg }} kg</td>
+                <td>{{ prg.body_fat_percentage|default:"—" }}%</td>
+                <td>{{ prg.chest_cm|default:"—" }}</td>
+                <td>{{ prg.waist_cm|default:"—" }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="5" class="text-center text-muted py-3">No physical metrics logged yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

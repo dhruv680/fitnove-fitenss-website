@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Diet & Nutrition Plans – FitNova SaaS{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-12 d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <div>
+      <h2 class="fw-bold text-dark mb-1">Nutrition & Diet Management</h2>
+      <p class="text-muted small mb-0">Prescribe macro ratios, meal timings, and calorie targets.</p>
+    </div>
+    <div>
+      <a href="{% url 'fitness:diet_create' %}" class="btn btn-fn-accent">
+        <i data-lucide="plus-circle" style="width: 18px;"></i>
+        <span>Prescribe Diet Plan</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="fn-table-responsive">
+      <table class="fn-table">
+        <thead>
+          <tr>
+            <th>Plan Name</th>
+            <th>Athlete</th>
+            <th>Daily Energy</th>
+            <th>Protein</th>
+            <th>Carbs</th>
+            <th>Fats</th>
+            <th>Status</th>
+            <th class="text-end">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in page_obj %}
+          <tr>
+            <td>
+              <a href="{% url 'fitness:diet_detail' d.id %}" class="fw-bold text-dark text-decoration-none hover-primary">{{ d.name }}</a>
+              <div class="text-muted small">Prescribed: {{ d.created_at|date:"M d, Y" }}</div>
+            </td>
+            <td>
+              <div class="fw-semibold">{{ d.member.full_name }}</div>
+              <small class="text-muted">{{ d.member.member_id }}</small>
+            </td>
+            <td><span class="fw-bold text-warning">{{ d.daily_calories }} kcal</span></td>
+            <td><span class="fw-semibold" style="color: #7657E8;">{{ d.protein_grams }}g</span></td>
+            <td><span class="fw-semibold text-primary">{{ d.carbs_grams }}g</span></td>
+            <td><span class="fw-semibold text-success">{{ d.fats_grams }}g</span></td>
+            <td>
+              {% if d.is_active %}
+              <span class="fn-badge fn-badge-success">Active</span>
+              {% else %}
+              <span class="fn-badge fn-badge-muted">Archived</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <a href="{% url 'fitness:diet_detail' d.id %}" class="btn btn-sm btn-fn-outline py-1 px-2" style="font-size: 0.75rem;">
+                <i data-lucide="eye" style="width: 14px;"></i> View Meals
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8">
+              <div class="fn-empty-state">
+                <div class="fn-empty-icon"><i data-lucide="utensils"></i></div>
+                <h6 class="fw-bold">No Diet Plans Prescribed</h6>
+                <p class="text-muted small">Create personalized macro targets and meal programs.</p>
+                <a href="{% url 'fitness:diet_create' %}" class="btn btn-fn-accent">Create Diet Plan</a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

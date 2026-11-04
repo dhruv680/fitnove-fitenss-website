@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Invoices – FitNova SaaS{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-12 d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <div>
+      <h2 class="fw-bold text-dark mb-1">Official Member Invoices</h2>
+      <p class="text-muted small mb-0">Browse and print GST/tax invoices for member dues.</p>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="fn-table-responsive">
+      <table class="fn-table">
+        <thead>
+          <tr>
+            <th>Invoice #</th>
+            <th>Athlete Name</th>
+            <th>Issue Date</th>
+            <th>Subtotal</th>
+            <th>Total Amount</th>
+            <th>Status</th>
+            <th class="text-end">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for inv in page_obj %}
+          <tr>
+            <td><span class="font-monospace fw-bold text-primary">{{ inv.invoice_number }}</span></td>
+            <td>
+              <div class="fw-semibold text-dark">{{ inv.payment.member.full_name }}</div>
+              <small class="text-muted">{{ inv.payment.member.member_id }}</small>
+            </td>
+            <td>{{ inv.issue_date|date:"M d, Y" }}</td>
+            <td>{{ inv.payment.organization.currency }}{{ inv.subtotal }}</td>
+            <td><span class="fw-bold text-dark">{{ inv.payment.organization.currency }}{{ inv.total }}</span></td>
+            <td><span class="fn-badge fn-badge-success">{{ inv.get_status_display }}</span></td>
+            <td class="text-end">
+              <a href="{% url 'payments:invoice_detail' inv.id %}" class="btn btn-sm btn-fn-outline py-1 px-2" style="font-size: 0.75rem;">
+                <i data-lucide="printer" style="width: 14px;"></i> View & Print
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7">
+              <div class="fn-empty-state">
+                <div class="fn-empty-icon"><i data-lucide="file-text"></i></div>
+                <h6 class="fw-bold">No Invoices Yet</h6>
+                <p class="text-muted small">Invoices are automatically created whenever a member payment is recorded.</p>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

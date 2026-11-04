@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Trainers – FitNova SaaS{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-12 d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <div>
+      <h2 class="fw-bold text-dark mb-1">Coaching Staff & Personal Trainers</h2>
+      <p class="text-muted small mb-0">Manage gym instructors, certifications, athlete allocations, and ratings.</p>
+    </div>
+    <div>
+      <a href="{% url 'trainers:trainer_create' %}" class="btn btn-fn-accent">
+        <i data-lucide="plus-circle" style="width: 18px;"></i>
+        <span>Add Trainer</span>
+      </a>
+    </div>
+  </div>
+
+  {% for t in page_obj %}
+  <div class="col-lg-4 col-md-6">
+    <div class="fn-card h-100 text-center p-4">
+      <div class="fn-avatar mx-auto mb-3" style="width: 64px; height: 64px; font-size: 1.5rem;">
+        {% if t.user.profile_picture %}
+        <img src="{{ t.user.profile_picture.url }}" alt="{{ t.full_name }}">
+        {% else %}
+        {{ t.user.first_name|default:t.user.username|make_list|first|upper }}
+        {% endif %}
+      </div>
+      <h5 class="fw-bold text-dark mb-1">{{ t.full_name }}</h5>
+      <div class="fn-badge fn-badge-accent mb-2">{{ t.specialization }}</div>
+      <div class="text-warning small fw-bold mb-3">★ {{ t.rating }} ({{ t.experience_years }} yrs experience)</div>
+
+      <div class="p-3 bg-light rounded-3 text-start small mb-3">
+        <div class="d-flex justify-content-between py-1">
+          <span class="text-muted">ID:</span>
+          <span class="fw-bold text-dark">{{ t.employee_id }}</span>
+        </div>
+        <div class="d-flex justify-content-between py-1">
+          <span class="text-muted">Assigned Members:</span>
+          <span class="fw-bold text-success">{{ t.assigned_members_count }} Athletes</span>
+        </div>
+        <div class="d-flex justify-content-between py-1">
+          <span class="text-muted">Hourly Rate:</span>
+          <span class="fw-bold text-dark">{{ t.organization.currency }}{{ t.hourly_rate }}/hr</span>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center mt-auto">
+        <a href="{% url 'trainers:trainer_detail' t.id %}" class="btn btn-sm btn-fn-outline">View Profile</a>
+        <a href="{% url 'trainers:trainer_edit' t.id %}" class="btn btn-sm btn-fn-primary">Edit Info</a>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12">
+    <div class="fn-card text-center py-5">
+      <div class="fn-empty-icon"><i data-lucide="user-check"></i></div>
+      <h5 class="fw-bold">No Trainers Registered</h5>
+      <p class="text-muted small">Onboard your personal trainers and fitness coaches to assign members.</p>
+      <a href="{% url 'trainers:trainer_create' %}" class="btn btn-fn-accent">Add Trainer</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

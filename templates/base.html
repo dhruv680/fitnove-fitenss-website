@@ -1,0 +1,305 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}FitNova – Premium Gym Management SaaS{% endblock %}</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- FitNova Custom SaaS Design System -->
+  <link rel="stylesheet" href="{% static 'css/fitnova.css' %}">
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<div class="fn-app-wrapper">
+
+  <!-- 1. Collapsible Professional Sidebar (15 Main Navigation Items) -->
+  <aside class="fn-sidebar">
+    <a href="{% url 'dashboard:index' %}" class="fn-sidebar-brand">
+      <div class="fn-brand-logo-icon">
+        <i data-lucide="dumbbell"></i>
+      </div>
+      <div class="fn-brand-text">
+        <span class="fn-brand-title">FitNova</span>
+        <span class="fn-brand-badge">{{ current_org.name|default:"GYM SAAS" }}</span>
+      </div>
+    </a>
+
+    <div class="fn-sidebar-nav">
+      <div class="fn-nav-header-title">Core Management</div>
+      
+      <!-- 1. Dashboard -->
+      <a href="{% url 'dashboard:index' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'dashboard' and request.resolver_match.url_name == 'index' %}active{% endif %}">
+        <i data-lucide="layout-dashboard"></i>
+        <span class="fn-nav-text">Dashboard</span>
+      </a>
+
+      <!-- 2. Members -->
+      {% if not user.is_member %}
+      <a href="{% url 'members:member_list' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'members' %}active{% endif %}">
+        <i data-lucide="users"></i>
+        <span class="fn-nav-text">Members</span>
+      </a>
+      {% endif %}
+
+      <!-- 3. Membership Plans -->
+      {% if not user.is_member %}
+      <a href="{% url 'memberships:plan_list' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'memberships' %}active{% endif %}">
+        <i data-lucide="badge-percent"></i>
+        <span class="fn-nav-text">Membership Plans</span>
+      </a>
+      {% endif %}
+
+      <!-- 4. Attendance -->
+      <a href="{% url 'attendance:attendance_list' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'attendance' %}active{% endif %}">
+        <i data-lucide="qr-code"></i>
+        <span class="fn-nav-text">Attendance</span>
+      </a>
+
+      <!-- 5. Trainers -->
+      {% if not user.is_member %}
+      <a href="{% url 'trainers:trainer_list' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'trainers' %}active{% endif %}">
+        <i data-lucide="user-check"></i>
+        <span class="fn-nav-text">Trainers</span>
+      </a>
+      {% endif %}
+
+      <div class="fn-nav-header-title">Fitness & Coaching</div>
+
+      <!-- 6. Workout Management -->
+      <a href="{% url 'fitness:workout_list' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'fitness' and 'workout' in request.path %}active{% endif %}">
+        <i data-lucide="flame"></i>
+        <span class="fn-nav-text">Workout Management</span>
+      </a>
+
+      <!-- 7. Diet Management -->
+      <a href="{% url 'fitness:diet_list' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'fitness' and 'diet' in request.path %}active{% endif %}">
+        <i data-lucide="utensils"></i>
+        <span class="fn-nav-text">Diet Management</span>
+      </a>
+
+      <!-- 8. Classes & Bookings -->
+      <a href="{% url 'classes:class_list' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'classes' %}active{% endif %}">
+        <i data-lucide="calendar"></i>
+        <span class="fn-nav-text">Classes & Bookings</span>
+      </a>
+
+      {% if not user.is_member %}
+      <div class="fn-nav-header-title">Finance & Sales</div>
+
+      <!-- 9. Payments -->
+      <a href="{% url 'payments:payment_list' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'payments' and request.resolver_match.url_name == 'payment_list' %}active{% endif %}">
+        <i data-lucide="credit-card"></i>
+        <span class="fn-nav-text">Payments</span>
+      </a>
+
+      <!-- 10. Invoices -->
+      <a href="{% url 'payments:invoice_list' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'payments' and 'invoice' in request.path %}active{% endif %}">
+        <i data-lucide="file-text"></i>
+        <span class="fn-nav-text">Invoices</span>
+      </a>
+
+      <!-- 11. Expenses -->
+      <a href="{% url 'payments:expense_list' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'payments' and 'expense' in request.path %}active{% endif %}">
+        <i data-lucide="receipt"></i>
+        <span class="fn-nav-text">Expenses</span>
+      </a>
+
+      <!-- 12. Leads & CRM -->
+      <a href="{% url 'crm:lead_list' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'crm' %}active{% endif %}">
+        <i data-lucide="contact-round"></i>
+        <span class="fn-nav-text">Leads & CRM</span>
+      </a>
+      {% endif %}
+
+      <div class="fn-nav-header-title">Intelligence & System</div>
+
+      <!-- 13. Notifications -->
+      <a href="{% url 'notifications:list' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'notifications' %}active{% endif %}">
+        <i data-lucide="bell"></i>
+        <span class="fn-nav-text">Notifications</span>
+        {% if unread_notifications_count > 0 %}
+        <span class="fn-nav-badge">{{ unread_notifications_count }}</span>
+        {% endif %}
+      </a>
+
+      <!-- 14. Reports & Analytics -->
+      {% if not user.is_member %}
+      <a href="{% url 'dashboard:reports' %}" class="fn-nav-link {% if request.resolver_match.url_name == 'reports' %}active{% endif %}">
+        <i data-lucide="trending-up"></i>
+        <span class="fn-nav-text">Reports & Analytics</span>
+      </a>
+
+      <!-- 15. Settings -->
+      <a href="{% url 'dashboard:settings' %}" class="fn-nav-link {% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
+        <i data-lucide="settings"></i>
+        <span class="fn-nav-text">Settings</span>
+      </a>
+      {% endif %}
+    </div>
+
+    <!-- Quick User Status in Sidebar bottom -->
+    <div class="p-3 border-top border-white border-opacity-10 d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-2">
+        <div class="fn-avatar" style="width: 32px; height: 32px; font-size: 0.8rem;">
+          {{ user.first_name|default:user.username|make_list|first|upper }}
+        </div>
+        <div class="fn-brand-text">
+          <small class="text-white fw-semibold">{{ user.first_name|default:user.username }}</small>
+          <small class="text-white-50" style="font-size: 0.7rem;">{{ user.get_role_display }}</small>
+        </div>
+      </div>
+      <a href="{% url 'accounts:logout' %}" class="text-white-50 hover-white text-decoration-none" title="Sign Out">
+        <i data-lucide="log-out" style="width: 18px; height: 18px;"></i>
+      </a>
+    </div>
+  </aside>
+
+  <!-- 2. Main Content Wrapper -->
+  <main class="fn-main-content">
+    
+    <!-- Topbar Header -->
+    <header class="fn-topbar">
+      <div class="fn-topbar-left">
+        <button type="button" class="fn-sidebar-toggle-btn" id="fnSidebarToggle" title="Toggle Navigation">
+          <i data-lucide="menu"></i>
+        </button>
+
+        <!-- Global Search -->
+        <form action="{% url 'dashboard:search' %}" method="GET" class="fn-global-search">
+          <i data-lucide="search" class="search-icon"></i>
+          <input type="text" name="q" id="fnGlobalSearchInput" placeholder="Search members, transactions, plans... (Press '/')" value="{{ request.GET.q }}">
+        </form>
+      </div>
+
+      <div class="fn-topbar-right">
+        <!-- Quick Action Button -->
+        {% if not user.is_member %}
+        <div class="dropdown">
+          <button class="btn-fn-accent dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i data-lucide="plus-circle"></i>
+            <span>Quick Action</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-2" style="border-radius: 12px; min-width: 220px;">
+            <li><a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{% url 'members:member_create' %}"><i data-lucide="user-plus" class="text-primary" style="width: 16px;"></i> Register Member</a></li>
+            <li><a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{% url 'attendance:scanner' %}"><i data-lucide="scan-line" class="text-success" style="width: 16px;"></i> QR Check-In Scanner</a></li>
+            <li><a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{% url 'payments:payment_create' %}"><i data-lucide="wallet" class="text-warning" style="width: 16px;"></i> Collect Payment</a></li>
+            <li><a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{% url 'classes:class_create' %}"><i data-lucide="calendar-plus" class="text-info" style="width: 16px;"></i> Schedule Class</a></li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <li><a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{% url 'crm:lead_create' %}"><i data-lucide="user-search" class="text-secondary" style="width: 16px;"></i> Capture New Lead</a></li>
+          </ul>
+        </div>
+        {% endif %}
+
+        <!-- Notification Center -->
+        <div class="dropdown">
+          <a href="#" class="fn-icon-btn" data-bs-toggle="dropdown" aria-expanded="false" title="Notification Center">
+            <i data-lucide="bell"></i>
+            {% if unread_notifications_count > 0 %}
+            <span class="fn-badge-dot"></span>
+            {% endif %}
+          </a>
+          <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 p-0" style="width: 320px; border-radius: 16px; overflow: hidden;">
+            <div class="p-3 bg-light border-bottom d-flex align-items-center justify-content-between">
+              <span class="fw-bold text-dark fs-6">Notifications</span>
+              <a href="{% url 'notifications:mark_all_read' %}" class="text-decoration-none text-muted small">Mark all read</a>
+            </div>
+            <div class="list-group list-group-flush" style="max-height: 280px; overflow-y: auto;">
+              {% for notif in recent_notifications %}
+              <a href="{% url 'notifications:mark_read' notif.id %}" class="list-group-item list-group-item-action p-3 border-bottom {% if not notif.is_read %}bg-light{% endif %}">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1 text-dark fs-7 fw-bold">{{ notif.title }}</h6>
+                  <small class="text-muted">{{ notif.created_at|timesince }} ago</small>
+                </div>
+                <p class="mb-1 text-muted small text-truncate">{{ notif.message }}</p>
+              </a>
+              {% empty %}
+              <div class="p-4 text-center text-muted small">
+                <i data-lucide="bell-off" class="mb-2" style="width: 24px;"></i>
+                <div>No new notifications</div>
+              </div>
+              {% endfor %}
+            </div>
+            <div class="p-2 text-center bg-white border-top">
+              <a href="{% url 'notifications:list' %}" class="text-decoration-none fw-semibold small text-primary">View All Notifications</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- User Profile Dropdown -->
+        <div class="dropdown">
+          <div class="fn-user-dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <div class="fn-avatar">
+              {% if user.profile_picture %}
+              <img src="{{ user.profile_picture.url }}" alt="{{ user.first_name }}">
+              {% else %}
+              {{ user.first_name|default:user.username|make_list|first|upper }}
+              {% endif %}
+            </div>
+            <div class="fn-user-meta d-none d-md-flex">
+              <span class="fn-user-name">{{ user.get_full_name|default:user.username }}</span>
+              <span class="fn-user-role-badge">{{ user.get_role_display }}</span>
+            </div>
+            <i data-lucide="chevron-down" class="text-muted ms-1" style="width: 16px;"></i>
+          </div>
+          <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-2 mt-2" style="border-radius: 12px; min-width: 200px;">
+            <li><a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{% url 'accounts:profile' %}"><i data-lucide="user" style="width: 16px;"></i> Profile Settings</a></li>
+            {% if not user.is_member %}
+            <li><a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{% url 'dashboard:settings' %}"><i data-lucide="building" style="width: 16px;"></i> Organization Info</a></li>
+            {% endif %}
+            <li><hr class="dropdown-divider my-1"></li>
+            <li><a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="{% url 'accounts:logout' %}"><i data-lucide="log-out" style="width: 16px;"></i> Sign Out</a></li>
+          </ul>
+        </div>
+      </div>
+    </header>
+
+    <!-- Global Flash Messages / Toast Alerts -->
+    <div class="container-fluid px-4 pt-3">
+      {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show border-0 shadow-sm d-flex align-items-center gap-2 mb-3" style="border-radius: 12px;" role="alert">
+          {% if message.tags == 'success' %}
+          <i data-lucide="check-circle" class="text-success" style="width: 20px; height: 20px;"></i>
+          {% elif message.tags == 'error' or message.tags == 'danger' %}
+          <i data-lucide="alert-circle" class="text-danger" style="width: 20px; height: 20px;"></i>
+          {% else %}
+          <i data-lucide="info" class="text-primary" style="width: 20px; height: 20px;"></i>
+          {% endif %}
+          <div class="flex-grow-1">{{ message }}</div>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+
+    <!-- Page Content Slot -->
+    <div class="fn-page-container">
+      {% block content %}{% endblock %}
+    </div>
+
+  </main>
+</div>
+
+<!-- Bootstrap 5 Bundle JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- FitNova JS -->
+<script src="{% static 'js/fitnova.js' %}"></script>
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

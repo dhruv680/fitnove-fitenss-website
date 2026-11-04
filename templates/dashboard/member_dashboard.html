@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}My Member Portal – FitNova{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- Member Welcome Banner -->
+  <div class="col-12">
+    <div class="fn-card p-4" style="background: linear-gradient(135deg, #172554 0%, #2e1065 100%); color: white; border: none;">
+      <div class="row align-items-center">
+        <div class="col-md-8">
+          <div class="d-flex align-items-center gap-3 mb-2">
+            <h2 class="fw-bold mb-0">Welcome back, {{ user.first_name }}!</h2>
+            {% if member.is_membership_active %}
+            <span class="badge bg-success py-1 px-3 rounded-pill">Active Member</span>
+            {% else %}
+            <span class="badge bg-danger py-1 px-3 rounded-pill">Membership Inactive</span>
+            {% endif %}
+          </div>
+          <p class="text-white-50 mb-0">Member ID: <strong class="text-white">{{ member.member_id }}</strong> | Organization: {{ member.organization.name }}</p>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+          <a href="{% url 'classes:class_list' %}" class="btn btn-light fw-bold text-dark me-2">Book a Class</a>
+          <a href="{% url 'fitness:progress_log' %}?member_id={{ member.id }}" class="btn btn-fn-accent">Log Progress</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Digital QR Membership Pass -->
+  <div class="col-lg-4">
+    <div class="fn-card text-center h-100">
+      <div class="fn-card-header justify-content-center">
+        <h5 class="fn-card-title">Digital Gym Pass</h5>
+      </div>
+      <div class="p-3 bg-light rounded-4 d-inline-block border my-2">
+        {% if member.qr_code %}
+        <img src="{{ member.qr_code.url }}" alt="QR Pass" class="img-fluid" style="width: 200px; height: 200px;">
+        {% else %}
+        <div class="p-4 text-muted">QR Pass Generating...</div>
+        {% endif %}
+      </div>
+      <div class="mt-3">
+        <h6 class="fw-bold text-dark mb-1">{{ member.full_name }}</h6>
+        <div class="text-muted small">Scan this QR at the front desk for instant check-in.</div>
+        {% if member.current_membership %}
+        <div class="mt-3 p-3 bg-light rounded-3 text-start small">
+          <div class="d-flex justify-content-between py-1">
+            <span class="text-muted">Plan:</span>
+            <span class="fw-bold text-dark">{{ member.current_membership.plan.name }}</span>
+          </div>
+          <div class="d-flex justify-content-between py-1">
+            <span class="text-muted">Valid Until:</span>
+            <span class="fw-bold text-primary">{{ member.current_membership.end_date|date:"M d, Y" }}</span>
+          </div>
+          <div class="d-flex justify-content-between py-1">
+            <span class="text-muted">Days Left:</span>
+            <span class="fw-bold text-success">{{ member.days_until_expiry }} days</span>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Workout Routine & Diet Summary -->
+  <div class="col-lg-8">
+    <div class="row g-4">
+      <!-- Assigned Workout -->
+      <div class="col-12">
+        <div class="fn-card">
+          <div class="fn-card-header">
+            <div>
+              <h5 class="fn-card-title">Active Workout Routine</h5>
+              <div class="fn-card-subtitle">Your personalized training program</div>
+            </div>
+            {% if workout %}
+            <a href="{% url 'fitness:workout_detail' workout.id %}" class="btn-fn-outline py-1 px-3 small text-decoration-none">View Split</a>
+            {% endif %}
+          </div>
+          {% if workout %}
+          <div class="p-3 bg-light rounded-3 mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <h6 class="fw-bold text-dark mb-0">{{ workout.name }}</h6>
+              <span class="badge bg-primary">{{ workout.goal }}</span>
+            </div>
+            <p class="text-muted small mt-2 mb-0">{{ workout.notes|default:"Follow the progressive overload guidelines." }}</p>
+          </div>
+          <div class="row g-2">
+            {% for day in workout.days.all %}
+            <div class="col-md-4">
+              <div class="p-2 border rounded-3 bg-white text-center">
+                <small class="text-muted d-block">{{ day.day_name }}</small>
+                <strong class="text-dark small">{{ day.focus_area }}</strong>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="text-center py-4 text-muted small">No workout routine assigned yet. Speak with your coach!</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Diet & Macros -->
+      <div class="col-12">
+        <div class="fn-card">
+          <div class="fn-card-header">
+            <div>
+              <h5 class="fn-card-title">Nutrition & Macro Targets</h5>
+              <div class="fn-card-subtitle">Daily energy and fueling breakdown</div>
+            </div>
+            {% if diet %}
+            <a href="{% url 'fitness:diet_detail' diet.id %}" class="btn-fn-outline py-1 px-3 small text-decoration-none">View Meals</a>
+            {% endif %}
+          </div>
+          {% if diet %}
+          <div class="row g-3 text-center">
+            <div class="col-3">
+              <div class="p-3 rounded-3" style="background: rgba(245, 158, 11, 0.1);">
+                <div class="text-warning fw-bold fs-5">{{ diet.daily_calories }}</div>
+                <small class="text-muted" style="font-size: 0.75rem;">Calories</small>
+              </div>
+            </div>
+            <div class="col-3">
+              <div class="p-3 rounded-3" style="background: rgba(118, 87, 232, 0.1);">
+                <div class="fw-bold fs-5" style="color: #7657E8;">{{ diet.protein_grams }}g</div>
+                <small class="text-muted" style="font-size: 0.75rem;">Protein</small>
+              </div>
+            </div>
+            <div class="col-3">
+              <div class="p-3 rounded-3" style="background: rgba(59, 130, 246, 0.1);">
+                <div class="text-primary fw-bold fs-5">{{ diet.carbs_grams }}g</div>
+                <small class="text-muted" style="font-size: 0.75rem;">Carbs</small>
+              </div>
+            </div>
+            <div class="col-3">
+              <div class="p-3 rounded-3" style="background: rgba(16, 185, 129, 0.1);">
+                <div class="text-success fw-bold fs-5">{{ diet.fats_grams }}g</div>
+                <small class="text-muted" style="font-size: 0.75rem;">Fats</small>
+              </div>
+            </div>
+          </div>
+          {% else %}
+          <div class="text-center py-4 text-muted small">No nutrition plan created yet.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Attendance History -->
+  <div class="col-12">
+    <div class="fn-card">
+      <div class="fn-card-header">
+        <h5 class="fn-card-title">My Recent Gym Check-Ins</h5>
+      </div>
+      <div class="fn-table-responsive">
+        <table class="fn-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Check-In</th>
+              <th>Check-Out</th>
+              <th>Duration</th>
+              <th>Method</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for att in attendances %}
+            <tr>
+              <td><span class="fw-semibold">{{ att.date|date:"D, M d, Y" }}</span></td>
+              <td>{{ att.check_in_time|date:"h:i A" }}</td>
+              <td>{{ att.check_out_time|date:"h:i A"|default:"In Progress" }}</td>
+              <td>{{ att.duration_minutes|default:"—" }} mins</td>
+              <td><span class="fn-badge fn-badge-muted">{{ att.get_method_display }}</span></td>
+              <td>
+                {% if att.status == 'CHECKED_OUT' %}
+                <span class="fn-badge fn-badge-success">Completed</span>
+                {% else %}
+                <span class="fn-badge fn-badge-accent">Active Now</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center text-muted py-3">No attendance recorded yet. Scan your pass at the gym!</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

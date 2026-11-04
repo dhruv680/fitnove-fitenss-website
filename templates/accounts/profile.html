@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile – FitNova{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-12">
+    <div class="d-flex align-items-center justify-content-between">
+      <div>
+        <h3 class="fw-bold text-dark mb-1">My Account Profile</h3>
+        <p class="text-muted small mb-0">Manage your personal credentials, contact details, and security.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="fn-card text-center">
+      <div class="fn-avatar mx-auto mb-3" style="width: 88px; height: 88px; font-size: 2rem;">
+        {% if profile_user.profile_picture %}
+        <img src="{{ profile_user.profile_picture.url }}" alt="{{ profile_user.username }}">
+        {% else %}
+        {{ profile_user.first_name|default:profile_user.username|make_list|first|upper }}
+        {% endif %}
+      </div>
+      <h5 class="fw-bold text-dark mb-1">{{ profile_user.get_full_name|default:profile_user.username }}</h5>
+      <div class="fn-badge fn-badge-accent mb-3">{{ profile_user.get_role_display }}</div>
+      
+      <div class="border-top pt-3 text-start small">
+        <div class="d-flex justify-content-between py-1">
+          <span class="text-muted">Username:</span>
+          <span class="fw-semibold text-dark">{{ profile_user.username }}</span>
+        </div>
+        <div class="d-flex justify-content-between py-1">
+          <span class="text-muted">Organization:</span>
+          <span class="fw-semibold text-dark">{{ profile_user.organization.name|default:"Global Master" }}</span>
+        </div>
+        <div class="d-flex justify-content-between py-1">
+          <span class="text-muted">Branch:</span>
+          <span class="fw-semibold text-dark">{{ profile_user.branch.name|default:"Main Headquarters" }}</span>
+        </div>
+        <div class="d-flex justify-content-between py-1">
+          <span class="text-muted">Member Since:</span>
+          <span class="fw-semibold text-dark">{{ profile_user.date_joined|date:"M d, Y" }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="fn-card mb-4">
+      <h5 class="fn-card-title mb-4">Personal Details</h5>
+      <form method="POST" action="{% url 'accounts:profile' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="fn-form-label">First Name</label>
+            <input type="text" name="first_name" class="fn-input" value="{{ profile_user.first_name }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Last Name</label>
+            <input type="text" name="last_name" class="fn-input" value="{{ profile_user.last_name }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Email Address</label>
+            <input type="email" name="email" class="fn-input" value="{{ profile_user.email }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Phone Number</label>
+            <input type="text" name="phone" class="fn-input" value="{{ profile_user.phone }}">
+          </div>
+          <div class="col-12">
+            <label class="fn-form-label">Street Address</label>
+            <input type="text" name="address" class="fn-input" value="{{ profile_user.address }}">
+          </div>
+          <div class="col-12">
+            <label class="fn-form-label">Update Profile Avatar</label>
+            <input type="file" name="profile_picture" class="fn-input" accept="image/*">
+          </div>
+        </div>
+        <div class="mt-4 text-end">
+          <button type="submit" class="btn btn-fn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="fn-card">
+      <h5 class="fn-card-title mb-3">Change Account Password</h5>
+      <form method="POST" action="{% url 'accounts:change_password' %}">
+        {% csrf_token %}
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="fn-form-label">Current Password</label>
+            <input type="password" name="current_password" class="fn-input" required>
+          </div>
+          <div class="col-md-4">
+            <label class="fn-form-label">New Password</label>
+            <input type="password" name="new_password" class="fn-input" required>
+          </div>
+          <div class="col-md-4">
+            <label class="fn-form-label">Confirm New Password</label>
+            <input type="password" name="confirm_password" class="fn-input" required>
+          </div>
+        </div>
+        <div class="mt-4 text-end">
+          <button type="submit" class="btn btn-fn-accent">Update Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

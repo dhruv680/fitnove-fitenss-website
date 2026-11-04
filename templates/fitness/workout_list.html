@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Workout Management – FitNova SaaS{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-12 d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <div>
+      <h2 class="fw-bold text-dark mb-1">Workout Routines & Splits</h2>
+      <p class="text-muted small mb-0">Customized hypertrophy, strength, and endurance workout regimens.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'fitness:exercise_library' %}" class="btn btn-fn-outline">
+        <i data-lucide="book-open" style="width: 18px;"></i>
+        <span>Exercise Library</span>
+      </a>
+      <a href="{% url 'fitness:workout_create' %}" class="btn btn-fn-accent">
+        <i data-lucide="plus-circle" style="width: 18px;"></i>
+        <span>Assign Workout Routine</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="fn-table-responsive">
+      <table class="fn-table">
+        <thead>
+          <tr>
+            <th>Routine Name</th>
+            <th>Athlete</th>
+            <th>Trainer</th>
+            <th>Target Goal</th>
+            <th>Level</th>
+            <th>Days in Split</th>
+            <th>Status</th>
+            <th class="text-end">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for w in page_obj %}
+          <tr>
+            <td>
+              <a href="{% url 'fitness:workout_detail' w.id %}" class="fw-bold text-dark text-decoration-none hover-primary">{{ w.name }}</a>
+              <div class="text-muted small">{{ w.start_date|date:"M d" }} &rarr; {{ w.end_date|date:"M d, Y" }}</div>
+            </td>
+            <td>
+              <div class="fw-semibold">{{ w.member.full_name }}</div>
+              <small class="text-muted">{{ w.member.member_id }}</small>
+            </td>
+            <td>{{ w.trainer.full_name|default:"Self / Unassigned" }}</td>
+            <td><span class="badge bg-light text-dark">{{ w.goal }}</span></td>
+            <td><span class="fn-badge fn-badge-accent">{{ w.get_level_display }}</span></td>
+            <td>{{ w.days.count }} Training Days</td>
+            <td>
+              {% if w.is_active %}
+              <span class="fn-badge fn-badge-success">Active</span>
+              {% else %}
+              <span class="fn-badge fn-badge-muted">Archived</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <a href="{% url 'fitness:workout_detail' w.id %}" class="btn btn-sm btn-fn-outline py-1 px-2" style="font-size: 0.75rem;">
+                <i data-lucide="eye" style="width: 14px;"></i> View Split
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8">
+              <div class="fn-empty-state">
+                <div class="fn-empty-icon"><i data-lucide="flame"></i></div>
+                <h6 class="fw-bold">No Workout Routines Assigned</h6>
+                <p class="text-muted small">Create personalized workout splits for your gym members.</p>
+                <a href="{% url 'fitness:workout_create' %}" class="btn btn-fn-accent">Create Routine</a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

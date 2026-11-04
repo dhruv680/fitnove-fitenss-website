@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if is_edit %}Edit Plan – {{ plan.name }}{% else %}Create Membership Plan – FitNova{% endif %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h3 class="fw-bold text-dark mb-1">{% if is_edit %}Edit Membership Plan{% else %}Create Membership Plan{% endif %}</h3>
+        <p class="text-muted small mb-0">Set pricing, duration type, privileges, and features.</p>
+      </div>
+      <a href="{% url 'memberships:plan_list' %}" class="btn btn-fn-outline">
+        <i data-lucide="arrow-left" style="width: 16px;"></i>
+        <span>Back to Plans</span>
+      </a>
+    </div>
+
+    <div class="fn-card">
+      <form method="POST">
+        {% csrf_token %}
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="fn-form-label">Plan Name <span class="text-danger">*</span></label>
+            <input type="text" name="name" class="fn-input" value="{{ plan.name }}" required placeholder="e.g. Pro Quarterly Fitness">
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Duration Type</label>
+            <select name="duration_type" class="fn-select" id="planDurationSelect" onchange="autoFillDays(this.value)">
+              <option value="MONTHLY" {% if plan.duration_type == 'MONTHLY' %}selected{% endif %}>Monthly</option>
+              <option value="QUARTERLY" {% if plan.duration_type == 'QUARTERLY' %}selected{% endif %}>Quarterly (3 Months)</option>
+              <option value="HALF_YEARLY" {% if plan.duration_type == 'HALF_YEARLY' %}selected{% endif %}>Half-Yearly (6 Months)</option>
+              <option value="YEARLY" {% if plan.duration_type == 'YEARLY' %}selected{% endif %}>Yearly (12 Months)</option>
+              <option value="CUSTOM" {% if plan.duration_type == 'CUSTOM' %}selected{% endif %}>Custom Days</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="fn-form-label">Duration in Days <span class="text-danger">*</span></label>
+            <input type="number" name="duration_days" id="planDurationDays" class="fn-input" value="{{ plan.duration_days|default:30 }}" required>
+          </div>
+          <div class="col-md-4">
+            <label class="fn-form-label">Plan Price ({{ current_org.currency|default:'$' }}) <span class="text-danger">*</span></label>
+            <input type="number" step="0.01" name="price" class="fn-input" value="{{ plan.price }}" required placeholder="99.00">
+          </div>
+          <div class="col-md-4">
+            <label class="fn-form-label">Signup Fee</label>
+            <input type="number" step="0.01" name="signup_fee" class="fn-input" value="{{ plan.signup_fee|default:'0.00' }}">
+          </div>
+
+          <div class="col-12">
+            <label class="fn-form-label">Included Features (One per line)</label>
+            <textarea name="features" class="fn-textarea" rows="4" placeholder="Access to all gym facilities&#10;Locker & shower access&#10;Free guest pass every month">{{ plan.features }}</textarea>
+          </div>
+
+          <div class="col-12">
+            <div class="d-flex flex-wrap gap-4 pt-2">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="has_trainer_included" id="featTrainer" {% if plan.has_trainer_included %}checked{% endif %}>
+                <label class="form-check-label small" for="featTrainer">Personal Trainer Included</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="has_locker_included" id="featLocker" {% if plan.has_locker_included %}checked{% endif %}>
+                <label class="form-check-label small" for="featLocker">Private Locker Included</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="has_classes_included" id="featClasses" {% if plan.has_classes_included or not plan %}checked{% endif %}>
+                <label class="form-check-label small" for="featClasses">Group Classes Included</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="is_popular" id="featPopular" {% if plan.is_popular %}checked{% endif %}>
+                <label class="form-check-label small" for="featPopular">Mark as Popular</label>
+              </div>
+              {% if is_edit %}
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="is_active" id="planActive" {% if plan.is_active %}checked{% endif %}>
+                <label class="form-check-label small" for="planActive">Active for New Signups</label>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-top text-end">
+          <a href="{% url 'memberships:plan_list' %}" class="btn btn-fn-outline me-2">Cancel</a>
+          <button type="submit" class="btn btn-fn-accent">Save Plan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function autoFillDays(type) {
+    const daysInput = document.getElementById('planDurationDays');
+    if (type === 'MONTHLY') daysInput.value = 30;
+    else if (type === 'QUARTERLY') daysInput.value = 90;
+    else if (type === 'HALF_YEARLY') daysInput.value = 180;
+    else if (type === 'YEARLY') daysInput.value = 365;
+  }
+</script>
+{% endblock %}

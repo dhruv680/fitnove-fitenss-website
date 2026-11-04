@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Assign Workout Routine – FitNova{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h3 class="fw-bold text-dark mb-1">Create Workout Program</h3>
+        <p class="text-muted small mb-0">Build a structured multi-day routine split tailored to athlete goals.</p>
+      </div>
+      <a href="{% url 'fitness:workout_list' %}" class="btn btn-fn-outline">
+        <i data-lucide="arrow-left" style="width: 16px;"></i>
+        <span>Workouts</span>
+      </a>
+    </div>
+
+    <div class="fn-card">
+      <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="fn-form-label">Select Gym Athlete <span class="text-danger">*</span></label>
+          <select name="member_id" class="fn-select" required>
+            <option value="">-- Choose Member --</option>
+            {% for m in members %}
+            <option value="{{ m.id }}">{{ m.full_name }} ({{ m.member_id }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="fn-form-label">Program Name <span class="text-danger">*</span></label>
+            <input type="text" name="name" class="fn-input" required placeholder="e.g. 8-Week Hypertrophy PPL Split">
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Primary Training Goal <span class="text-danger">*</span></label>
+            <input type="text" name="goal" class="fn-input" required placeholder="e.g. Muscle Gain, Core Strength, Fat Loss">
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="fn-form-label">Difficulty Level</label>
+            <select name="level" class="fn-select">
+              <option value="BEGINNER">Beginner</option>
+              <option value="INTERMEDIATE" selected>Intermediate</option>
+              <option value="ADVANCED">Advanced / Elite</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Supervising Trainer</label>
+            <select name="trainer_id" class="fn-select">
+              <option value="">None (Self-directed)</option>
+              {% for t in trainers %}
+              <option value="{{ t.id }}">{{ t.full_name }} ({{ t.specialization }})</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="fn-form-label">Start Date</label>
+            <input type="date" name="start_date" class="fn-input">
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Target Completion Date</label>
+            <input type="date" name="end_date" class="fn-input">
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="fn-form-label">Coaching Notes & Instructions</label>
+          <textarea name="notes" class="fn-textarea" rows="3" placeholder="Rest periods, progressive overload instructions, warm-up routine..."></textarea>
+        </div>
+
+        <div class="text-end">
+          <a href="{% url 'fitness:workout_list' %}" class="btn btn-fn-outline me-2">Cancel</a>
+          <button type="submit" class="btn btn-fn-accent">Generate Workout Split</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

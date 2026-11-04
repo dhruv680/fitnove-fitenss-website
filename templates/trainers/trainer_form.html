@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if is_edit %}Edit Trainer – {{ trainer.full_name }}{% else %}Add Trainer – FitNova{% endif %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h3 class="fw-bold text-dark mb-1">{% if is_edit %}Edit Coach Profile{% else %}Onboard New Fitness Trainer{% endif %}</h3>
+        <p class="text-muted small mb-0">Personal details, certifications, specialization, and billing rate.</p>
+      </div>
+      <a href="{% url 'trainers:trainer_list' %}" class="btn btn-fn-outline">
+        <i data-lucide="arrow-left" style="width: 16px;"></i>
+        <span>Back to Trainers</span>
+      </a>
+    </div>
+
+    <div class="fn-card">
+      <form method="POST">
+        {% csrf_token %}
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label class="fn-form-label">First Name <span class="text-danger">*</span></label>
+            <input type="text" name="first_name" class="fn-input" value="{{ trainer.user.first_name }}" required placeholder="e.g. Alex">
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Last Name <span class="text-danger">*</span></label>
+            <input type="text" name="last_name" class="fn-input" value="{{ trainer.user.last_name }}" required placeholder="e.g. Mercer">
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Email Address <span class="text-danger">*</span></label>
+            <input type="email" name="email" class="fn-input" value="{{ trainer.user.email }}" required {% if is_edit %}readonly{% endif %} placeholder="alex@fitnova.com">
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Phone Number <span class="text-danger">*</span></label>
+            <input type="tel" name="phone" class="fn-input" value="{{ trainer.user.phone }}" required placeholder="+1 555-0198">
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Specialization Area <span class="text-danger">*</span></label>
+            <input type="text" name="specialization" class="fn-input" value="{{ trainer.specialization }}" required placeholder="e.g. Strength & Conditioning, HIIT, Yoga">
+          </div>
+          <div class="col-md-3">
+            <label class="fn-form-label">Years of Experience</label>
+            <input type="number" name="experience_years" class="fn-input" value="{{ trainer.experience_years|default:3 }}">
+          </div>
+          <div class="col-md-3">
+            <label class="fn-form-label">Hourly Coaching Rate</label>
+            <input type="number" step="0.01" name="hourly_rate" class="fn-input" value="{{ trainer.hourly_rate|default:'45.00' }}">
+          </div>
+          <div class="col-12">
+            <label class="fn-form-label">Certifications & Credentials</label>
+            <input type="text" name="certifications" class="fn-input" value="{{ trainer.certifications }}" placeholder="e.g. ACE Certified, NASM-CPT, CSCS">
+          </div>
+          <div class="col-12">
+            <label class="fn-form-label">Trainer Biography / Summary</label>
+            <textarea name="bio" class="fn-textarea" rows="3" placeholder="Brief background, philosophy, achievements...">{{ trainer.bio }}</textarea>
+          </div>
+          {% if is_edit %}
+          <div class="col-md-6">
+            <label class="fn-form-label">Coaching Status</label>
+            <select name="status" class="fn-select">
+              <option value="ACTIVE" {% if trainer.status == 'ACTIVE' %}selected{% endif %}>Active</option>
+              <option value="ON_LEAVE" {% if trainer.status == 'ON_LEAVE' %}selected{% endif %}>On Leave</option>
+              <option value="INACTIVE" {% if trainer.status == 'INACTIVE' %}selected{% endif %}>Inactive</option>
+            </select>
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="text-end pt-3 border-top">
+          <a href="{% url 'trainers:trainer_list' %}" class="btn btn-fn-outline me-2">Cancel</a>
+          <button type="submit" class="btn btn-fn-accent">Save Coach</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

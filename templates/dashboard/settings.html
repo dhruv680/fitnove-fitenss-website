@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Settings – FitNova SaaS{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-12">
+    <h3 class="fw-bold text-dark mb-1">Organization & Branch Settings</h3>
+    <p class="text-muted small">Configure gym branding, multi-branch information, invoice defaults, and currencies.</p>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="fn-card">
+      <form method="POST" action="{% url 'dashboard:settings' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <h5 class="fn-card-title mb-3">Gym Organization Profile</h5>
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label class="fn-form-label">Organization Name</label>
+            <input type="text" name="org_name" class="fn-input" value="{{ org.name }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Currency Symbol</label>
+            <input type="text" name="currency" class="fn-input" value="{{ org.currency }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Support Email</label>
+            <input type="email" name="org_email" class="fn-input" value="{{ org.email }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Contact Phone</label>
+            <input type="text" name="org_phone" class="fn-input" value="{{ org.phone }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Website</label>
+            <input type="url" name="org_website" class="fn-input" value="{{ org.website }}">
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Tax / GST Number</label>
+            <input type="text" name="tax_id" class="fn-input" value="{{ org.tax_id }}">
+          </div>
+        </div>
+
+        <h5 class="fn-card-title mb-3">Branch Location Details</h5>
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label class="fn-form-label">Branch Name</label>
+            <input type="text" name="branch_name" class="fn-input" value="{{ branch.name }}">
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">City</label>
+            <input type="text" name="branch_city" class="fn-input" value="{{ branch.city }}">
+          </div>
+          <div class="col-12">
+            <label class="fn-form-label">Physical Address</label>
+            <input type="text" name="branch_address" class="fn-input" value="{{ branch.address }}">
+          </div>
+        </div>
+
+        <div class="text-end">
+          <button type="submit" class="btn btn-fn-primary">Save Settings</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="fn-card">
+      <h5 class="fn-card-title mb-3">System Information</h5>
+      <div class="small">
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Platform:</span>
+          <span class="fw-semibold text-dark">FitNova SaaS v2.0</span>
+        </div>
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Database Engine:</span>
+          <span class="fw-semibold text-dark">PostgreSQL 18 Ready</span>
+        </div>
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Authentication:</span>
+          <span class="fw-semibold text-success">Active RBAC</span>
+        </div>
+        <div class="d-flex justify-content-between py-2">
+          <span class="text-muted">Data Isolation:</span>
+          <span class="fw-semibold text-dark">Organization Scoped</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

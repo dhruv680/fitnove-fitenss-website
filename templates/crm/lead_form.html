@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Capture Lead – FitNova CRM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h3 class="fw-bold text-dark mb-1">Capture New Sales Lead</h3>
+        <p class="text-muted small mb-0">Record member inquiry, trial requests, and follow-up reminders.</p>
+      </div>
+      <a href="{% url 'crm:lead_list' %}" class="btn btn-fn-outline">
+        <i data-lucide="arrow-left" style="width: 16px;"></i>
+        <span>Back to Leads</span>
+      </a>
+    </div>
+
+    <div class="fn-card">
+      <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="fn-form-label">Full Name <span class="text-danger">*</span></label>
+          <input type="text" name="full_name" class="fn-input" required placeholder="e.g. Rachel Adams">
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="fn-form-label">Phone Number <span class="text-danger">*</span></label>
+            <input type="tel" name="phone" class="fn-input" required placeholder="+1 555-0182">
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Email Address</label>
+            <input type="email" name="email" class="fn-input" placeholder="rachel@example.com">
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="fn-form-label">Inquiry Source</label>
+            <select name="source" class="fn-select">
+              {% for s_val, s_label in sources %}
+              <option value="{{ s_val }}">{{ s_label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Program of Interest</label>
+            <input type="text" name="interest" class="fn-input" value="Annual VIP Membership" placeholder="e.g. Weight loss, Personal Training">
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="fn-form-label">Free Trial Date</label>
+            <input type="date" name="trial_date" class="fn-input">
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Next Follow-Up Date</label>
+            <input type="date" name="follow_up_date" class="fn-input">
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="fn-form-label">Prospect Notes</label>
+          <textarea name="notes" class="fn-textarea" rows="3" placeholder="Preferences, previous gyms, health conditions..."></textarea>
+        </div>
+
+        <div class="text-end">
+          <a href="{% url 'crm:lead_list' %}" class="btn btn-fn-outline me-2">Cancel</a>
+          <button type="submit" class="btn btn-fn-accent">Save to Pipeline</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

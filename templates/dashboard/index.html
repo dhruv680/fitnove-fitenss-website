@@ -1,0 +1,590 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard – FitNova SaaS{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <!-- Page Header -->
+  <div class="col-12 d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <div>
+      <h2 class="fw-bold text-dark mb-1">Executive Gym Dashboard</h2>
+      <p class="text-muted small mb-0">Real-time performance metrics for {{ current_org.name|default:"FitNova Hub" }}.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <a href="{% url 'attendance:scanner' %}" class="btn btn-fn-primary">
+        <i data-lucide="scan-line" style="width: 18px;"></i>
+        <span>Scan Attendance</span>
+      </a>
+      <a href="{% url 'members:member_create' %}" class="btn btn-fn-accent">
+        <i data-lucide="user-plus" style="width: 18px;"></i>
+        <span>Register Member</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Section 3: 8 Professional Dashboard Cards -->
+  <!-- 1. Total Members -->
+  <div class="col-xl-3 col-md-6">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Total Members</div>
+          <div class="fn-stat-value">{{ total_members }}</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(23, 37, 84, 0.08); color: #172554;">
+          <i data-lucide="users" style="width: 24px; height: 24px;"></i>
+        </div>
+      </div>
+      <div class="fn-stat-footer">
+        <span class="fn-trend-pill fn-trend-up">
+          <i data-lucide="arrow-up-right" style="width: 14px;"></i> {{ growth_pct }}%
+        </span>
+        <span>vs last month</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Active Members -->
+  <div class="col-xl-3 col-md-6">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Active Members</div>
+          <div class="fn-stat-value text-success">{{ active_members }}</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.12); color: #10B981;">
+          <i data-lucide="user-check" style="width: 24px; height: 24px;"></i>
+        </div>
+      </div>
+      <div class="fn-stat-footer">
+        <span class="text-muted">Currently active subscriptions</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. New Registrations -->
+  <div class="col-xl-3 col-md-6">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">New Registrations</div>
+          <div class="fn-stat-value" style="color: #7657E8;">{{ new_registrations }}</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(118, 87, 232, 0.12); color: #7657E8;">
+          <i data-lucide="sparkles" style="width: 24px; height: 24px;"></i>
+        </div>
+      </div>
+      <div class="fn-stat-footer">
+        <span class="text-muted">Joined this calendar month</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Total Revenue -->
+  <div class="col-xl-3 col-md-6">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Total Revenue</div>
+          <div class="fn-stat-value">{{ currency }}{{ total_revenue|floatformat:0 }}</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(59, 130, 246, 0.12); color: #3B82F6;">
+          <i data-lucide="dollar-sign" style="width: 24px; height: 24px;"></i>
+        </div>
+      </div>
+      <div class="fn-stat-footer">
+        <span class="fw-semibold text-dark">{{ currency }}{{ this_month_revenue|floatformat:0 }}</span>
+        <span>earned this month</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Pending Payments -->
+  <div class="col-xl-3 col-md-6">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Pending Payments</div>
+          <div class="fn-stat-value text-warning">{{ pending_payments }}</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(245, 158, 11, 0.12); color: #F59E0B;">
+          <i data-lucide="clock" style="width: 24px; height: 24px;"></i>
+        </div>
+      </div>
+      <div class="fn-stat-footer">
+        <a href="{% url 'payments:payment_list' %}?status=PENDING" class="text-decoration-none small text-warning fw-semibold">Review invoices &rarr;</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Expiring Memberships -->
+  <div class="col-xl-3 col-md-6">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Expiring Soon</div>
+          <div class="fn-stat-value text-danger">{{ expiring_memberships }}</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(239, 68, 68, 0.12); color: #EF4444;">
+          <i data-lucide="alert-triangle" style="width: 24px; height: 24px;"></i>
+        </div>
+      </div>
+      <div class="fn-stat-footer">
+        <span class="text-muted">In the next 14 days</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. Today's Attendance -->
+  <div class="col-xl-3 col-md-6">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Today's Attendance</div>
+          <div class="fn-stat-value" style="color: #059669;">{{ today_attendance }}</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.12); color: #10B981;">
+          <i data-lucide="scan" style="width: 24px; height: 24px;"></i>
+        </div>
+      </div>
+      <div class="fn-stat-footer">
+        <a href="{% url 'attendance:attendance_list' %}" class="text-decoration-none small text-success fw-semibold">View live check-ins &rarr;</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. Monthly Growth -->
+  <div class="col-xl-3 col-md-6">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Monthly Growth</div>
+          <div class="fn-stat-value" style="color: #7657E8;">+{{ growth_pct }}%</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(118, 87, 232, 0.12); color: #7657E8;">
+          <i data-lucide="trending-up" style="width: 24px; height: 24px;"></i>
+        </div>
+      </div>
+      <div class="fn-stat-footer">
+        <span class="text-muted">Member acquisition rate</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Section 3: Charts Grid -->
+<div class="row g-4 mb-4">
+  <!-- Chart 1: Monthly Revenue Trend -->
+  <div class="col-lg-8">
+    <div class="fn-card h-100">
+      <div class="fn-card-header">
+        <div>
+          <h5 class="fn-card-title">Monthly Revenue Analysis</h5>
+          <div class="fn-card-subtitle">Gross subscription revenue over the last 6 months</div>
+        </div>
+        <span class="fn-badge fn-badge-accent">Revenue ({{ currency }})</span>
+      </div>
+      <div style="height: 280px; position: relative;">
+        <canvas id="monthlyRevenueChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart 3: Membership Distribution (Doughnut) -->
+  <div class="col-lg-4">
+    <div class="fn-card h-100">
+      <div class="fn-card-header">
+        <div>
+          <h5 class="fn-card-title">Plan Distribution</h5>
+          <div class="fn-card-subtitle">Active member plan share</div>
+        </div>
+      </div>
+      <div style="height: 280px; position: relative;" class="d-flex align-items-center justify-content-center">
+        <canvas id="membershipDistributionChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart 2: Weekly Attendance -->
+  <div class="col-lg-4">
+    <div class="fn-card h-100">
+      <div class="fn-card-header">
+        <div>
+          <h5 class="fn-card-title">Weekly Attendance</h5>
+          <div class="fn-card-subtitle">Daily footfall over past 7 days</div>
+        </div>
+      </div>
+      <div style="height: 240px; position: relative;">
+        <canvas id="weeklyAttendanceChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart 4: Member Growth -->
+  <div class="col-lg-4">
+    <div class="fn-card h-100">
+      <div class="fn-card-header">
+        <div>
+          <h5 class="fn-card-title">Member Growth</h5>
+          <div class="fn-card-subtitle">Monthly registration pace</div>
+        </div>
+      </div>
+      <div style="height: 240px; position: relative;">
+        <canvas id="memberGrowthChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart 5: Payment Analytics -->
+  <div class="col-lg-4">
+    <div class="fn-card h-100">
+      <div class="fn-card-header">
+        <div>
+          <h5 class="fn-card-title">Payment Channels</h5>
+          <div class="fn-card-subtitle">Transaction value by method</div>
+        </div>
+      </div>
+      <div style="height: 240px; position: relative;">
+        <canvas id="paymentMethodsChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Section 3: Additional Data Sections -->
+<div class="row g-4">
+  <!-- Recent Member Registrations -->
+  <div class="col-lg-6">
+    <div class="fn-card h-100">
+      <div class="fn-card-header">
+        <div>
+          <h5 class="fn-card-title">Recent Member Registrations</h5>
+          <div class="fn-card-subtitle">Latest enrolled athletes</div>
+        </div>
+        <a href="{% url 'members:member_list' %}" class="btn-fn-outline py-1 px-2 text-decoration-none small">View All</a>
+      </div>
+      <div class="fn-table-responsive">
+        <table class="fn-table">
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Member ID</th>
+              <th>Plan</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in recent_members %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="fn-avatar" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                    {{ m.user.first_name|default:m.user.username|make_list|first|upper }}
+                  </div>
+                  <div>
+                    <div class="fw-semibold text-dark">{{ m.full_name }}</div>
+                    <div class="text-muted small" style="font-size: 0.72rem;">{{ m.email }}</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="badge bg-light text-dark">{{ m.member_id }}</span></td>
+              <td><small class="fw-semibold">{{ m.current_membership.plan.name|default:"Pending Plan" }}</small></td>
+              <td>
+                {% if m.status == 'ACTIVE' %}
+                <span class="fn-badge fn-badge-success">Active</span>
+                {% elif m.status == 'EXPIRED' %}
+                <span class="fn-badge fn-badge-danger">Expired</span>
+                {% else %}
+                <span class="fn-badge fn-badge-warning">{{ m.get_status_display }}</span>
+                {% endif %}
+              </td>
+              <td>
+                <a href="{% url 'members:member_detail' m.id %}" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">View</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center text-muted py-3">No members enrolled yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Transactions -->
+  <div class="col-lg-6">
+    <div class="fn-card h-100">
+      <div class="fn-card-header">
+        <div>
+          <h5 class="fn-card-title">Recent Transactions</h5>
+          <div class="fn-card-subtitle">Incoming membership dues</div>
+        </div>
+        <a href="{% url 'payments:payment_list' %}" class="btn-fn-outline py-1 px-2 text-decoration-none small">All Payments</a>
+      </div>
+      <div class="fn-table-responsive">
+        <table class="fn-table">
+          <thead>
+            <tr>
+              <th>Txn ID</th>
+              <th>Member</th>
+              <th>Amount</th>
+              <th>Method</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in recent_payments %}
+            <tr>
+              <td><span class="font-monospace small text-primary">{{ p.transaction_id }}</span></td>
+              <td><span class="fw-semibold">{{ p.member.full_name }}</span></td>
+              <td><span class="fw-bold text-dark">{{ currency }}{{ p.total_amount }}</span></td>
+              <td><span class="fn-badge fn-badge-muted">{{ p.get_payment_method_display }}</span></td>
+              <td><span class="fn-badge fn-badge-success">{{ p.get_status_display }}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center text-muted py-3">No transactions logged yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upcoming Membership Expiry -->
+  <div class="col-lg-6">
+    <div class="fn-card h-100">
+      <div class="fn-card-header">
+        <div>
+          <h5 class="fn-card-title">Upcoming Membership Expirations</h5>
+          <div class="fn-card-subtitle">Due in the next 14 days</div>
+        </div>
+      </div>
+      <div class="fn-table-responsive">
+        <table class="fn-table">
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Plan</th>
+              <th>Expiry Date</th>
+              <th>Days Left</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sub in expiring_list %}
+            <tr>
+              <td><span class="fw-semibold">{{ sub.member.full_name }}</span></td>
+              <td><span class="small">{{ sub.plan.name }}</span></td>
+              <td><span class="small text-danger fw-semibold">{{ sub.end_date|date:"M d, Y" }}</span></td>
+              <td><span class="fn-badge fn-badge-danger">{{ sub.days_remaining }} days</span></td>
+              <td>
+                <a href="{% url 'memberships:membership_renew' sub.member.id %}" class="btn btn-sm btn-fn-accent py-0 px-2" style="font-size: 0.75rem;">Renew</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center text-muted py-3">No memberships expiring within 14 days.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Trainer Performance -->
+  <div class="col-lg-6">
+    <div class="fn-card h-100">
+      <div class="fn-card-header">
+        <div>
+          <h5 class="fn-card-title">Trainer Coaching Roster</h5>
+          <div class="fn-card-subtitle">Assigned athletes & specialties</div>
+        </div>
+        <a href="{% url 'trainers:trainer_list' %}" class="btn-fn-outline py-1 px-2 text-decoration-none small">Trainers</a>
+      </div>
+      <div class="fn-table-responsive">
+        <table class="fn-table">
+          <thead>
+            <tr>
+              <th>Trainer</th>
+              <th>Specialization</th>
+              <th>Assigned Members</th>
+              <th>Rating</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for trn in trainers_list %}
+            <tr>
+              <td>
+                <div class="fw-semibold text-dark">{{ trn.full_name }}</div>
+                <div class="text-muted small" style="font-size: 0.7rem;">{{ trn.employee_id }}</div>
+              </td>
+              <td><span class="small">{{ trn.specialization }}</span></td>
+              <td><span class="fn-badge fn-badge-accent">{{ trn.assigned_members_count }} Active</span></td>
+              <td><span class="text-warning fw-bold">★ {{ trn.rating }}</span></td>
+              <td><span class="fn-badge fn-badge-success">{{ trn.get_status_display }}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center text-muted py-3">No trainers added yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Safe Chart Initialization using database values passed from view
+  const rawChartData = {{ chart_data_json|safe }};
+
+  // Primary colors
+  const primaryNavy = '#172554';
+  const accentViolet = '#7657E8';
+  const successEmerald = '#10B981';
+
+  // 1. Monthly Revenue Chart
+  const revCtx = document.getElementById('monthlyRevenueChart');
+  if (revCtx) {
+    new Chart(revCtx, {
+      type: 'line',
+      data: {
+        labels: rawChartData.revenue_labels,
+        datasets: [{
+          label: 'Gross Revenue',
+          data: rawChartData.revenue_values,
+          borderColor: accentViolet,
+          backgroundColor: 'rgba(118, 87, 232, 0.1)',
+          fill: true,
+          tension: 0.35,
+          pointBackgroundColor: accentViolet,
+          pointRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: '#F1F5F9' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  // 2. Membership Distribution Chart
+  const planCtx = document.getElementById('membershipDistributionChart');
+  if (planCtx) {
+    new Chart(planCtx, {
+      type: 'doughnut',
+      data: {
+        labels: rawChartData.plan_labels,
+        datasets: [{
+          data: rawChartData.plan_counts,
+          backgroundColor: ['#7657E8', '#172554', '#10B981', '#3B82F6', '#F59E0B'],
+          borderWidth: 2,
+          borderColor: '#FFFFFF'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+        },
+        cutout: '68%'
+      }
+    });
+  }
+
+  // 3. Weekly Attendance Chart
+  const attCtx = document.getElementById('weeklyAttendanceChart');
+  if (attCtx) {
+    new Chart(attCtx, {
+      type: 'bar',
+      data: {
+        labels: rawChartData.weekly_att_labels,
+        datasets: [{
+          label: 'Check-ins',
+          data: rawChartData.weekly_att_values,
+          backgroundColor: '#10B981',
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: '#F1F5F9' }, ticks: { stepSize: 1 } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  // 4. Member Growth Chart
+  const growthCtx = document.getElementById('memberGrowthChart');
+  if (growthCtx) {
+    new Chart(growthCtx, {
+      type: 'line',
+      data: {
+        labels: rawChartData.growth_labels,
+        datasets: [{
+          label: 'New Members',
+          data: rawChartData.growth_values,
+          borderColor: '#3B82F6',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: '#F1F5F9' }, ticks: { stepSize: 1 } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  // 5. Payment Methods Chart
+  const methodCtx = document.getElementById('paymentMethodsChart');
+  if (methodCtx) {
+    new Chart(methodCtx, {
+      type: 'bar',
+      data: {
+        labels: rawChartData.method_labels,
+        datasets: [{
+          label: 'Volume',
+          data: rawChartData.method_counts,
+          backgroundColor: '#172554',
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: '#F1F5F9' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  }
+</script>
+{% endblock %}

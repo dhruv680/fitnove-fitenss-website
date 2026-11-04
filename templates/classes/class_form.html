@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Schedule Fitness Class – FitNova{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h3 class="fw-bold text-dark mb-1">Schedule Group Fitness Class</h3>
+        <p class="text-muted small mb-0">Create recurring studio classes with assigned trainers and seat limits.</p>
+      </div>
+      <a href="{% url 'classes:class_list' %}" class="btn btn-fn-outline">
+        <i data-lucide="arrow-left" style="width: 16px;"></i>
+        <span>Back to Classes</span>
+      </a>
+    </div>
+
+    <div class="fn-card">
+      <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="fn-form-label">Class Name <span class="text-danger">*</span></label>
+          <input type="text" name="name" class="fn-input" required placeholder="e.g. Sunrise Power Vinyasa Yoga">
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="fn-form-label">Lead Coach / Trainer <span class="text-danger">*</span></label>
+            <select name="trainer_id" class="fn-select" required>
+              <option value="">-- Choose Instructor --</option>
+              {% for t in trainers %}
+              <option value="{{ t.id }}">{{ t.full_name }} ({{ t.specialization }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Studio / Room Location</label>
+            <input type="text" name="room" class="fn-input" value="Main Studio" placeholder="Studio A, Spin Lab, Turf Area">
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label class="fn-form-label">Start Time <span class="text-danger">*</span></label>
+            <input type="time" name="schedule_time" class="fn-input" required>
+          </div>
+          <div class="col-md-4">
+            <label class="fn-form-label">Duration (Minutes)</label>
+            <input type="number" name="duration_minutes" class="fn-input" value="60">
+          </div>
+          <div class="col-md-4">
+            <label class="fn-form-label">Max Seat Capacity</label>
+            <input type="number" name="capacity" class="fn-input" value="20" required>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="fn-form-label">Days of Week</label>
+          <input type="text" name="days_of_week" class="fn-input" value="Monday, Wednesday, Friday" placeholder="e.g. Mon, Wed, Fri">
+        </div>
+
+        <div class="mb-4">
+          <label class="fn-form-label">Class Description & Equipment Needed</label>
+          <textarea name="description" class="fn-textarea" rows="3" placeholder="Towels and water bottles required. High intensity circuit conditioning."></textarea>
+        </div>
+
+        <div class="text-end">
+          <a href="{% url 'classes:class_list' %}" class="btn btn-fn-outline me-2">Cancel</a>
+          <button type="submit" class="btn btn-fn-accent">Schedule Class</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

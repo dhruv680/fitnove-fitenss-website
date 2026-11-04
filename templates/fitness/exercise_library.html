@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Exercise Library – FitNova{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-12 d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <div>
+      <h2 class="fw-bold text-dark mb-1">Exercise Library & Movements</h2>
+      <p class="text-muted small mb-0">Browse movement patterns, equipment requirements, and instructions.</p>
+    </div>
+  </div>
+
+  <!-- Search & Category Filters -->
+  <div class="col-12">
+    <div class="fn-card p-3">
+      <form method="GET" action="{% url 'fitness:exercise_library' %}" class="row g-2 align-items-center">
+        <div class="col-md-6">
+          <input type="text" name="search" class="fn-input" placeholder="Search exercises by name..." value="{{ search_query }}">
+        </div>
+        <div class="col-md-4">
+          <select name="category" class="fn-select">
+            <option value="">All Muscle Groups</option>
+            {% for c_val, c_label in categories %}
+            <option value="{{ c_val }}" {% if category_filter == c_val %}selected{% endif %}>{{ c_label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+          <button type="submit" class="btn btn-fn-primary w-100">Filter</button>
+          <a href="{% url 'fitness:exercise_library' %}" class="btn btn-fn-outline" title="Reset"><i data-lucide="rotate-ccw" style="width: 16px;"></i></a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Exercise Cards Grid -->
+  {% for ex in page_obj %}
+  <div class="col-lg-4 col-md-6">
+    <div class="fn-card h-100 p-4 d-flex flex-column">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <span class="fn-badge fn-badge-accent">{{ ex.get_category_display }}</span>
+        <span class="badge bg-light text-muted small">{{ ex.difficulty }}</span>
+      </div>
+      <h5 class="fw-bold text-dark mb-2">{{ ex.name }}</h5>
+      <div class="text-muted small mb-3"><strong>Equipment:</strong> {{ ex.equipment }}</div>
+      <p class="text-muted small flex-grow-1 mb-0">{{ ex.instructions|default:"Execute with controlled cadence and full range of motion." }}</p>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12">
+    <div class="fn-card text-center py-5">
+      <div class="fn-empty-icon"><i data-lucide="dumbbell"></i></div>
+      <h6 class="fw-bold">No Exercises Found</h6>
+      <p class="text-muted small">No movements match your search criteria.</p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

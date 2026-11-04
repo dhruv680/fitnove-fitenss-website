@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}Gym Expenses – FitNova SaaS{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-12 d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <div>
+      <h2 class="fw-bold text-dark mb-1">Gym Operating Expenses</h2>
+      <p class="text-muted small mb-0">Record equipment purchases, staff salaries, rent, and utility disbursements.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'payments:expense_create' %}" class="btn btn-fn-accent">
+        <i data-lucide="plus-circle" style="width: 18px;"></i>
+        <span>Record Expense</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="fn-card p-3 d-flex align-items-center gap-3">
+      <div class="fn-stat-icon-wrapper" style="background: rgba(239, 68, 68, 0.12); color: #EF4444;">
+        <i data-lucide="receipt" style="width: 22px;"></i>
+      </div>
+      <div>
+        <div class="text-muted small fw-semibold text-uppercase">Total Recorded Outflow</div>
+        <div class="fs-4 fw-bold text-danger">{{ current_org.currency|default:'$' }}{{ total_expense|floatformat:2 }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Category Filters -->
+<div class="fn-card p-3 mb-4">
+  <form method="GET" action="{% url 'payments:expense_list' %}" class="row g-2 align-items-center">
+    <div class="col-md-5">
+      <input type="text" name="search" class="fn-input" placeholder="Search expense title or vendor/payee..." value="{{ search_query }}">
+    </div>
+    <div class="col-md-4">
+      <select name="category" class="fn-select">
+        <option value="">All Expense Categories</option>
+        {% for cat_val, cat_label in categories %}
+        <option value="{{ cat_val }}" {% if category_filter == cat_val %}selected{% endif %}>{{ cat_label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3 d-flex gap-2">
+      <button type="submit" class="btn btn-fn-primary w-100">Filter</button>
+      <a href="{% url 'payments:expense_list' %}" class="btn btn-fn-outline" title="Reset"><i data-lucide="rotate-ccw" style="width: 16px;"></i></a>
+    </div>
+  </form>
+</div>
+
+<!-- Expenses Table -->
+<div class="fn-table-responsive mb-4">
+  <table class="fn-table">
+    <thead>
+      <tr>
+        <th>Expense Title</th>
+        <th>Category</th>
+        <th>Date</th>
+        <th>Paid To (Vendor)</th>
+        <th>Recorded By</th>
+        <th class="text-end">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for exp in page_obj %}
+      <tr>
+        <td>
+          <div class="fw-bold text-dark">{{ exp.title }}</div>
+          {% if exp.notes %}<small class="text-muted">{{ exp.notes }}</small>{% endif %}
+        </td>
+        <td><span class="fn-badge fn-badge-muted">{{ exp.get_category_display }}</span></td>
+        <td>{{ exp.date|date:"M d, Y" }}</td>
+        <td>{{ exp.paid_to|default:"—" }}</td>
+        <td><small class="text-muted">{{ exp.recorded_by.get_full_name|default:exp.recorded_by.username }}</small></td>
+        <td class="text-end fw-bold text-danger">{{ exp.organization.currency }}{{ exp.amount }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6">
+          <div class="fn-empty-state">
+            <div class="fn-empty-icon"><i data-lucide="receipt"></i></div>
+            <h6 class="fw-bold">No Expenses Recorded</h6>
+            <p class="text-muted small">Keep track of gym operating costs by recording expenses.</p>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

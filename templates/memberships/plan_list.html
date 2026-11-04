@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}Membership Plans – FitNova SaaS{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-12 d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <div>
+      <h2 class="fw-bold text-dark mb-1">Gym Membership Plans</h2>
+      <p class="text-muted small mb-0">Configure multi-tier memberships (Monthly, Quarterly, Half-Yearly, Yearly) and privileges.</p>
+    </div>
+    <div>
+      <a href="{% url 'memberships:plan_create' %}" class="btn btn-fn-accent">
+        <i data-lucide="plus-circle" style="width: 18px;"></i>
+        <span>Create New Plan</span>
+      </a>
+    </div>
+  </div>
+
+  {% for plan in plans %}
+  <div class="col-lg-4 col-md-6">
+    <div class="fn-card h-100 position-relative {% if plan.is_popular %}border-primary shadow-hover{% endif %}" style="display: flex; flex-direction: column;">
+      {% if plan.is_popular %}
+      <div class="position-absolute top-0 end-0 m-3">
+        <span class="badge bg-primary rounded-pill px-3 py-1">Most Popular</span>
+      </div>
+      {% endif %}
+
+      <div>
+        <div class="fn-badge fn-badge-accent mb-2">{{ plan.get_duration_type_display }}</div>
+        <h4 class="fw-bold text-dark mb-1">{{ plan.name }}</h4>
+        <div class="d-flex align-items-baseline gap-1 my-3">
+          <span class="fs-2 fw-bold text-dark">{{ plan.organization.currency }}{{ plan.price }}</span>
+          <span class="text-muted small">/ {{ plan.duration_days }} days</span>
+        </div>
+        {% if plan.signup_fee > 0 %}
+        <div class="text-muted small mb-3">+ {{ plan.organization.currency }}{{ plan.signup_fee }} one-time registration fee</div>
+        {% endif %}
+      </div>
+
+      <div class="py-3 border-top border-bottom my-3 flex-grow-1">
+        <div class="text-muted small fw-semibold text-uppercase mb-2">Included Privileges:</div>
+        <ul class="list-unstyled mb-0 small">
+          {% for feature in plan.feature_list %}
+          <li class="d-flex align-items-center gap-2 py-1">
+            <i data-lucide="check" class="text-success" style="width: 16px; height: 16px;"></i>
+            <span>{{ feature }}</span>
+          </li>
+          {% endfor %}
+          {% if plan.has_trainer_included %}
+          <li class="d-flex align-items-center gap-2 py-1">
+            <i data-lucide="check" class="text-success" style="width: 16px; height: 16px;"></i>
+            <span class="fw-semibold">Personal Trainer Included</span>
+          </li>
+          {% endif %}
+          {% if plan.has_classes_included %}
+          <li class="d-flex align-items-center gap-2 py-1">
+            <i data-lucide="check" class="text-success" style="width: 16px; height: 16px;"></i>
+            <span>Unlimited Group Studio Classes</span>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center pt-2">
+        <span class="small {% if plan.is_active %}text-success{% else %}text-danger{% endif %} fw-semibold">
+          {% if plan.is_active %}● Active Plan{% else %}● Inactive{% endif %}
+        </span>
+        <a href="{% url 'memberships:plan_edit' plan.id %}" class="btn btn-sm btn-fn-outline">
+          <i data-lucide="edit-3" style="width: 14px;"></i> Edit Plan
+        </a>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12">
+    <div class="fn-card text-center py-5">
+      <div class="fn-empty-icon"><i data-lucide="badge-percent"></i></div>
+      <h5 class="fw-bold">No Membership Plans Yet</h5>
+      <p class="text-muted small">Create monthly, quarterly, and yearly tiers to start enrolling athletes.</p>
+      <a href="{% url 'memberships:plan_create' %}" class="btn btn-fn-accent">Create First Plan</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

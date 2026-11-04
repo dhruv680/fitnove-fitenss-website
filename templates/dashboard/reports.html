@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports & Analytics – FitNova{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-12 d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <div>
+      <h2 class="fw-bold text-dark mb-1">Financial & Operational Analytics</h2>
+      <p class="text-muted small mb-0">Consolidated P&L, retention metrics, and attendance analysis.</p>
+    </div>
+    <div>
+      <button onclick="window.print()" class="btn btn-fn-outline">
+        <i data-lucide="printer" style="width: 18px;"></i>
+        <span>Print Statement</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Gross Revenue</div>
+          <div class="fn-stat-value text-success">{{ currency }}{{ total_revenue|floatformat:2 }}</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.12); color: #10B981;">
+          <i data-lucide="trending-up" style="width: 24px;"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Gym Expenses</div>
+          <div class="fn-stat-value text-danger">{{ currency }}{{ total_expenses|floatformat:2 }}</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(239, 68, 68, 0.12); color: #EF4444;">
+          <i data-lucide="trending-down" style="width: 24px;"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Net Operating Profit</div>
+          <div class="fn-stat-value" style="color: #7657E8;">{{ currency }}{{ net_profit|floatformat:2 }}</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(118, 87, 232, 0.12); color: #7657E8;">
+          <i data-lucide="dollar-sign" style="width: 24px;"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Member Retention</div>
+          <div class="fn-stat-value text-primary">{{ retention_rate }}%</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(59, 130, 246, 0.12); color: #3B82F6;">
+          <i data-lucide="user-check" style="width: 24px;"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-12">
+    <div class="fn-card">
+      <div class="fn-card-header">
+        <h5 class="fn-card-title">Monthly Financial Statement (Last 6 Months)</h5>
+      </div>
+      <div class="fn-table-responsive">
+        <table class="fn-table">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Subscription Revenue</th>
+              <th>Operating Expenses</th>
+              <th>Net Profit / Margin</th>
+              <th>Health Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in monthly_financials %}
+            <tr>
+              <td class="fw-semibold text-dark">{{ item.month }}</td>
+              <td class="text-success fw-bold">{{ currency }}{{ item.revenue|floatformat:2 }}</td>
+              <td class="text-danger fw-bold">{{ currency }}{{ item.expenses|floatformat:2 }}</td>
+              <td class="fw-bold" style="color: #7657E8;">{{ currency }}{{ item.net|floatformat:2 }}</td>
+              <td>
+                {% if item.net >= 0 %}
+                <span class="fn-badge fn-badge-success">Profitable</span>
+                {% else %}
+                <span class="fn-badge fn-badge-danger">Deficit</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

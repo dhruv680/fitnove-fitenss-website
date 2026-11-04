@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}Leads & CRM Pipeline – FitNova SaaS{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-12 d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <div>
+      <h2 class="fw-bold text-dark mb-1">Sales Leads & Member CRM</h2>
+      <p class="text-muted small mb-0">Track prospect inquiries, gym tours, trial sessions, and conversion rates.</p>
+    </div>
+    <div>
+      <a href="{% url 'crm:lead_create' %}" class="btn btn-fn-accent">
+        <i data-lucide="user-plus" style="width: 18px;"></i>
+        <span>Capture New Lead</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Pipeline Stage Counters -->
+  <div class="col-12">
+    <div class="row g-3">
+      <div class="col">
+        <div class="fn-card p-3 text-center border-top border-4 border-primary">
+          <div class="text-muted small fw-bold text-uppercase">New Inquiries</div>
+          <div class="fs-4 fw-bold text-dark mt-1">{{ counts.new }}</div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="fn-card p-3 text-center border-top border-4 border-info">
+          <div class="text-muted small fw-bold text-uppercase">Contacted</div>
+          <div class="fs-4 fw-bold text-info mt-1">{{ counts.contacted }}</div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="fn-card p-3 text-center border-top border-4 border-warning">
+          <div class="text-muted small fw-bold text-uppercase">Trial Scheduled</div>
+          <div class="fs-4 fw-bold text-warning mt-1">{{ counts.trial }}</div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="fn-card p-3 text-center border-top border-4 border-success">
+          <div class="text-muted small fw-bold text-uppercase">Converted</div>
+          <div class="fs-4 fw-bold text-success mt-1">{{ counts.converted }}</div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="fn-card p-3 text-center border-top border-4 border-danger">
+          <div class="text-muted small fw-bold text-uppercase">Lost</div>
+          <div class="fs-4 fw-bold text-danger mt-1">{{ counts.lost }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="fn-card p-3 mb-4">
+  <form method="GET" action="{% url 'crm:lead_list' %}" class="row g-2 align-items-center">
+    <div class="col-md-6">
+      <input type="text" name="search" class="fn-input" placeholder="Search by prospect name, phone, or email..." value="{{ search_query }}">
+    </div>
+    <div class="col-md-4">
+      <select name="status" class="fn-select">
+        <option value="">All Pipeline Stages</option>
+        {% for s_val, s_label in statuses %}
+        <option value="{{ s_val }}" {% if status_filter == s_val %}selected{% endif %}>{{ s_label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2 d-flex gap-2">
+      <button type="submit" class="btn btn-fn-primary w-100">Filter</button>
+      <a href="{% url 'crm:lead_list' %}" class="btn btn-fn-outline" title="Reset"><i data-lucide="rotate-ccw" style="width: 16px;"></i></a>
+    </div>
+  </form>
+</div>
+
+<!-- Leads Table -->
+<div class="fn-table-responsive mb-4">
+  <table class="fn-table">
+    <thead>
+      <tr>
+        <th>Prospect Name</th>
+        <th>Phone & Email</th>
+        <th>Source</th>
+        <th>Interest</th>
+        <th>Stage</th>
+        <th>Created</th>
+        <th class="text-end">Update Stage</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for lead in page_obj %}
+      <tr>
+        <td><strong class="text-dark">{{ lead.full_name }}</strong></td>
+        <td>
+          <div>{{ lead.phone }}</div>
+          {% if lead.email %}<small class="text-muted">{{ lead.email }}</small>{% endif %}
+        </td>
+        <td><span class="badge bg-light text-dark">{{ lead.get_source_display }}</span></td>
+        <td><small class="text-muted">{{ lead.interest }}</small></td>
+        <td>
+          {% if lead.status == 'CONVERTED' %}
+          <span class="fn-badge fn-badge-success">Converted</span>
+          {% elif lead.status == 'LOST' %}
+          <span class="fn-badge fn-badge-danger">Lost</span>
+          {% elif lead.status == 'TRIAL_SCHEDULED' %}
+          <span class="fn-badge fn-badge-warning">Trial Booked</span>
+          {% else %}
+          <span class="fn-badge fn-badge-accent">{{ lead.get_status_display }}</span>
+          {% endif %}
+        </td>
+        <td><small class="text-muted">{{ lead.created_at|date:"M d" }}</small></td>
+        <td class="text-end">
+          <form method="POST" action="{% url 'crm:lead_update_status' lead.id %}" class="d-inline-flex gap-1">
+            {% csrf_token %}
+            <select name="status" class="fn-select py-1 px-2" style="font-size: 0.75rem; width: auto;" onchange="this.form.submit()">
+              {% for s_val, s_label in statuses %}
+              <option value="{{ s_val }}" {% if lead.status == s_val %}selected{% endif %}>{{ s_label }}</option>
+              {% endfor %}
+            </select>
+          </form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7">
+          <div class="fn-empty-state">
+            <div class="fn-empty-icon"><i data-lucide="contact-round"></i></div>
+            <h6 class="fw-bold">No Leads in Pipeline</h6>
+            <p class="text-muted small">Capture walk-ins, phone calls, and digital inquiries to grow membership.</p>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

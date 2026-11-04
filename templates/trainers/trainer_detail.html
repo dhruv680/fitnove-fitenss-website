@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}Coach {{ trainer.full_name }} – FitNova{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="fn-card text-center p-4">
+      <div class="fn-avatar mx-auto mb-3" style="width: 84px; height: 84px; font-size: 2rem;">
+        {% if trainer.user.profile_picture %}
+        <img src="{{ trainer.user.profile_picture.url }}" alt="{{ trainer.full_name }}">
+        {% else %}
+        {{ trainer.user.first_name|default:trainer.user.username|make_list|first|upper }}
+        {% endif %}
+      </div>
+      <h4 class="fw-bold text-dark mb-1">{{ trainer.full_name }}</h4>
+      <div class="fn-badge fn-badge-accent mb-2">{{ trainer.specialization }}</div>
+      <div class="text-warning fw-bold mb-3">★ {{ trainer.rating }} Rating</div>
+
+      <div class="border-top pt-3 text-start small">
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Trainer ID:</span>
+          <span class="fw-bold font-monospace text-dark">{{ trainer.employee_id }}</span>
+        </div>
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Email:</span>
+          <span class="fw-semibold text-dark">{{ trainer.email }}</span>
+        </div>
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Phone:</span>
+          <span class="fw-semibold text-dark">{{ trainer.phone }}</span>
+        </div>
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Experience:</span>
+          <span class="fw-semibold text-dark">{{ trainer.experience_years }} Years</span>
+        </div>
+        <div class="d-flex justify-content-between py-2">
+          <span class="text-muted">Hourly Rate:</span>
+          <span class="fw-bold text-success">{{ trainer.organization.currency }}{{ trainer.hourly_rate }}/hr</span>
+        </div>
+      </div>
+
+      <div class="mt-4 pt-2">
+        <a href="{% url 'trainers:trainer_edit' trainer.id %}" class="btn btn-fn-outline w-100">Edit Coach Details</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="fn-card mb-4">
+      <h5 class="fn-card-title mb-2">Certifications & Biography</h5>
+      <p class="text-muted small mb-3">{{ trainer.bio|default:"Dedicated fitness trainer committed to progressive athlete transformations and scientific exercise mechanics." }}</p>
+      <div class="p-3 bg-light rounded-3 small">
+        <span class="fw-bold text-dark">Credentials:</span> {{ trainer.certifications|default:"Certified Fitness Coach" }}
+      </div>
+    </div>
+
+    <div class="fn-card">
+      <div class="fn-card-header">
+        <h5 class="fn-card-title">Assigned Athletes ({{ assigned_members|length }})</h5>
+      </div>
+      <div class="fn-table-responsive">
+        <table class="fn-table">
+          <thead>
+            <tr>
+              <th>Athlete</th>
+              <th>Member ID</th>
+              <th>Goal</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in assigned_members %}
+            <tr>
+              <td>
+                <div class="fw-semibold text-dark">{{ m.full_name }}</div>
+                <small class="text-muted">{{ m.email }}</small>
+              </td>
+              <td><span class="badge bg-light text-dark">{{ m.member_id }}</span></td>
+              <td><small>{{ m.fitness_goals|default:"General Health"|truncatechars:30 }}</small></td>
+              <td>
+                {% if m.status == 'ACTIVE' %}
+                <span class="fn-badge fn-badge-success">Active</span>
+                {% else %}
+                <span class="fn-badge fn-badge-danger">{{ m.status }}</span>
+                {% endif %}
+              </td>
+              <td>
+                <a href="{% url 'members:member_detail' m.id %}" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">Profile</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center text-muted py-3">No athletes currently assigned to this coach.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

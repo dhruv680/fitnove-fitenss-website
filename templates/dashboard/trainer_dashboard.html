@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}Trainer Dashboard – FitNova{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-12 d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <div>
+      <h2 class="fw-bold text-dark mb-1">Coach Portal – {{ trainer.full_name }}</h2>
+      <p class="text-muted small mb-0">{{ trainer.specialization }} | {{ trainer.experience_years }} Years Experience</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'fitness:workout_create' %}" class="btn btn-fn-accent">
+        <i data-lucide="plus" style="width: 18px;"></i>
+        <span>Create Workout Split</span>
+      </a>
+      <a href="{% url 'fitness:diet_create' %}" class="btn btn-fn-primary">
+        <i data-lucide="utensils" style="width: 18px;"></i>
+        <span>Prescribe Diet Plan</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Assigned Athletes</div>
+          <div class="fn-stat-value" style="color: #7657E8;">{{ assigned_members|length }}</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(118, 87, 232, 0.12); color: #7657E8;">
+          <i data-lucide="users" style="width: 24px;"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Active Classes</div>
+          <div class="fn-stat-value text-primary">{{ classes|length }}</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(59, 130, 246, 0.12); color: #3B82F6;">
+          <i data-lucide="calendar" style="width: 24px;"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Coaching Rating</div>
+          <div class="fn-stat-value text-warning">★ {{ trainer.rating }}</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(245, 158, 11, 0.12); color: #F59E0B;">
+          <i data-lucide="star" style="width: 24px;"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Assigned Members List -->
+  <div class="col-lg-6">
+    <div class="fn-card h-100">
+      <div class="fn-card-header">
+        <h5 class="fn-card-title">My Assigned Athletes</h5>
+      </div>
+      <div class="fn-table-responsive">
+        <table class="fn-table">
+          <thead>
+            <tr>
+              <th>Athlete</th>
+              <th>Member ID</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in assigned_members %}
+            <tr>
+              <td>
+                <div class="fw-semibold text-dark">{{ m.full_name }}</div>
+                <div class="text-muted small" style="font-size: 0.72rem;">{{ m.phone }}</div>
+              </td>
+              <td><span class="badge bg-light text-dark">{{ m.member_id }}</span></td>
+              <td>
+                {% if m.status == 'ACTIVE' %}
+                <span class="fn-badge fn-badge-success">Active</span>
+                {% else %}
+                <span class="fn-badge fn-badge-danger">{{ m.get_status_display }}</span>
+                {% endif %}
+              </td>
+              <td>
+                <a href="{% url 'members:member_detail' m.id %}" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">Profile</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted py-3">No athletes currently assigned.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scheduled Classes -->
+  <div class="col-lg-6">
+    <div class="fn-card h-100">
+      <div class="fn-card-header">
+        <h5 class="fn-card-title">My Fitness Classes</h5>
+      </div>
+      <div class="fn-table-responsive">
+        <table class="fn-table">
+          <thead>
+            <tr>
+              <th>Class Name</th>
+              <th>Time</th>
+              <th>Room</th>
+              <th>Capacity</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cls in classes %}
+            <tr>
+              <td><span class="fw-semibold text-dark">{{ cls.name }}</span></td>
+              <td>{{ cls.schedule_time|time:"h:i A" }}</td>
+              <td>{{ cls.room }}</td>
+              <td><span class="fn-badge fn-badge-muted">{{ cls.capacity }} Max</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted py-3">No group classes assigned.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

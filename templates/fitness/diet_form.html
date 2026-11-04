@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}Prescribe Diet Plan – FitNova{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h3 class="fw-bold text-dark mb-1">Prescribe Athlete Nutrition Plan</h3>
+        <p class="text-muted small mb-0">Define calories, protein, carbohydrates, fats, hydration, and meal schedules.</p>
+      </div>
+      <a href="{% url 'fitness:diet_list' %}" class="btn btn-fn-outline">
+        <i data-lucide="arrow-left" style="width: 16px;"></i>
+        <span>Diet Plans</span>
+      </a>
+    </div>
+
+    <div class="fn-card">
+      <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="fn-form-label">Select Gym Athlete <span class="text-danger">*</span></label>
+          <select name="member_id" class="fn-select" required>
+            <option value="">-- Choose Member --</option>
+            {% for m in members %}
+            <option value="{{ m.id }}">{{ m.full_name }} ({{ m.member_id }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="fn-form-label">Plan Name <span class="text-danger">*</span></label>
+            <input type="text" name="name" class="fn-input" required placeholder="e.g. Lean Bulk High-Protein Nutrition">
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Supervising Coach</label>
+            <select name="trainer_id" class="fn-select">
+              <option value="">None (Gym Standard)</option>
+              {% for t in trainers %}
+              <option value="{{ t.id }}">{{ t.full_name }} ({{ t.specialization }})</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <h6 class="fw-bold text-dark mt-4 mb-3">Daily Macronutrient Targets</h6>
+        <div class="row g-3 mb-3">
+          <div class="col-md-3">
+            <label class="fn-form-label">Calories (kcal)</label>
+            <input type="number" name="calories" class="fn-input" value="2400" required>
+          </div>
+          <div class="col-md-3">
+            <label class="fn-form-label">Protein (grams)</label>
+            <input type="number" name="protein" class="fn-input" value="160" required>
+          </div>
+          <div class="col-md-3">
+            <label class="fn-form-label">Carbs (grams)</label>
+            <input type="number" name="carbs" class="fn-input" value="220" required>
+          </div>
+          <div class="col-md-3">
+            <label class="fn-form-label">Fats (grams)</label>
+            <input type="number" name="fats" class="fn-input" value="65" required>
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Daily Hydration Target (Liters)</label>
+            <input type="number" step="0.5" name="water" class="fn-input" value="3.5">
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="fn-form-label">Dietary Restrictions & Guidelines</label>
+          <textarea name="notes" class="fn-textarea" rows="3" placeholder="e.g. Gluten-free, avoid lactose, drink 500ml water upon waking..."></textarea>
+        </div>
+
+        <div class="text-end">
+          <a href="{% url 'fitness:diet_list' %}" class="btn btn-fn-outline me-2">Cancel</a>
+          <button type="submit" class="btn btn-fn-accent">Prescribe Nutrition Plan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

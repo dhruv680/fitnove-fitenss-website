@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}Log Fitness Progress – FitNova{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h3 class="fw-bold text-dark mb-1">Track Physical Transformation</h3>
+        <p class="text-muted small mb-0">Record weigh-ins, body composition, and circumference measurements for {{ member.full_name }}.</p>
+      </div>
+      <a href="{% url 'members:member_detail' member.id %}" class="btn btn-fn-outline">
+        <i data-lucide="arrow-left" style="width: 16px;"></i>
+        <span>Member Profile</span>
+      </a>
+    </div>
+
+    <!-- Form -->
+    <div class="fn-card mb-4">
+      <h5 class="fn-card-title mb-3">Record New Measurements</h5>
+      <form method="POST">
+        {% csrf_token %}
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="fn-form-label">Body Weight (kg) <span class="text-danger">*</span></label>
+            <input type="number" step="0.1" name="weight_kg" class="fn-input" required placeholder="e.g. 78.5">
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Body Fat Percentage (%)</label>
+            <input type="number" step="0.1" name="body_fat" class="fn-input" placeholder="e.g. 14.5">
+          </div>
+          <div class="col-md-4">
+            <label class="fn-form-label">Chest (cm)</label>
+            <input type="number" step="0.5" name="chest" class="fn-input" placeholder="e.g. 102.0">
+          </div>
+          <div class="col-md-4">
+            <label class="fn-form-label">Waist (cm)</label>
+            <input type="number" step="0.5" name="waist" class="fn-input" placeholder="e.g. 82.0">
+          </div>
+          <div class="col-md-4">
+            <label class="fn-form-label">Arms (cm)</label>
+            <input type="number" step="0.5" name="arms" class="fn-input" placeholder="e.g. 38.5">
+          </div>
+          <div class="col-12">
+            <label class="fn-form-label">Notes & Comments</label>
+            <input type="text" name="notes" class="fn-input" placeholder="Energy levels, strength PRs, recovery notes...">
+          </div>
+        </div>
+        <div class="text-end">
+          <button type="submit" class="btn btn-fn-accent">Save Measurement Entry</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Past Logs -->
+    <div class="fn-card">
+      <h5 class="fn-card-title mb-3">Measurement History</h5>
+      <div class="fn-table-responsive">
+        <table class="fn-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Weight</th>
+              <th>Body Fat</th>
+              <th>Chest</th>
+              <th>Waist</th>
+              <th>Arms</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in logs %}
+            <tr>
+              <td class="fw-semibold text-dark">{{ log.date|date:"M d, Y" }}</td>
+              <td class="fw-bold text-primary">{{ log.weight_kg }} kg</td>
+              <td>{{ log.body_fat_percentage|default:"—" }}%</td>
+              <td>{{ log.chest_cm|default:"—" }} cm</td>
+              <td>{{ log.waist_cm|default:"—" }} cm</td>
+              <td>{{ log.arms_cm|default:"—" }} cm</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center text-muted py-3">No physical metrics logged yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

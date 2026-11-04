@@ -1,0 +1,101 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login – FitNova Gym Management SaaS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="{% static 'css/fitnova.css' %}">
+  <style>
+    body {
+      background: linear-gradient(135deg, #172554 0%, #0F172A 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .fn-auth-card {
+      background: #FFFFFF;
+      border-radius: 20px;
+      padding: 40px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+    }
+  </style>
+</head>
+<body>
+
+<div class="fn-auth-card">
+  <div class="text-center mb-4">
+    <div class="d-inline-flex align-items-center justify-content-center p-3 rounded-4 mb-3" style="background: linear-gradient(135deg, #7657E8 0%, #172554 100%); color: white; width: 64px; height: 64px;">
+      <i data-lucide="dumbbell" style="width: 32px; height: 32px;"></i>
+    </div>
+    <h3 class="fw-bold text-dark mb-1">FitNova SaaS</h3>
+    <p class="text-muted small">Premium Gym & Fitness Management Platform</p>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }} py-2 px-3 small rounded-3 mb-3" role="alert">
+      {{ message }}
+    </div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="POST" action="{% url 'accounts:login' %}">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label class="fn-form-label">Username or Email</label>
+      <input type="text" name="username" id="authUsername" class="fn-input" placeholder="admin@fitnova.com" required autofocus>
+    </div>
+
+    <div class="mb-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <label class="fn-form-label mb-0">Password</label>
+      </div>
+      <input type="password" name="password" id="authPassword" class="fn-input mt-1" placeholder="••••••••" required>
+    </div>
+
+    <button type="submit" class="btn btn-fn-accent w-100 py-2 mt-2 justify-content-center">
+      <i data-lucide="log-in" style="width: 18px;"></i>
+      <span>Sign In to Dashboard</span>
+    </button>
+  </form>
+
+  <div class="mt-4 pt-3 border-top text-center">
+    <div class="text-muted fw-semibold small mb-2">Demo Quick Sign-In Accounts</div>
+    <div class="d-flex flex-wrap gap-2 justify-content-center">
+      <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.76rem;" onclick="fillLogin('admin', 'FitNova@Admin2026')">
+        👑 Admin
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.76rem;" onclick="fillLogin('staff1', 'Staff@FitNova2026')">
+        📋 Staff
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.76rem;" onclick="fillLogin('alex_trainer', 'Trainer@FitNova2026')">
+        🏋️ Trainer
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.76rem;" onclick="fillLogin('john_doe', 'Member@FitNova2026')">
+        🏃 Member
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+  }
+  function fillLogin(u, p) {
+    document.getElementById('authUsername').value = u;
+    document.getElementById('authPassword').value = p;
+  }
+</script>
+</body>
+</html>

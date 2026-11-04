@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Record Gym Expense – FitNova{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h3 class="fw-bold text-dark mb-1">Record Gym Expense</h3>
+        <p class="text-muted small mb-0">Track equipment maintenance, utilities, salaries, or supplies.</p>
+      </div>
+      <a href="{% url 'payments:expense_list' %}" class="btn btn-fn-outline">
+        <i data-lucide="arrow-left" style="width: 16px;"></i>
+        <span>Expenses</span>
+      </a>
+    </div>
+
+    <div class="fn-card">
+      <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="fn-form-label">Expense Title <span class="text-danger">*</span></label>
+          <input type="text" name="title" class="fn-input" required placeholder="e.g. Monthly Commercial Electric Bill">
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="fn-form-label">Expense Category <span class="text-danger">*</span></label>
+            <select name="category" class="fn-select" required>
+              {% for cat_val, cat_label in categories %}
+              <option value="{{ cat_val }}">{{ cat_label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Amount ({{ current_org.currency|default:'$' }}) <span class="text-danger">*</span></label>
+            <input type="number" step="0.01" name="amount" class="fn-input" required placeholder="0.00">
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="fn-form-label">Date Incurred</label>
+            <input type="date" name="date" class="fn-input">
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Paid To (Vendor / Person)</label>
+            <input type="text" name="paid_to" class="fn-input" placeholder="e.g. City Power Corp">
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="fn-form-label">Notes & Comments</label>
+          <textarea name="notes" class="fn-textarea" rows="3" placeholder="Additional details or invoice reference"></textarea>
+        </div>
+
+        <div class="text-end">
+          <a href="{% url 'payments:expense_list' %}" class="btn btn-fn-outline me-2">Cancel</a>
+          <button type="submit" class="btn btn-fn-accent">Save Expense</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

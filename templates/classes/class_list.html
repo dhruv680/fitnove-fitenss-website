@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}Classes & Bookings – FitNova SaaS{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-12 d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <div>
+      <h2 class="fw-bold text-dark mb-1">Group Fitness Classes & Schedules</h2>
+      <p class="text-muted small mb-0">High-energy studio sessions, capacity monitoring, and seat reservations.</p>
+    </div>
+    {% if not user.is_member %}
+    <div>
+      <a href="{% url 'classes:class_create' %}" class="btn btn-fn-accent">
+        <i data-lucide="plus-circle" style="width: 18px;"></i>
+        <span>Schedule New Class</span>
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  {% for card in class_cards %}
+  <div class="col-lg-4 col-md-6">
+    <div class="fn-card h-100 p-4 d-flex flex-column">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <span class="fn-badge fn-badge-accent">{{ card.obj.room }}</span>
+        <span class="badge {% if card.is_full %}bg-danger{% else %}bg-success{% endif %} rounded-pill px-3 py-1">
+          {% if card.is_full %}Full Capacity{% else %}{{ card.slots_left }} Seats Left{% endif %}
+        </span>
+      </div>
+
+      <h4 class="fw-bold text-dark mb-1">{{ card.obj.name }}</h4>
+      <div class="text-muted small mb-3">
+        <i data-lucide="clock" style="width: 14px;"></i> {{ card.obj.schedule_time|time:"h:i A" }} ({{ card.obj.duration_minutes }} mins) &bull; {{ card.obj.days_of_week }}
+      </div>
+
+      <div class="p-3 bg-light rounded-3 small mb-3">
+        <div class="d-flex justify-content-between py-1">
+          <span class="text-muted">Coach / Instructor:</span>
+          <span class="fw-bold text-dark">{{ card.obj.trainer.full_name|default:"Head Trainer" }}</span>
+        </div>
+        <div class="d-flex justify-content-between py-1">
+          <span class="text-muted">Max Capacity:</span>
+          <span class="fw-bold text-dark">{{ card.obj.capacity }} Athletes</span>
+        </div>
+      </div>
+
+      <p class="text-muted small flex-grow-1">{{ card.obj.description|default:"High energy class designed to burn calories and build functional strength." }}</p>
+
+      <div class="pt-3 border-top mt-auto d-flex justify-content-between align-items-center">
+        <a href="{% url 'classes:class_detail' card.obj.id %}" class="btn btn-sm btn-fn-outline">Roster</a>
+        {% if not card.is_full %}
+        <form method="POST" action="{% url 'classes:book_class' card.obj.id %}" class="d-inline">
+          {% csrf_token %}
+          {% if not user.is_member %}
+          <div class="d-flex gap-1">
+            <select name="member_id" class="fn-select py-1 px-2" style="font-size: 0.75rem;" required>
+              <option value="">Book Member...</option>
+              {% for m in members %}
+              <option value="{{ m.id }}">{{ m.full_name }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-sm btn-fn-accent">Book</button>
+          </div>
+          {% else %}
+          <button type="submit" class="btn btn-sm btn-fn-accent">Reserve My Seat</button>
+          {% endif %}
+        </form>
+        {% else %}
+        <button class="btn btn-sm btn-secondary" disabled>Waitlist Only</button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12">
+    <div class="fn-card text-center py-5">
+      <div class="fn-empty-icon"><i data-lucide="calendar"></i></div>
+      <h6 class="fw-bold">No Fitness Classes Scheduled</h6>
+      <p class="text-muted small">Schedule group classes like Spinning, Yoga, and HIIT.</p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

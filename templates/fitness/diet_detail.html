@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ diet.name }} – FitNova{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-12">
+    <div class="fn-card p-4">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div>
+          <h3 class="fw-bold text-dark mb-1">{{ diet.name }}</h3>
+          <div class="text-muted small">
+            Athlete: <a href="{% url 'members:member_detail' diet.member.id %}" class="fw-bold text-dark">{{ diet.member.full_name }}</a> &bull; 
+            Prescribed by: {{ diet.trainer.full_name|default:"Gym Head Coach" }} &bull; 
+            Water Target: <strong>{{ diet.water_liters }} Liters / Day</strong>
+          </div>
+        </div>
+        <div>
+          <a href="{% url 'fitness:diet_list' %}" class="btn btn-fn-outline">All Diets</a>
+        </div>
+      </div>
+
+      <!-- Macro Cards -->
+      <div class="row g-3 text-center mt-3">
+        <div class="col-md-3">
+          <div class="p-3 rounded-3" style="background: rgba(245, 158, 11, 0.1);">
+            <div class="text-warning fw-bold fs-4">{{ diet.daily_calories }}</div>
+            <div class="text-muted small fw-semibold">DAILY CALORIES</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="p-3 rounded-3" style="background: rgba(118, 87, 232, 0.1);">
+            <div class="fw-bold fs-4" style="color: #7657E8;">{{ diet.protein_grams }}g</div>
+            <div class="text-muted small fw-semibold">PROTEIN</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="p-3 rounded-3" style="background: rgba(59, 130, 246, 0.1);">
+            <div class="text-primary fw-bold fs-4">{{ diet.carbs_grams }}g</div>
+            <div class="text-muted small fw-semibold">CARBOHYDRATES</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="p-3 rounded-3" style="background: rgba(16, 185, 129, 0.1);">
+            <div class="text-success fw-bold fs-4">{{ diet.fats_grams }}g</div>
+            <div class="text-muted small fw-semibold">HEALTHY FATS</div>
+          </div>
+        </div>
+      </div>
+
+      {% if diet.notes %}
+      <div class="p-3 bg-light rounded-3 mt-3 small text-muted">
+        <strong class="text-dark">Guidelines:</strong> {{ diet.notes }}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Meals Schedule -->
+  <div class="col-12">
+    <div class="fn-card">
+      <div class="fn-card-header">
+        <h5 class="fn-card-title">Daily Meal Schedule ({{ diet.meals.count }} Meals)</h5>
+      </div>
+      <div class="row g-3">
+        {% for meal in diet.meals.all %}
+        <div class="col-md-6">
+          <div class="p-3 border rounded-3 bg-white h-100">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="badge bg-light text-dark fw-bold">{{ meal.get_meal_type_display }}</span>
+              <span class="text-muted small"><i data-lucide="clock" style="width: 14px;"></i> {{ meal.time_slot }}</span>
+            </div>
+            <p class="text-dark fw-semibold small mb-2">{{ meal.items }}</p>
+            <div class="text-end">
+              <span class="badge bg-primary bg-opacity-10 text-primary fw-bold">{{ meal.calories }} kcal</span>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-4 text-muted small">No specific meals logged for this plan.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
