@@ -28,3 +28,4 @@ class ClassBookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClassBooking
         fields = ['id', 'fitness_class', 'class_name', 'member', 'member_name', 'booking_date', 'status', 'booked_at']
+

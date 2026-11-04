@@ -96,3 +96,4 @@ class Membership(models.Model):
         if self.end_date < today:
             return 0
         return (self.end_date - today).days
+

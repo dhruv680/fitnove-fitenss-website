@@ -13,3 +13,4 @@ urlpatterns = [
     path('<int:pk>/status/', views.lead_update_status, name='lead_update_status'),
     path('api/', include(router.urls)),
 ]
+

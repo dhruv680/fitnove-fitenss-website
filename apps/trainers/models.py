@@ -58,3 +58,4 @@ class Trainer(models.Model):
     @property
     def assigned_members_count(self):
         return self.assigned_members.filter(status='ACTIVE').count()
+

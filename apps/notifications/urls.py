@@ -13,3 +13,4 @@ urlpatterns = [
     path('read-all/', views.mark_all_read, name='mark_all_read'),
     path('api/', include(router.urls)),
 ]
+

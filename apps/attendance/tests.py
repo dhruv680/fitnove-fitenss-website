@@ -56,3 +56,4 @@ class AttendanceServiceTestCase(TestCase):
         self.assertFalse(success)
         self.assertEqual(action, 'DUPLICATE')
         self.assertIn('already completed attendance today', msg)
+

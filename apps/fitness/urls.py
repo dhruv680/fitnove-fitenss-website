@@ -19,3 +19,4 @@ urlpatterns = [
     path('progress/', views.progress_log, name='progress_log'),
     path('api/', include(router.urls)),
 ]
+

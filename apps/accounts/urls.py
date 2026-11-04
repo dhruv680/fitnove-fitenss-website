@@ -16,3 +16,4 @@ urlpatterns = [
     path('profile/change-password/', views.change_password_view, name='change_password'),
     path('api/', include(router.urls)),
 ]
+

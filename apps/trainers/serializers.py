@@ -17,3 +17,4 @@ class TrainerSerializer(serializers.ModelSerializer):
             'experience_years', 'certifications', 'hourly_rate',
             'rating', 'status', 'joined_date', 'assigned_members_count'
         ]
+

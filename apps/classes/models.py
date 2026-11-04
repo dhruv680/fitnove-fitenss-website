@@ -81,3 +81,4 @@ class ClassBooking(models.Model):
 
     def __str__(self):
         return f"{self.member.full_name} - {self.fitness_class.name} on {self.booking_date}"
+

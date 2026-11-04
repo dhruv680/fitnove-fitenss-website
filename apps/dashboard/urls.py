@@ -9,3 +9,4 @@ urlpatterns = [
     path('reports/', views.reports_analytics, name='reports'),
     path('settings/', views.settings_view, name='settings'),
 ]
+

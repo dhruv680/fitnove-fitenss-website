@@ -65,3 +65,4 @@ class IsOrganizationMember(permissions.BasePermission):
         if hasattr(obj, 'member') and hasattr(obj.member, 'organization'):
             return obj.member.organization == request.user.organization
         return True
+

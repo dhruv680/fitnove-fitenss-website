@@ -94,3 +94,4 @@ class MembershipService:
         
         members_to_expire.update(status=Member.Status.EXPIRED)
         return expired_count
+

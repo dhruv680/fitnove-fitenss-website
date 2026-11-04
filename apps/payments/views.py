@@ -221,3 +221,4 @@ class ExpenseViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return PaymentService.get_scoped_expenses(self.request.user)
+

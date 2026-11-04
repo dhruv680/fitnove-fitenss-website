@@ -114,3 +114,4 @@ class LeadViewSet(viewsets.ModelViewSet):
         if user.is_super_admin:
             return Lead.objects.all()
         return Lead.objects.filter(organization=user.organization)
+

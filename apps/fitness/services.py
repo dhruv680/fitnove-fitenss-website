@@ -22,3 +22,4 @@ class FitnessService:
         if user.is_member:
             return DietPlan.objects.select_related('member__user', 'trainer__user').prefetch_related('meals').filter(member__user=user)
         return DietPlan.objects.select_related('member__user', 'trainer__user').prefetch_related('meals').filter(member__organization=user.organization)
+

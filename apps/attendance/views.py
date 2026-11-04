@@ -123,3 +123,4 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             method=Attendance.CheckInMethod.QR_CODE
         )
         return Response({'success': success, 'message': msg, 'action': action_type})
+

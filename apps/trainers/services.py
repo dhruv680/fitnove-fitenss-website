@@ -47,3 +47,4 @@ class TrainerService:
             certifications=certifications
         )
         return trainer
+

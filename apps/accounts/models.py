@@ -119,3 +119,4 @@ class User(AbstractUser):
     @property
     def is_member(self):
         return self.role == self.Role.MEMBER
+

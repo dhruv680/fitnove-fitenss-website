@@ -14,3 +14,4 @@ urlpatterns = [
     path('<int:pk>/edit/', views.trainer_edit, name='trainer_edit'),
     path('api/', include(router.urls)),
 ]
+

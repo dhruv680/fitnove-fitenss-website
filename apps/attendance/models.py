@@ -62,3 +62,4 @@ class Attendance(models.Model):
             delta = self.check_out_time - self.check_in_time
             return max(0, int(delta.total_seconds() / 60))
         return None
+

@@ -28,3 +28,4 @@ class MembershipSerializer(serializers.ModelSerializer):
             'start_date', 'end_date', 'status', 'auto_renew',
             'days_remaining', 'is_currently_active', 'notes', 'created_at'
         ]
+

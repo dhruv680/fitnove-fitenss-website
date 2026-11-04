@@ -17,3 +17,4 @@ def global_fitnova_context(request):
         'current_org': getattr(request.user, 'organization', None),
         'current_branch': getattr(request.user, 'branch', None),
     }
+

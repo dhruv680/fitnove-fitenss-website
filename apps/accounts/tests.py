@@ -26,3 +26,4 @@ class RoleBasedAccessControlTestCase(TestCase):
         response = self.client.get(reverse('members:member_list'))
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('dashboard:index'))
+

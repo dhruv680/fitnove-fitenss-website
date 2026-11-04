@@ -124,3 +124,4 @@ class TrainerViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return TrainerService.get_scoped_trainers(self.request.user)
+

@@ -15,3 +15,4 @@ urlpatterns = [
     path('renew/<int:member_id>/', views.membership_renew, name='membership_renew'),
     path('api/', include(router.urls)),
 ]
+

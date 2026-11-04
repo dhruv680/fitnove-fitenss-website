@@ -14,3 +14,4 @@ class AttendanceSerializer(serializers.ModelSerializer):
             'branch_name', 'date', 'check_in_time', 'check_out_time',
             'method', 'verified_by', 'status', 'duration_minutes'
         ]
+

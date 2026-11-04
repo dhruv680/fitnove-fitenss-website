@@ -13,3 +13,4 @@ urlpatterns = [
     path('api/scan/', views.api_scan_qr, name='api_scan'),
     path('api/', include(router.urls)),
 ]
+

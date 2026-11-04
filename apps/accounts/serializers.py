@@ -25,3 +25,4 @@ class UserSerializer(serializers.ModelSerializer):
             'phone', 'profile_picture', 'gender', 'date_of_birth', 'address', 'is_verified', 'date_joined'
         ]
         read_only_fields = ['id', 'date_joined']
+

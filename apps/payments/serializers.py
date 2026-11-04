@@ -32,3 +32,4 @@ class ExpenseSerializer(serializers.ModelSerializer):
             'id', 'organization', 'branch', 'category', 'title',
             'amount', 'date', 'paid_to', 'recorded_by', 'recorded_by_name', 'notes'
         ]
+

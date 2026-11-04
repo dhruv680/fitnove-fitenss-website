@@ -155,3 +155,4 @@ class Expense(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.organization.currency}{self.amount} ({self.get_category_display()})"
+

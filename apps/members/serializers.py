@@ -23,3 +23,4 @@ class MemberSerializer(serializers.ModelSerializer):
             'joined_date', 'assigned_trainer', 'assigned_trainer_name',
             'current_membership', 'days_until_expiry', 'is_membership_active', 'notes'
         ]
+

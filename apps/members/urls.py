@@ -15,3 +15,4 @@ urlpatterns = [
     path('<int:pk>/delete/', views.member_delete, name='member_delete'),
     path('api/', include(router.urls)),
 ]
+

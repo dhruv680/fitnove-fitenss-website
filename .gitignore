@@ -40,3 +40,4 @@ media/members/qr_codes/*.png
 
 # Environment variables
 .env
+

@@ -177,3 +177,4 @@ class MemberProgress(models.Model):
 
     def __str__(self):
         return f"{self.member.full_name} - {self.weight_kg} kg on {self.date}"
+

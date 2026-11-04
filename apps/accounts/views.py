@@ -126,3 +126,4 @@ class GymBranchViewSet(viewsets.ModelViewSet):
         if user.is_super_admin:
             return GymBranch.objects.all()
         return GymBranch.objects.filter(organization=user.organization)
+

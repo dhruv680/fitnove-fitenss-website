@@ -48,3 +48,4 @@ class NotificationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return self.request.user.notifications.all()
+

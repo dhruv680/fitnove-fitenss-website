@@ -220,3 +220,4 @@ class MemberViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return MemberService.get_scoped_members(self.request.user)
+

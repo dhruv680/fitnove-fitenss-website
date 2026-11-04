@@ -14,3 +14,4 @@ urlpatterns = [
     path('<int:pk>/book/', views.book_class, name='book_class'),
     path('api/', include(router.urls)),
 ]
+

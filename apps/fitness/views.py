@@ -220,3 +220,4 @@ class DietPlanViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return FitnessService.get_scoped_diets(self.request.user)
+

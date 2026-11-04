@@ -58,3 +58,4 @@ class MemberProgressSerializer(serializers.ModelSerializer):
     class Meta:
         model = MemberProgress
         fields = ['id', 'member', 'date', 'weight_kg', 'body_fat_percentage', 'chest_cm', 'waist_cm', 'arms_cm', 'notes']
+

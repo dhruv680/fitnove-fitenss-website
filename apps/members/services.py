@@ -57,3 +57,4 @@ class MemberService:
             status=Member.Status.PENDING
         )
         return member
+

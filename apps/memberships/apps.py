@@ -4,3 +4,4 @@ class MembershipsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'apps.memberships'
     verbose_name = 'Membership Plans & Subscriptions'
+

@@ -67,3 +67,4 @@ class AccountService:
             **extra_fields
         )
         return user
+

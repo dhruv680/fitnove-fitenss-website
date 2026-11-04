@@ -18,3 +18,4 @@ urlpatterns = [
     path('expenses/add/', views.expense_create, name='expense_create'),
     path('api/', include(router.urls)),
 ]
+

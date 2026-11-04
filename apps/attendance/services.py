@@ -69,3 +69,4 @@ class AttendanceService:
             status=Attendance.Status.PRESENT
         )
         return True, f"Check-in successful! Welcome {member.full_name} to FitNova.", attendance, "CHECK_IN"
+

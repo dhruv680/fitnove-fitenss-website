@@ -109,3 +109,4 @@ class Member(models.Model):
         if not self.qr_code:
             self.generate_qr_code()
         super().save(*args, **kwargs)
+

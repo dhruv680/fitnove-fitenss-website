@@ -128,3 +128,4 @@ python manage.py migrate
 - Organization-level data isolation scoping on all queries and DRF ViewSets.
 - CSRF protection across all forms and AJAX/QR camera scanner endpoints.
 - Password hashing with PBKDF2.
+

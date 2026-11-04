@@ -133,3 +133,4 @@ class FitnessClassViewSet(viewsets.ModelViewSet):
         if user.is_super_admin:
             return FitnessClass.objects.all()
         return FitnessClass.objects.filter(organization=user.organization)
+

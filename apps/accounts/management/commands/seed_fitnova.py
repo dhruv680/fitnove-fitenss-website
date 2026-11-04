@@ -616,3 +616,4 @@ class Command(BaseCommand):
         )
 
         self.stdout.write(self.style.SUCCESS("FitNova database successfully populated with rich enterprise SaaS data!"))
+

@@ -34,3 +34,4 @@ class PaymentServiceTestCase(TestCase):
         self.assertEqual(invoice.total, Decimal('500.00'))
         self.assertEqual(self.member.status, Member.Status.ACTIVE)
         self.assertTrue(invoice.invoice_number.startswith('INV-'))
+
