@@ -31,7 +31,8 @@
 
       <h4 class="fw-bold text-dark mb-1">{{ card.obj.name }}</h4>
       <div class="text-muted small mb-3">
-        <i data-lucide="clock" style="width: 14px;"></i> {{ card.obj.schedule_time|time:"h:i A" }} ({{ card.obj.duration_minutes }} mins) &bull; {{ card.obj.days_of_week }}
+        <i data-lucide="clock" style="width: 14px;"></i> {{ card.obj.schedule_time|time:"h:i A" }} ({{
+        card.obj.duration_minutes }} mins) &bull; {{ card.obj.days_of_week }}
       </div>
 
       <div class="p-3 bg-light rounded-3 small mb-3">
@@ -45,7 +46,8 @@
         </div>
       </div>
 
-      <p class="text-muted small flex-grow-1">{{ card.obj.description|default:"High energy class designed to burn calories and build functional strength." }}</p>
+      <p class="text-muted small flex-grow-1">{{ card.obj.description|default:"High energy class designed to burn
+        calories and build functional strength." }}</p>
 
       <div class="pt-3 border-top mt-auto d-flex justify-content-between align-items-center">
         <a href="{% url 'classes:class_detail' card.obj.id %}" class="btn btn-sm btn-fn-outline">Roster</a>
@@ -83,4 +85,3 @@
   {% endfor %}
 </div>
 {% endblock %}
-

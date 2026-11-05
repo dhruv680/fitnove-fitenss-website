@@ -13,6 +13,7 @@ urlpatterns = [
     path('<int:pk>/', views.member_detail, name='member_detail'),
     path('<int:pk>/edit/', views.member_edit, name='member_edit'),
     path('<int:pk>/delete/', views.member_delete, name='member_delete'),
+    path('<int:pk>/quick-view/', views.member_quick_view, name='member_quick_view'),
     path('api/', include(router.urls)),
 ]
 

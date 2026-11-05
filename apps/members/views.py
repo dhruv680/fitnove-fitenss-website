@@ -4,6 +4,8 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import JsonResponse, HttpResponse
+from django.urls import reverse
+from django.utils import timezone
 from rest_framework import viewsets
 from apps.accounts.permissions import staff_or_admin, IsStaffOrAdminUser
 from apps.trainers.models import Trainer
@@ -16,26 +18,60 @@ from .serializers import MemberSerializer
 @login_required
 @staff_or_admin
 def member_list(request):
-    members = MemberService.get_scoped_members(request.user)
+    all_scoped = MemberService.get_scoped_members(request.user)
 
+    # Global KPI counts across all roster (unfiltered)
+    total_roster = all_scoped.count()
+    active_roster = all_scoped.filter(status='ACTIVE').count()
+    expired_roster = all_scoped.filter(status='EXPIRED').count()
+    pending_roster = all_scoped.filter(status='PENDING').count()
+
+    # Real data percentage metrics
+    active_pct = round((active_roster / total_roster * 100), 1) if total_roster > 0 else 0
+    expired_pct = round((expired_roster / total_roster * 100), 1) if total_roster > 0 else 0
+    pending_pct = round((pending_roster / total_roster * 100), 1) if total_roster > 0 else 0
+
+    # New enrollments this calendar month
+    month_start = timezone.now().date().replace(day=1)
+    new_this_month = all_scoped.filter(joined_date__gte=month_start).count()
+
+    members = all_scoped
     search_query = request.GET.get('search', '').strip()
     status_filter = request.GET.get('status', '').strip()
     plan_filter = request.GET.get('plan', '').strip()
+    sort_by = request.GET.get('sort', 'newest').strip()
 
     if search_query:
-        members = members.filter(
+        terms = search_query.split()
+        q_obj = (
             Q(user__first_name__icontains=search_query) |
             Q(user__last_name__icontains=search_query) |
+            Q(user__username__icontains=search_query) |
             Q(user__email__icontains=search_query) |
             Q(user__phone__icontains=search_query) |
             Q(member_id__icontains=search_query)
         )
+        if len(terms) > 1:
+            q_obj |= (Q(user__first_name__icontains=terms[0]) & Q(user__last_name__icontains=terms[-1]))
+        members = members.filter(q_obj)
 
     if status_filter:
         members = members.filter(status=status_filter)
 
     if plan_filter:
         members = members.filter(memberships__plan_id=plan_filter, memberships__status='ACTIVE')
+
+    # Sorting options
+    if sort_by == 'name_asc':
+        members = members.order_by('user__first_name', 'user__last_name')
+    elif sort_by == 'name_desc':
+        members = members.order_by('-user__first_name', '-user__last_name')
+    elif sort_by == 'joined_asc':
+        members = members.order_by('joined_date', 'id')
+    else:  # newest default
+        members = members.order_by('-joined_date', '-id')
+
+    total_filtered = members.count()
 
     paginator = Paginator(members, 10)
     page_number = request.GET.get('page')
@@ -50,11 +86,102 @@ def member_list(request):
         'search_query': search_query,
         'status_filter': status_filter,
         'plan_filter': plan_filter,
+        'sort_by': sort_by,
         'plans': plans,
-        'total_members': members.count(),
-        'active_count': members.filter(status='ACTIVE').count(),
-        'expired_count': members.filter(status='EXPIRED').count(),
+        'total_filtered': total_filtered,
+        'total_roster': total_roster,
+        'active_roster': active_roster,
+        'expired_roster': expired_roster,
+        'pending_roster': pending_roster,
+        'active_pct': active_pct,
+        'expired_pct': expired_pct,
+        'pending_pct': pending_pct,
+        'new_this_month': new_this_month,
     })
+
+
+@login_required
+@staff_or_admin
+def member_quick_view(request, pk):
+    """Returns member profile, active plan, attendance & payment history for modal/drawer."""
+    members = MemberService.get_scoped_members(request.user)
+    member = get_object_or_404(members, pk=pk)
+
+    recent_memberships = member.memberships.select_related('plan').order_by('-start_date')[:5]
+    recent_payments = member.payments.select_related('membership__plan').order_by('-payment_date')[:5]
+    recent_attendances = member.attendances.order_by('-date', '-check_in_time')[:5]
+
+    curr_sub = member.current_membership
+    curr_plan_data = None
+    if curr_sub:
+        curr_plan_data = {
+            'id': curr_sub.id,
+            'name': curr_sub.plan.name,
+            'price': str(curr_sub.plan.price),
+            'start_date': curr_sub.start_date.strftime('%b %d, %Y'),
+            'end_date': curr_sub.end_date.strftime('%b %d, %Y'),
+            'days_remaining': curr_sub.days_remaining,
+            'is_active': curr_sub.is_currently_active,
+            'status': curr_sub.status,
+            'status_display': curr_sub.get_status_display(),
+        }
+
+    data = {
+        'id': member.id,
+        'member_id': member.member_id,
+        'full_name': member.full_name,
+        'first_name': member.user.first_name,
+        'last_name': member.user.last_name,
+        'initials': (member.user.first_name[:1] if member.user.first_name else member.user.username[:1]).upper(),
+        'email': member.email,
+        'phone': member.phone,
+        'gender': member.user.get_gender_display() if hasattr(member.user, 'get_gender_display') else member.user.gender,
+        'dob': member.user.date_of_birth.strftime('%b %d, %Y') if member.user.date_of_birth else '—',
+        'address': member.user.address or '—',
+        'blood_group': member.blood_group or '—',
+        'emergency_name': member.emergency_contact_name or '—',
+        'emergency_phone': member.emergency_contact_phone or '—',
+        'medical_history': member.medical_history or 'None reported',
+        'fitness_goals': member.fitness_goals or 'General fitness & strength',
+        'status': member.status,
+        'status_display': member.get_status_display(),
+        'joined_date': member.joined_date.strftime('%b %d, %Y') if member.joined_date else '—',
+        'branch_name': member.branch.name if member.branch else 'Main Facility',
+        'trainer_name': member.assigned_trainer.full_name if member.assigned_trainer else 'None Assigned',
+        'trainer_specialization': member.assigned_trainer.specialization if member.assigned_trainer else '',
+        'qr_code_url': member.qr_code.url if member.qr_code else '',
+        'currency': member.organization.currency if member.organization else '$',
+        'current_plan': curr_plan_data,
+        'memberships': [{
+            'plan_name': m.plan.name,
+            'start_date': m.start_date.strftime('%b %d, %Y'),
+            'end_date': m.end_date.strftime('%b %d, %Y'),
+            'status': m.status,
+            'status_display': m.get_status_display(),
+        } for m in recent_memberships],
+        'payments': [{
+            'transaction_id': p.transaction_id,
+            'amount': str(p.total_amount),
+            'method': p.get_payment_method_display(),
+            'date': p.payment_date.strftime('%b %d, %Y'),
+            'status': p.status,
+            'status_display': p.get_status_display(),
+        } for p in recent_payments],
+        'attendances': [{
+            'date': a.date.strftime('%b %d, %Y'),
+            'check_in': a.check_in_time.strftime('%I:%M %p') if a.check_in_time else '—',
+            'check_out': a.check_out_time.strftime('%I:%M %p') if a.check_out_time else '—',
+            'status': a.status,
+        } for a in recent_attendances],
+        'urls': {
+            'detail': reverse('members:member_detail', args=[member.id]),
+            'edit': reverse('members:member_edit', args=[member.id]),
+            'renew': reverse('memberships:membership_renew', args=[member.id]),
+            'delete': reverse('members:member_delete', args=[member.id]),
+        }
+    }
+    return JsonResponse(data)
+
 
 
 @login_required
