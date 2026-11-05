@@ -85,57 +85,129 @@ def attendance_scanner(request):
 
 @login_required
 @staff_or_admin
+def api_verify_member(request):
+    """
+    Step 1 of Smart Focus Scanner:
+    Verifies a scanned QR code or member ID on backend.
+    Returns member details and validation status WITHOUT recording attendance.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
+
+    identifier = request.POST.get('identifier', '').strip()
+    if not identifier:
+        return JsonResponse({'success': False, 'message': 'No identifier provided.'}, status=400)
+
+    can_confirm, message, member, action_code, existing = AttendanceService.verify_member_for_attendance(identifier)
+
+    member_data = None
+    if member:
+        curr_sub = member.current_membership
+        today = timezone.now().date()
+        photo_url = None
+        if member.user.profile_picture and hasattr(member.user.profile_picture, 'url'):
+            try:
+                photo_url = member.user.profile_picture.url
+            except Exception:
+                photo_url = None
+
+        member_data = {
+            'id': member.id,
+            'name': member.full_name,
+            'member_id': member.member_id,
+            'phone': member.user.phone or '—',
+            'plan': curr_sub.plan.name if curr_sub else 'No Plan Assigned',
+            'plan_expiry': curr_sub.end_date.strftime('%b %d, %Y') if curr_sub and curr_sub.end_date else '—',
+            'is_membership_active': member.is_membership_active,
+            'status': member.status,
+            'status_display': member.get_status_display(),
+            'photo_url': photo_url,
+            'existing_check_in': existing.check_in_time.strftime('%I:%M %p') if (existing and existing.check_in_time) else None,
+            'existing_check_out': existing.check_out_time.strftime('%I:%M %p') if (existing and existing.check_out_time) else None,
+            'identifier': identifier,
+        }
+
+    return JsonResponse({
+        'success': can_confirm,
+        'message': message,
+        'action': action_code,
+        'member': member_data,
+    })
+
+
+@login_required
+@staff_or_admin
+def api_confirm_attendance(request):
+    """
+    Step 2 of Smart Focus Scanner:
+    Called when the user clicks [OK - CONFIRM ATTENDANCE].
+    Re-verifies on backend and atomically records attendance/check-out.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
+
+    identifier = request.POST.get('identifier', '').strip()
+    if not identifier:
+        return JsonResponse({'success': False, 'message': 'No identifier provided.'}, status=400)
+
+    success, message, attendance, action_type = AttendanceService.process_check_in(
+        member_identifier=identifier,
+        verified_by=request.user,
+        method=Attendance.CheckInMethod.QR_CODE
+    )
+
+    member_data = None
+    if attendance and attendance.member:
+        member = attendance.member
+        curr_sub = member.current_membership
+        today = timezone.now().date()
+        photo_url = None
+        if member.user.profile_picture and hasattr(member.user.profile_picture, 'url'):
+            try:
+                photo_url = member.user.profile_picture.url
+            except Exception:
+                photo_url = None
+
+        member_data = {
+            'id': member.id,
+            'name': member.full_name,
+            'member_id': member.member_id,
+            'phone': member.user.phone or '—',
+            'plan': curr_sub.plan.name if curr_sub else 'No Plan Assigned',
+            'plan_expiry': curr_sub.end_date.strftime('%b %d, %Y') if curr_sub and curr_sub.end_date else '—',
+            'photo_url': photo_url,
+            'check_in_date': today.strftime('%b %d, %Y'),
+            'check_in_time': attendance.check_in_time.strftime('%I:%M %p') if attendance.check_in_time else '',
+            'check_out_time': attendance.check_out_time.strftime('%I:%M %p') if attendance.check_out_time else '',
+            'duration': f"{attendance.duration_minutes} mins" if attendance.duration_minutes else None,
+            'status': member.status,
+            'status_display': member.get_status_display(),
+        }
+
+    # Live statistics
+    today_total_qs = AttendanceService.get_scoped_attendance(request.user).filter(date=timezone.now().date())
+    today_total = today_total_qs.count()
+    active_now = today_total_qs.filter(status=Attendance.Status.PRESENT, check_out_time__isnull=True).count()
+    completed_today = today_total_qs.filter(status=Attendance.Status.CHECKED_OUT).count()
+
+    return JsonResponse({
+        'success': success,
+        'message': message,
+        'action': action_type,
+        'member': member_data,
+        'stats': {
+            'today_total': today_total,
+            'active_now': active_now,
+            'completed_today': completed_today,
+        }
+    })
+
+
+@login_required
+@staff_or_admin
 def api_scan_qr(request):
-    if request.method == 'POST':
-        identifier = request.POST.get('identifier', '').strip()
-        if not identifier:
-            return JsonResponse({'success': False, 'message': 'No identifier provided.'}, status=400)
-
-        success, message, attendance, action_type = AttendanceService.process_check_in(
-            member_identifier=identifier,
-            verified_by=request.user,
-            method=Attendance.CheckInMethod.QR_CODE
-        )
-
-        member_data = None
-        if attendance and attendance.member:
-            member = attendance.member
-            curr_sub = member.current_membership
-            today = timezone.now().date()
-            member_data = {
-                'id': member.id,
-                'name': member.full_name,
-                'member_id': member.member_id,
-                'plan': curr_sub.plan.name if curr_sub else 'No Plan Assigned',
-                'plan_expiry': curr_sub.end_date.strftime('%b %d, %Y') if curr_sub and curr_sub.end_date else '—',
-                'photo_url': member.user.profile_picture.url if member.user.profile_picture else None,
-                'check_in_date': today.strftime('%b %d, %Y'),
-                'check_in_time': attendance.check_in_time.strftime('%I:%M %p') if attendance.check_in_time else '',
-                'check_out_time': attendance.check_out_time.strftime('%I:%M %p') if attendance.check_out_time else '',
-                'duration': f"{attendance.duration_minutes} mins" if attendance.duration_minutes else None,
-                'status': member.status,
-                'status_display': member.get_status_display(),
-            }
-
-        # Updated real-time analytics
-        today_total_qs = AttendanceService.get_scoped_attendance(request.user).filter(date=timezone.now().date())
-        today_total = today_total_qs.count()
-        active_now = today_total_qs.filter(status=Attendance.Status.PRESENT, check_out_time__isnull=True).count()
-        completed_today = today_total_qs.filter(status=Attendance.Status.CHECKED_OUT).count()
-
-        return JsonResponse({
-            'success': success,
-            'message': message,
-            'action': action_type,
-            'member': member_data,
-            'stats': {
-                'today_total': today_total,
-                'active_now': active_now,
-                'completed_today': completed_today,
-            }
-        })
-
-    return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
+    """Direct scan endpoint (also routes to api_confirm_attendance for unified handling)."""
+    return api_confirm_attendance(request)
 
 
 @login_required
@@ -143,14 +215,18 @@ def api_scan_qr(request):
 def api_reset_today_attendance(request):
     """Allows staff/admins to reset today's attendance for a specific member during kiosk testing."""
     if request.method == 'POST':
-        member_id = request.POST.get('member_id')
+        member_id = request.POST.get('member_id', '').strip()
         if not member_id:
             return JsonResponse({'success': False, 'message': 'Member ID required.'}, status=400)
         today = timezone.now().date()
-        deleted_count, _ = Attendance.objects.filter(member_id=member_id, date=today).delete()
+        from django.db.models import Q
+        deleted_count, _ = Attendance.objects.filter(
+            Q(member__member_id__iexact=member_id) | Q(member__id__iexact=int(member_id) if member_id.isdigit() else 0),
+            date=today
+        ).delete()
         return JsonResponse({
             'success': True,
-            'message': f"Today's attendance record cleared. You can now re-test check-in for this member."
+            'message': f"Today's attendance record cleared ({deleted_count} deleted). You can now re-test check-in for this member."
         })
     return JsonResponse({'success': False, 'message': 'Method not allowed.'}, status=405)
 

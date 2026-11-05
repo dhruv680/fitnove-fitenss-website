@@ -1,28 +1,29 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Automatic QR Attendance Scanner – FitNova{% endblock %}
+{% block title %}Instant Automatic QR Attendance – FitNova{% endblock %}
 
 {% block extra_head %}
 <!-- HTML5 QR Code Scanner Library -->
 <script src="https://unpkg.com/html5-qrcode"></script>
 <style>
+  /* Viewfinder Frame Container */
   .fn-scanner-box {
     position: relative;
     border-radius: 18px;
     overflow: hidden;
-    min-height: 400px;
-    background: #0B1120;
+    height: 420px;
+    background: #000;
     border: 2px solid #1E293B;
     transition: border-color 0.25s ease, box-shadow 0.25s ease;
   }
   .fn-scanner-box.scan-success {
     border-color: #10B981 !important;
-    box-shadow: 0 0 40px rgba(16, 185, 129, 0.7) !important;
+    box-shadow: 0 0 42px rgba(16, 185, 129, 0.75) !important;
   }
   .fn-scanner-box.scan-error {
     border-color: #EF4444 !important;
-    box-shadow: 0 0 40px rgba(239, 68, 68, 0.7) !important;
+    box-shadow: 0 0 42px rgba(239, 68, 68, 0.75) !important;
   }
   .fn-scanner-laser {
     position: absolute;
@@ -30,27 +31,28 @@
     right: 4%;
     height: 3px;
     background: linear-gradient(90deg, transparent 0%, #10B981 50%, transparent 100%);
-    box-shadow: 0 0 18px #10B981;
+    box-shadow: 0 0 20px #10B981;
     border-radius: 50%;
     z-index: 10;
     pointer-events: none;
-    animation: fnScanSweep 2s ease-in-out infinite;
+    animation: fnScanSweep 1.8s ease-in-out infinite;
   }
   @keyframes fnScanSweep {
     0% { top: 8%; opacity: 0.25; }
     50% { top: 90%; opacity: 0.95; }
     100% { top: 8%; opacity: 0.25; }
   }
+
   /* Floating Top Indicator inside Camera Viewport */
   .fn-scanner-top-badge {
     position: absolute;
     top: 14px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(15, 23, 42, 0.78);
+    background: rgba(15, 23, 42, 0.85);
     backdrop-filter: blur(8px);
     color: #F8FAFC;
-    padding: 6px 14px;
+    padding: 6px 16px;
     border-radius: 20px;
     font-size: 0.75rem;
     font-weight: 600;
@@ -60,80 +62,99 @@
     pointer-events: none;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   }
-  /* QR Guide Target Reticle */
+
+  /* Outer Edge Viewfinder Corners (Clean & Open - No Face Framing) */
   .fn-target-overlay {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 240px;
-    height: 240px;
+    top: 14px;
+    left: 14px;
+    right: 14px;
+    bottom: 14px;
     pointer-events: none;
     z-index: 8;
   }
-  .fn-qr-target-guide {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    border: 2px dashed rgba(255, 255, 255, 0.35);
-    border-radius: 20px;
-    background: rgba(255, 255, 255, 0.03);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
   .fn-corner {
     position: absolute;
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     border-color: #10B981;
     border-style: solid;
     pointer-events: none;
   }
-  .fn-corner-tl { top: -2px; left: -2px; border-width: 4px 0 0 4px; border-top-left-radius: 8px; }
-  .fn-corner-tr { top: -2px; right: -2px; border-width: 4px 4px 0 0; border-top-right-radius: 8px; }
-  .fn-corner-bl { bottom: -2px; left: -2px; border-width: 0 0 4px 4px; border-bottom-left-radius: 8px; }
-  .fn-corner-br { bottom: -2px; right: -2px; border-width: 0 4px 4px 0; border-bottom-right-radius: 8px; }
-
-  .fn-qr-watermark {
-    color: rgba(255, 255, 255, 0.45);
-    text-align: center;
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-  }
+  .fn-corner-tl { top: 0; left: 0; border-width: 4px 0 0 4px; border-top-left-radius: 12px; }
+  .fn-corner-tr { top: 0; right: 0; border-width: 4px 4px 0 0; border-top-right-radius: 12px; }
+  .fn-corner-bl { bottom: 0; left: 0; border-width: 0 0 4px 4px; border-bottom-left-radius: 12px; }
+  .fn-corner-br { bottom: 0; right: 0; border-width: 0 4px 4px 0; border-bottom-right-radius: 12px; }
 
   #reader {
     width: 100% !important;
-    min-height: 400px;
+    height: 420px !important;
+    border: none !important;
+    padding: 0 !important;
+    background: #000 !important;
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+  }
+  #reader__scan_region {
+    width: 100% !important;
+    height: 420px !important;
+    position: relative !important;
   }
   #reader video {
-    border-radius: 16px;
-    object-fit: cover !important;
+    display: block !important;
     width: 100% !important;
-    height: 100% !important;
+    height: 420px !important;
+    object-fit: cover !important;
+    border-radius: 16px;
   }
   #reader svg {
     display: none !important;
   }
+
+  /* CRITICAL: Completely hide html5-qrcode's internal center box & shaded region */
+  #qr-shaded-region,
+  #qr-shaded-region > div,
+  #reader__scan_region svg,
+  #reader__scan_region img,
+  #reader__dashboard,
+  #reader__dashboard_section,
+  #reader__dashboard_section_csr,
+  #reader__camera_selection {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  /* Success Circle Bounce Animation */
+  .fn-success-check-circle {
+    animation: fnCheckBounce 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+  @keyframes fnCheckBounce {
+    0% { transform: scale(0.5); opacity: 0; }
+    60% { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* Auto-Resume Cooldown Progress Bar */
+  .scan-cooldown-bar {
+    height: 4px;
+    background: #10B981;
+    width: 100%;
+    transition: width 1.8s linear;
+  }
+
   .demo-member-card {
     transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   }
   .demo-member-card:hover {
     transform: translateY(-2px);
     border-color: #7657E8 !important;
-    box-shadow: 0 4px 12px rgba(118, 87, 232, 0.1);
-  }
-  .scan-cooldown-bar {
-    height: 4px;
-    background: #10B981;
-    width: 100%;
-    transition: width 3s linear;
+    box-shadow: 0 4px 12px rgba(118, 87, 232, 0.12);
   }
 </style>
 {% endblock %}
@@ -143,8 +164,8 @@
   <!-- Page Header -->
   <div class="col-12 d-flex flex-wrap align-items-center justify-content-between gap-3">
     <div>
-      <h2 class="fw-bold text-dark mb-1">Automatic Attendance Kiosk</h2>
-      <p class="text-muted small mb-0">Hands-free real-time QR attendance verification with autofocus & automatic check-in.</p>
+      <h2 class="fw-bold text-dark mb-1">Instant QR Attendance Kiosk</h2>
+      <p class="text-muted small mb-0">Hands-free automatic optical scanning. Attendance is saved immediately upon QR detection with instant voice confirmation.</p>
     </div>
     <div class="d-flex align-items-center gap-2">
       <div class="d-flex align-items-center gap-3 px-3 py-2 bg-white rounded-3 border small shadow-sm">
@@ -164,32 +185,41 @@
     </div>
   </div>
 
-  <!-- Main Left: Automatic Camera Viewfinder -->
+  <!-- Left Column: Camera Viewfinder with Continuous Detection -->
   <div class="col-lg-7">
     <div class="fn-card p-4">
+
       <!-- Camera Controls Bar -->
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div class="d-flex align-items-center gap-2">
           <span class="fn-badge fn-badge-accent" id="scannerStatusBadge">
             <span class="fn-status-dot active"></span> Auto-Starting Camera...
           </span>
-          <select id="cameraSelect" class="fn-select py-1 px-2" style="font-size: 0.8rem; max-width: 200px;">
+          <select id="cameraSelect" class="fn-select py-1 px-2" style="font-size: 0.8rem; max-width: 220px;">
             <option value="">Detecting cameras...</option>
           </select>
         </div>
 
         <div class="d-flex gap-2">
+          <!-- Instant Test Scan Button -->
+          <button type="button" class="btn btn-fn-primary btn-sm" onclick="testSamplePass()" title="Test instant scan with Jessica Taylor's digital pass">
+            <i data-lucide="zap" style="width: 14px;"></i> Test Scan Pass
+          </button>
+          <!-- Voice Announcement Toggle -->
+          <button type="button" class="btn btn-fn-outline btn-sm" id="voiceToggleBtn" onclick="toggleVoice()" title="Toggle Voice Announcement">
+            <i data-lucide="volume-2" id="voiceIcon" style="width: 14px;"></i> <span id="voiceText">Voice ON</span>
+          </button>
           <!-- Switch Camera Button (Front/Rear Toggle) -->
           <button type="button" class="btn btn-fn-outline btn-sm" id="switchCameraBtn" onclick="toggleCameraSwitch()" title="Switch Front/Rear Camera">
             <i data-lucide="refresh-cw" style="width: 14px;"></i> Switch Camera
           </button>
-          <!-- Stop Camera Button -->
+          <!-- Pause/Stop Camera Button -->
           <button id="stopScanBtn" class="btn btn-fn-outline btn-sm" onclick="stopScanner()">
-            <i data-lucide="video-off" style="width: 14px;"></i> Pause Camera
+            <i data-lucide="video-off" style="width: 14px;"></i> Pause
           </button>
-          <!-- Start Camera Button (Hidden unless stopped) -->
+          <!-- Resume Camera Button -->
           <button id="startScanBtn" class="btn btn-fn-primary btn-sm d-none" onclick="startScanner()">
-            <i data-lucide="video" style="width: 14px;"></i> Resume Camera
+            <i data-lucide="video" style="width: 14px;"></i> Resume
           </button>
           <!-- Upload QR Image File Button -->
           <label class="btn btn-fn-outline btn-sm mb-0" style="cursor: pointer;" title="Scan from QR Code Image File">
@@ -199,29 +229,23 @@
         </div>
       </div>
 
-      <!-- Live Viewfinder Frame -->
+      <!-- Live Viewfinder Frame (Clean, Wide & Open - No Face Framing Box) -->
       <div class="fn-scanner-box mb-3 d-flex align-items-center justify-content-center" id="scannerBox">
         <div id="reader"></div>
         <div id="scannerLaser" class="fn-scanner-laser"></div>
 
         <!-- Floating Live Scanning Hint -->
         <div class="fn-scanner-top-badge" id="scannerTopBadge">
-          <i data-lucide="qr-code" style="width: 14px;"></i>
-          <span>Auto-Scan Active • Point QR Pass at Camera</span>
+          <span class="fn-status-dot active"></span>
+          <span>Instant Scan Live • Show Athlete QR Pass</span>
         </div>
 
-        <!-- QR Guide Target Reticle Overlay -->
+        <!-- Outer Edge Frame Guides (Clean border framing only) -->
         <div class="fn-target-overlay" id="targetOverlay">
-          <div class="fn-qr-target-guide">
-            <div class="fn-corner fn-corner-tl"></div>
-            <div class="fn-corner fn-corner-tr"></div>
-            <div class="fn-corner fn-corner-bl"></div>
-            <div class="fn-corner fn-corner-br"></div>
-            <div class="fn-qr-watermark">
-              <i data-lucide="scan" style="width: 38px; height: 38px; stroke-width: 1.5; margin-bottom: 4px;"></i>
-              <div>Point QR Here</div>
-            </div>
-          </div>
+          <div class="fn-corner fn-corner-tl"></div>
+          <div class="fn-corner fn-corner-tr"></div>
+          <div class="fn-corner fn-corner-bl"></div>
+          <div class="fn-corner fn-corner-br"></div>
         </div>
 
         <!-- Camera Permission Denied / Error Card (Hidden by default) -->
@@ -241,53 +265,59 @@
 
       <!-- Quick Guidance Tip Banner -->
       <div class="p-2 px-3 bg-light rounded-3 border mb-3 d-flex align-items-center gap-2 small text-muted">
-        <i data-lucide="sparkles" class="text-primary flex-shrink-0" style="width: 15px;"></i>
-        <span><strong>Hands-Free Automatic Scan:</strong> Simply show any athlete QR pass (on screen or printed) ~15–30 cm from camera. Full-frame optical detection marks attendance instantly.</span>
+        <i data-lucide="zap" class="text-primary flex-shrink-0" style="width: 15px;"></i>
+        <span><strong>Instant Check-In Tip:</strong> Hold QR pass ~15–25 cm (6–10 in) from camera. (જો ફોનમાંથી સ્કેન કરતા હો તો બ્રાઈટનેસ થોડી ઓછી રાખો). Decodes automatically with voice confirmation!</span>
       </div>
 
       <!-- Manual Pass Input Option (Fallback) -->
       <div class="p-3 bg-light rounded-3 border">
         <div class="d-flex justify-content-between align-items-center mb-1">
           <label class="fn-form-label mb-0">Manual Member Pass ID / Phone Check-In</label>
-          <span class="text-muted small">Automatic optical scan is active above</span>
+          <span class="text-muted small">Auto-scan is running above</span>
         </div>
         <div class="input-group mt-2">
           <input type="text" id="manualInput" class="fn-input" placeholder="e.g. FN-2026-0001, phone (+1 555-0192), or username..." onkeydown="if(event.key==='Enter') submitManualScan()">
           <button class="btn btn-fn-accent px-4" type="button" onclick="submitManualScan()">
-            <i data-lucide="check" style="width: 15px;"></i> Check In
+            <i data-lucide="check" style="width: 15px;"></i> Instant Check-In
           </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Main Right: Instant Scan Result UI (Section 5) -->
+  <!-- Right Column: Instant Live Scan Result Screen -->
   <div class="col-lg-5">
     <div class="fn-card h-100 p-4" id="scanResultCard">
-      <!-- Idle Ready State -->
+
+      <!-- 1. Idle Ready State -->
       <div class="py-5 text-center my-auto" id="idleState">
-        <div class="mx-auto mb-3" style="width: 72px; height: 72px; background: rgba(118, 87, 232, 0.1); color: #7657E8; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-          <i data-lucide="scan-line" style="width: 36px; height: 36px;"></i>
+        <div class="mx-auto mb-3" style="width: 76px; height: 76px; background: rgba(118, 87, 232, 0.1); color: #7657E8; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="scan-line" style="width: 40px; height: 40px;"></i>
         </div>
         <h5 class="fw-bold text-dark mb-1">Scanner Active & Listening</h5>
-        <p class="text-muted small px-3 mb-0">Hold any athlete digital QR pass anywhere in front of the camera. Attendance will be verified and saved automatically!</p>
+        <p class="text-muted small px-3 mb-3">
+          Show any athlete digital QR pass anywhere in front of the camera. Attendance will be verified and marked automatically with voice confirmation!
+        </p>
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 bg-light rounded-pill border small text-muted">
+          <span class="fn-status-dot active"></span> Ready for Athlete
+        </div>
       </div>
 
-      <!-- Professional Scan Result UI (Section 5) -->
+      <!-- 2. Instant Success & Attendance Result Screen -->
       <div class="d-none fn-animate-in" id="activeState">
         <!-- Result Header Alert Banner -->
         <div class="text-center py-2 px-3 mb-3 rounded-3 fw-bold" id="scanAlert">
-          <!-- Populated dynamically: SUCCESS – ATTENDANCE MARKED / BLOCKED -->
+          <!-- Populated dynamically: ✓ ATTENDANCE MARKED SUCCESSFULLY / Error Alert -->
         </div>
 
-        <!-- Cooldown Re-arm Progress Bar -->
+        <!-- Cooldown Re-arm Progress Bar (Auto-resumes next scan in 1.8s) -->
         <div class="bg-light rounded-pill overflow-hidden mb-3" style="height: 4px;">
           <div id="cooldownBar" class="scan-cooldown-bar"></div>
         </div>
 
-        <!-- Member Profile Header -->
+        <!-- Success Animation Circle -->
         <div class="text-center mb-3">
-          <div class="fn-avatar mx-auto mb-2" id="resAvatar" style="width: 76px; height: 76px; font-size: 1.8rem; border: 3px solid #E2E8F0;"></div>
+          <div class="fn-avatar mx-auto mb-2 fn-success-check-circle" id="resAvatar" style="width: 80px; height: 80px; font-size: 2rem; border: 3px solid #10B981; box-shadow: 0 0 24px rgba(16, 185, 129, 0.35);"></div>
           <h4 class="fw-bold text-dark mb-1" id="resName">Athlete Name</h4>
           <span class="badge bg-light text-dark font-monospace px-2 py-1 border" id="resMemberId">FN-2026-0001</span>
         </div>
@@ -295,12 +325,12 @@
         <!-- Details Grid -->
         <div class="p-3 bg-light rounded-3 small border mb-3">
           <div class="d-flex justify-content-between py-2 border-bottom">
-            <span class="text-muted">Membership Tier:</span>
-            <span class="fw-bold text-dark" id="resPlan">Active Plan</span>
+            <span class="text-muted">Membership Plan:</span>
+            <span class="fw-bold text-primary" id="resPlan">Active Plan</span>
           </div>
           <div class="d-flex justify-content-between py-2 border-bottom">
-            <span class="text-muted">Plan Expiry:</span>
-            <span class="fw-semibold text-dark" id="resExpiry">Valid</span>
+            <span class="text-muted">Membership Expiry:</span>
+            <span class="fw-semibold text-dark" id="resExpiry">—</span>
           </div>
           <div class="d-flex justify-content-between py-2 border-bottom">
             <span class="text-muted">Check-In Date:</span>
@@ -308,32 +338,40 @@
           </div>
           <div class="d-flex justify-content-between py-2 border-bottom">
             <span class="text-muted">Check-In Timestamp:</span>
-            <span class="fw-semibold text-primary" id="resCheckIn">Just now</span>
+            <span class="fw-bold text-primary" id="resCheckIn">Just now</span>
           </div>
           <div class="d-flex justify-content-between py-2 border-bottom d-none" id="resCheckOutRow">
             <span class="text-muted">Check-Out Timestamp:</span>
-            <span class="fw-semibold text-success" id="resCheckOut">—</span>
+            <span class="fw-bold text-success" id="resCheckOut">—</span>
           </div>
-          <div class="d-flex justify-content-between py-2 d-none" id="resDurationRow">
+          <div class="d-flex justify-content-between py-2 border-bottom d-none" id="resDurationRow">
             <span class="text-muted">Session Duration:</span>
             <span class="fw-bold text-dark" id="resDuration">—</span>
           </div>
           <div class="d-flex justify-content-between py-2">
-            <span class="text-muted">Verification Status:</span>
-            <span id="resStatusBadge" class="fn-badge fn-badge-success">Verified</span>
+            <span class="text-muted">Attendance Status:</span>
+            <span id="resStatusBadge" class="fn-badge fn-badge-success">
+              <span class="fn-status-dot active"></span> Present
+            </span>
           </div>
         </div>
 
-        <!-- Auto-Resume Countdown Footer -->
-        <div class="d-flex justify-content-between align-items-center pt-2">
-          <span class="text-muted small" id="cooldownText">
-            <i data-lucide="clock" style="width: 13px;"></i> Ready for next athlete...
+        <!-- Testing Helper: Reset Today's Attendance for this Member -->
+        <button type="button" class="btn btn-outline-secondary btn-sm w-100 mb-3" id="resetMemberTestBtn" onclick="resetCurrentMemberAttendance()" title="Clear today's attendance record to re-test check-in">
+          <i data-lucide="rotate-ccw" style="width: 13px;"></i> Reset Attendance for Testing
+        </button>
+
+        <!-- Automatic Next Scan Indicator -->
+        <div class="d-flex justify-content-between align-items-center pt-1 text-muted small" id="cooldownFooter">
+          <span id="cooldownText">
+            <i data-lucide="clock" style="width: 13px;"></i> Ready for next athlete in 1.8s...
           </span>
-          <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.75rem;" onclick="resetMemberAttendanceForTest()">
-            <i data-lucide="rotate-ccw" style="width: 12px;"></i> Clear for Re-test
-          </button>
+          <span class="text-success fw-semibold">
+            <i data-lucide="video" style="width: 13px;"></i> Camera Live
+          </span>
         </div>
       </div>
+
     </div>
   </div>
 
@@ -343,7 +381,7 @@
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div>
           <h5 class="fn-card-title mb-0">Active Athlete Digital QR Passes</h5>
-          <div class="fn-card-subtitle">Show this pass to the camera, or open on a phone screen to test hands-free scanning.</div>
+          <div class="fn-card-subtitle">Show this pass to the camera, or open on a phone screen to test automatic optical check-in.</div>
         </div>
       </div>
 
@@ -368,7 +406,7 @@
 
             <div class="d-flex flex-column gap-1">
               {% if m.qr_code %}
-              <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" style="font-size: 0.75rem;" onclick="showQrModal('{{ m.full_name|escapejs }}', '{{ m.member_id }}', '{{ m.qr_code.url }}', '{{ m.current_membership.plan.name|default:"Active Plan" }}')">
+              <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" style="font-size: 0.75rem;" onclick="showQrModal('{{ m.full_name|escapejs }}', '{{ m.member_id }}', '{{ m.qr_code.url }}', '{{ m.current_membership.plan.name|default:"Active Plan" }}', 'FITNOVA:{{ m.member_id }}:{{ m.qr_token }}')">
                 <i data-lucide="qr-code" style="width: 13px;"></i> View QR
               </button>
               {% endif %}
@@ -383,13 +421,13 @@
     </div>
   </div>
 
-  <!-- Section 6: Today's Live Attendance Dashboard Feed -->
+  <!-- Today's Live Attendance Dashboard Feed -->
   <div class="col-12">
     <div class="fn-card p-4">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
           <h5 class="fn-card-title mb-0">Today's Check-In Activity Feed</h5>
-          <div class="fn-card-subtitle">Real-time attendance records stored in database for today.</div>
+          <div class="fn-card-subtitle">Real-time attendance records confirmed for today.</div>
         </div>
         <span class="fn-badge fn-badge-success"><span class="fn-status-dot active"></span> Live Updating</span>
       </div>
@@ -443,9 +481,7 @@
   </div>
 </div>
 
-<!-- ==========================================================================
-     Digital QR Pass Preview Modal (Displays Large QR for Screen-to-Camera Scan)
-     ========================================================================== -->
+<!-- Digital QR Pass Preview Modal (Displays Large QR for Screen-to-Camera Scan) -->
 <div class="modal fade" id="qrPassModal" tabindex="-1" aria-labelledby="qrPassModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-sm">
     <div class="modal-content border-0 shadow-lg rounded-4 text-center p-3">
@@ -457,10 +493,14 @@
         <div class="badge bg-light text-dark font-monospace border mb-3" id="modalMemberId">FN-2026-0001</div>
 
         <div class="p-3 bg-white border rounded-4 d-inline-block shadow-sm mb-3">
-          <img id="modalQrImage" src="" alt="Athlete Pass" style="width: 220px; height: 220px; object-fit: contain;">
+          <img id="modalQrImage" src="" alt="Athlete Pass" style="width: 240px; height: 240px; object-fit: contain;">
         </div>
 
-        <p class="text-muted small mb-0">Show this QR code to the laptop webcam or phone camera to test automatic optical check-in.</p>
+        <p class="text-muted small mb-3">Show this QR code to the laptop webcam or phone camera to test automatic optical check-in.</p>
+
+        <button type="button" class="btn btn-fn-primary w-100" onclick="scanCurrentModalMember()">
+          <i data-lucide="zap" style="width: 15px;"></i> Test Scan This Pass
+        </button>
       </div>
     </div>
   </div>
@@ -472,19 +512,25 @@
 
 {% block extra_scripts %}
 <script>
-  let html5QrcodeScanner = null;
+  let html5QrCode = null;
+  let isScanning = false;
   let isProcessing = false;
-  let currentScannedMemberId = null;
+  let isStarting = false;
   let availableCameras = [];
   let currentCameraIndex = 0;
   let autoResumeTimer = null;
+  let voiceEnabled = true;
+  let currentScannedMemberId = null;
+  let currentModalPayload = null;
 
-  // Auto-Start on Page Load (Requirement 1)
+  /* --------------------------------------------------------------------------
+     1. Auto-Start on Page Load (Requirement 1)
+     -------------------------------------------------------------------------- */
   document.addEventListener('DOMContentLoaded', function () {
     initAndAutoStartScanner();
   });
 
-  // Release camera resources when navigating away (Requirement 8)
+  // Cleanly release camera resources on unload (Requirement 9)
   window.addEventListener('beforeunload', function () {
     stopScanner();
   });
@@ -493,7 +539,40 @@
   });
 
   /* --------------------------------------------------------------------------
-     1. Web Audio API Chime Synthesizer
+     2. Voice Speech Announcement Engine ("ok thayu bolvu jaie")
+     -------------------------------------------------------------------------- */
+  function toggleVoice() {
+    voiceEnabled = !voiceEnabled;
+    const voiceText = document.getElementById('voiceText');
+    const voiceIcon = document.getElementById('voiceIcon');
+    if (voiceEnabled) {
+      if (voiceText) voiceText.textContent = "Voice ON";
+      speakVoice("Voice announcements enabled");
+    } else {
+      if (voiceText) voiceText.textContent = "Voice OFF";
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    }
+  }
+
+  function speakVoice(text) {
+    if (!voiceEnabled) return;
+    try {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel(); // Stop any pending speech
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.0; // Natural pace
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        utterance.lang = 'en-US';
+        window.speechSynthesis.speak(utterance);
+      }
+    } catch (e) {
+      console.warn('SpeechSynthesis error:', e);
+    }
+  }
+
+  /* --------------------------------------------------------------------------
+     3. Web Audio Synthesizer (Chime & Buzz)
      -------------------------------------------------------------------------- */
   function playScanSound(success = true) {
     try {
@@ -525,21 +604,22 @@
         osc.stop(ctx.currentTime + 0.28);
       }
     } catch (e) {
-      console.warn('AudioContext feedback waiting for user gesture', e);
+      console.warn('Audio feedback', e);
     }
   }
 
   /* --------------------------------------------------------------------------
-     2. Initialize Cameras & Auto-Start (Requirement 1)
+     4. Camera Initialization & Hardware Autofocus
      -------------------------------------------------------------------------- */
   function isMobileDevice() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   }
 
-  function initAndAutoStartScanner() {
+  async function initAndAutoStartScanner() {
     if (typeof Html5Qrcode === 'undefined') return;
 
-    Html5Qrcode.getCameras().then(devices => {
+    try {
+      const devices = await Html5Qrcode.getCameras();
       availableCameras = devices || [];
       const select = document.getElementById('cameraSelect');
 
@@ -553,7 +633,6 @@
           opt.text = device.label || `Camera ${index + 1}`;
           select.appendChild(opt);
 
-          // On mobile prefer rear/back camera, on desktop prefer webcam
           const lbl = (device.label || '').toLowerCase();
           if (isMobileDevice() && (lbl.includes('back') || lbl.includes('rear') || lbl.includes('environment'))) {
             preferredIndex = index;
@@ -563,22 +642,17 @@
         currentCameraIndex = preferredIndex;
         select.selectedIndex = preferredIndex;
 
-        // Auto change listener
         select.onchange = function () {
           currentCameraIndex = select.selectedIndex;
           startScanner();
         };
-
-        // Start scanning automatically immediately
-        startScanner();
-      } else {
-        // If no enumerated devices, start with facingMode constraint
-        startScanner();
       }
-    }).catch(err => {
-      console.warn('Camera enumeration error, attempting direct start:', err);
-      startScanner();
-    });
+    } catch (err) {
+      console.warn('Camera enumeration error, will attempt direct start:', err);
+    }
+
+    // Single unified auto-start
+    startScanner();
   }
 
   function toggleCameraSwitch() {
@@ -595,11 +669,20 @@
   }
 
   /* --------------------------------------------------------------------------
-     3. Start Continuous Scanner with Autofocus (Requirement 1 & 2)
+     5. Ultra-Fast Dedicated QR Scanner Engine
      -------------------------------------------------------------------------- */
-  function startScanner() {
-    if (html5QrcodeScanner) {
-      try { html5QrcodeScanner.stop(); } catch (e) {}
+  async function startScanner() {
+    if (isStarting) return;
+    isStarting = true;
+
+    // Properly stop existing stream
+    if (html5QrCode && isScanning) {
+      try {
+        await html5QrCode.stop();
+      } catch (e) {
+        console.warn('Error stopping previous stream:', e);
+      }
+      isScanning = false;
     }
 
     const errorOverlay = document.getElementById('cameraErrorOverlay');
@@ -608,43 +691,44 @@
     const select = document.getElementById('cameraSelect');
     const selectedCameraId = select && select.value ? select.value : null;
 
-    // Prefer back camera on mobile, or explicit camera ID
-    let cameraConfig;
-    if (selectedCameraId) {
-      cameraConfig = { deviceId: { exact: selectedCameraId } };
-    } else if (isMobileDevice()) {
-      cameraConfig = { facingMode: "environment" };
-    } else {
-      cameraConfig = { facingMode: "user" };
+    // Restrict strictly to QR Code format (10x faster decoding than all formats)
+    const formats = (typeof Html5QrcodeSupportedFormats !== 'undefined')
+      ? [ Html5QrcodeSupportedFormats.QR_CODE ]
+      : [ 0 ];
+
+    if (!html5QrCode) {
+      html5QrCode = new Html5Qrcode("reader", {
+        formatsToSupport: formats,
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true
+        },
+        verbose: false
+      });
     }
 
-    html5QrcodeScanner = new Html5Qrcode("reader");
-
-    // High-performance Full-frame Autofocus Config (Zero Aspect Distortion)
+    // Optimal scan config for responsive zero-latency decoding across full frame
     const scanConfig = {
-      fps: 15, // Optimal 15 fps for real-time decoding without CPU throttling
-      disableFlip: false,
-      videoConstraints: {
-        width: { min: 640, ideal: 1280 },
-        height: { min: 480, ideal: 720 },
-        advanced: [{ focusMode: "continuous" }]
-      }
+      fps: 15,
+      disableFlip: false
     };
 
-    html5QrcodeScanner.start(
-      cameraConfig,
-      scanConfig,
-      (decodedText) => {
-        // Automatically detect QR codes (Requirement 2 & 3)
-        if (!isProcessing) {
-          isProcessing = true;
-          handleScanPayload(decodedText);
-        }
-      },
-      (errorMessage) => {
-        // Continuous search loop
-      }
-    ).then(() => {
+    // Camera parameter: exact string ID if enumerated, or facingMode
+    const cameraParam = selectedCameraId ? selectedCameraId : (isMobileDevice() ? { facingMode: "environment" } : { facingMode: "user" });
+
+    try {
+      await html5QrCode.start(
+        cameraParam,
+        scanConfig,
+        (decodedText) => {
+          // Automatic Instant Detection & Attendance Marking
+          if (!isProcessing) {
+            handleScanPayload(decodedText);
+          }
+        },
+        () => {}
+      );
+
+      isScanning = true;
       document.getElementById('startScanBtn').classList.add('d-none');
       document.getElementById('stopScanBtn').classList.remove('d-none');
       document.getElementById('scannerLaser').classList.remove('d-none');
@@ -652,42 +736,48 @@
       const topBadge = document.getElementById('scannerTopBadge');
       if (topBadge) topBadge.classList.remove('d-none');
 
+      // Ensure camera video occupies full 420px height
+      const vid = document.querySelector('#reader video');
+      if (vid) {
+        vid.style.width = '100%';
+        vid.style.height = '420px';
+        vid.style.objectFit = 'cover';
+      }
+
       const badge = document.getElementById('scannerStatusBadge');
       if (badge) {
         badge.className = "fn-badge fn-badge-success";
         badge.innerHTML = `<span class="fn-status-dot active"></span> Auto-Scanning Live`;
       }
-    }).catch(err => {
-      handleCameraFailure(err, scanConfig);
-    });
-  }
-
-  function handleCameraFailure(err, scanConfig) {
-    console.error('Camera start failed:', err);
-    const errStr = (err ? err.toString() : '').toLowerCase();
-
-    // If environment camera failed on desktop, fallback to user camera
-    if (errStr.includes('overconstrained') || errStr.includes('facingmode') || errStr.includes('notfound')) {
-      html5QrcodeScanner.start(
-        { facingMode: "user" },
-        scanConfig,
-        (decodedText) => {
-          if (!isProcessing) {
-            isProcessing = true;
-            handleScanPayload(decodedText);
-          }
-        },
-        () => {}
-      ).then(() => {
+    } catch (err) {
+      console.error('Camera start failed, attempting user camera fallback:', err);
+      try {
+        await html5QrCode.start(
+          { facingMode: "user" },
+          scanConfig,
+          (decodedText) => {
+            if (!isProcessing) handleScanPayload(decodedText);
+          },
+          () => {}
+        );
+        isScanning = true;
         document.getElementById('startScanBtn').classList.add('d-none');
         document.getElementById('stopScanBtn').classList.remove('d-none');
         document.getElementById('scannerLaser').classList.remove('d-none');
-        return;
-      }).catch(fallbackErr => {
+        document.getElementById('targetOverlay').classList.remove('d-none');
+        const topBadge = document.getElementById('scannerTopBadge');
+        if (topBadge) topBadge.classList.remove('d-none');
+        const vid = document.querySelector('#reader video');
+        if (vid) {
+          vid.style.width = '100%';
+          vid.style.height = '420px';
+          vid.style.objectFit = 'cover';
+        }
+      } catch (fallbackErr) {
         showCameraPermissionError(fallbackErr);
-      });
-    } else {
-      showCameraPermissionError(err);
+      }
+    } finally {
+      isStarting = false;
     }
   }
 
@@ -724,65 +814,96 @@
     startScanner();
   }
 
-  function stopScanner() {
-    if (html5QrcodeScanner) {
-      html5QrcodeScanner.stop().then(() => {
-        document.getElementById('startScanBtn').classList.remove('d-none');
-        document.getElementById('stopScanBtn').classList.add('d-none');
-        document.getElementById('scannerLaser').classList.add('d-none');
-        document.getElementById('targetOverlay').classList.add('d-none');
-        const topBadge = document.getElementById('scannerTopBadge');
-        if (topBadge) topBadge.classList.add('d-none');
+  async function stopScanner() {
+    if (html5QrCode && isScanning) {
+      try {
+        await html5QrCode.stop();
+        isScanning = false;
+      } catch (err) {
+        console.log(err);
+      }
+      document.getElementById('startScanBtn').classList.remove('d-none');
+      document.getElementById('stopScanBtn').classList.add('d-none');
+      document.getElementById('scannerLaser').classList.add('d-none');
+      document.getElementById('targetOverlay').classList.add('d-none');
+      const topBadge = document.getElementById('scannerTopBadge');
+      if (topBadge) topBadge.classList.add('d-none');
 
-        const badge = document.getElementById('scannerStatusBadge');
-        if (badge) {
-          badge.className = "fn-badge fn-badge-accent";
-          badge.innerHTML = `<i data-lucide="video-off" style="width: 13px;"></i> Camera Paused`;
-          if (typeof initLucide === 'function') initLucide();
-        }
-      }).catch(err => console.log(err));
+      const badge = document.getElementById('scannerStatusBadge');
+      if (badge) {
+        badge.className = "fn-badge fn-badge-accent";
+        badge.innerHTML = `<i data-lucide="video-off" style="width: 13px;"></i> Camera Paused`;
+        if (typeof initLucide === 'function') initLucide();
+      }
     }
   }
 
   /* --------------------------------------------------------------------------
-     4. Upload & Scan QR Code Image File
+     Instant Test Pass & Helpers
      -------------------------------------------------------------------------- */
-  function scanQRImageFile(input) {
-    if (!input.files || input.files.length === 0) return;
-    const file = input.files[0];
-
-    const imageScanner = new Html5Qrcode("qrImageReaderTemp");
-    imageScanner.scanFile(file, true)
-      .then(decodedText => {
-        handleScanPayload(decodedText);
-        imageScanner.clear();
-        input.value = '';
-      })
-      .catch(err => {
-        playScanSound(false);
-        if (window.showFitNovaToast) {
-          window.showFitNovaToast("No valid QR pass detected in image file. Please upload a clear photo.", "danger");
-        }
-        imageScanner.clear();
-        input.value = '';
-      });
+  function testSamplePass() {
+    handleScanPayload('FITNOVA:FN-2026-0004:99bb40e7-3a81-4266-8166-8b2d7459de1d');
   }
 
-  /* --------------------------------------------------------------------------
-     5. Manual Search / ID Input Check-In
-     -------------------------------------------------------------------------- */
-  function submitManualScan() {
-    const val = document.getElementById('manualInput').value.trim();
-    if (val) {
-      handleScanPayload(val);
-      document.getElementById('manualInput').value = '';
+  function scanCurrentModalMember() {
+    const modalEl = document.getElementById('qrPassModal');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+      const modal = bootstrap.Modal.getInstance(modalEl);
+      if (modal) modal.hide();
+    }
+    if (currentModalPayload) {
+      handleScanPayload(currentModalPayload);
+    }
+  }
+
+  function resetCurrentMemberAttendance() {
+    if (!currentScannedMemberId) {
+      if (window.showFitNovaToast) window.showFitNovaToast("No member record to reset.", "info");
+      return;
+    }
+    const formData = new FormData();
+    formData.append('member_id', currentScannedMemberId);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    fetch("{% url 'attendance:api_reset_today' %}", {
+      method: 'POST',
+      body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        if (window.showFitNovaToast) window.showFitNovaToast(data.message, "success");
+        speakVoice("Attendance record cleared. Ready for check-in test.");
+        document.getElementById('activeState').classList.add('d-none');
+        document.getElementById('idleState').classList.remove('d-none');
+        isProcessing = false;
+      } else {
+        if (window.showFitNovaToast) window.showFitNovaToast(data.message, "danger");
+      }
+    })
+    .catch(err => {
+      console.error(err);
+    });
+  }
+      const topBadge = document.getElementById('scannerTopBadge');
+      if (topBadge) topBadge.classList.add('d-none');
+
+      const badge = document.getElementById('scannerStatusBadge');
+      if (badge) {
+        badge.className = "fn-badge fn-badge-accent";
+        badge.innerHTML = `<i data-lucide="video-off" style="width: 13px;"></i> Camera Paused`;
+        if (typeof initLucide === 'function') initLucide();
+      }
     }
   }
 
   /* --------------------------------------------------------------------------
-     6. Instant Attendance Marking & Backend Verification (Requirement 3 & 4)
+     6. Instant Automatic Attendance Marking + Voice Feedback
      -------------------------------------------------------------------------- */
   function handleScanPayload(payload) {
+    if (isProcessing) return;
+    isProcessing = true; // Lock to prevent multiple simultaneous requests
+
     const formData = new FormData();
     formData.append('identifier', payload);
     formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
@@ -793,7 +914,7 @@
     })
     .then(res => res.json())
     .then(data => {
-      // Visual Feedback & Audio
+      // 1. Visual Viewfinder Flash
       const box = document.getElementById('scannerBox');
       if (box) {
         box.classList.remove('scan-success', 'scan-error');
@@ -801,55 +922,85 @@
         setTimeout(() => box.classList.remove('scan-success', 'scan-error'), 1200);
       }
 
+      // 2. Play Audio Chime
       playScanSound(data.success);
+
+      // 3. Spoken Voice Announcement ("ok thayu bolvu jaie")
+      if (data.success && data.member) {
+        if (data.action === 'CHECK_OUT') {
+          speakVoice(`Check-out OK! Goodbye ${data.member.name}`);
+        } else {
+          speakVoice(`Attendance OK! Welcome ${data.member.name}`);
+        }
+      } else {
+        if (data.action === 'EXPIRED') {
+          speakVoice("Attendance denied. Membership expired.");
+        } else if (data.action === 'DUPLICATE') {
+          speakVoice("Attendance already marked today.");
+        } else {
+          speakVoice(data.message || "Attendance denied.");
+        }
+      }
+
+      // 4. Display instant scan result on right panel
       displayScanResult(data);
 
+      // 5. Toast notification
       if (window.showFitNovaToast) {
         window.showFitNovaToast(data.message, data.success ? "success" : "danger");
       }
 
-      // Prepend to Today's Live Table and Update KPI counters (Requirement 6)
+      // 6. Update live analytics & prepend activity table
       if (data.success && data.member) {
         prependAttendanceRow(data);
       }
-
       if (data.stats) {
         updateAttendanceStats(data.stats);
       }
 
-      // Auto-Resume Cooldown Countdown (Requirement 2 & 5)
-      triggerAutoResumeCooldown();
+      // 7. Automatic Next Scan (1.8s delay, then auto-resume)
+      triggerAutoNextScan(data.success ? 1800 : 2500);
     })
     .catch(err => {
-      isProcessing = false;
       playScanSound(false);
-      if (window.showFitNovaToast) {
-        window.showFitNovaToast("Network error verifying attendance pass.", "danger");
-      }
+      speakVoice("Network error marking attendance.");
+      displayScanResult({
+        success: false,
+        message: "Network error saving attendance.",
+        action: "ERROR"
+      });
+      triggerAutoNextScan(2200);
     });
   }
 
   /* --------------------------------------------------------------------------
-     7. Display Professional Scan Result UI (Requirement 5)
+     7. Display Instant Scan Result UI
      -------------------------------------------------------------------------- */
   function displayScanResult(data) {
+    currentScannedMemberId = (data && data.member) ? data.member.member_id : null;
     document.getElementById('idleState').classList.add('d-none');
     const activeBox = document.getElementById('activeState');
     activeBox.classList.remove('d-none');
 
     const alertBox = document.getElementById('scanAlert');
     if (data.success) {
-      alertBox.className = "alert alert-success text-center fw-bold py-2 px-3 mb-2 shadow-sm";
-      alertBox.innerHTML = `<i data-lucide="check-circle" style="width: 16px; margin-top: -2px;"></i> ${data.message}`;
+      alertBox.className = "alert alert-success text-center fw-bold py-2 px-3 mb-3 shadow-sm";
+      alertBox.innerHTML = `<i data-lucide="check-circle" style="width: 18px; margin-top: -2px;"></i> ${data.message}`;
     } else {
       alertBox.className = (data.action === 'DUPLICATE')
-        ? "alert alert-warning text-center fw-bold py-2 px-3 mb-2 shadow-sm"
-        : "alert alert-danger text-center fw-bold py-2 px-3 mb-2 shadow-sm";
-      alertBox.innerHTML = `<i data-lucide="alert-triangle" style="width: 16px; margin-top: -2px;"></i> ${data.message}`;
+        ? "alert alert-warning text-center fw-bold py-2 px-3 mb-3 shadow-sm"
+        : "alert alert-danger text-center fw-bold py-2 px-3 mb-3 shadow-sm";
+
+      let errorTitle = data.message;
+      if (data.action === 'EXPIRED') errorTitle = "Membership Expired – Attendance Denied";
+      else if (data.action === 'DUPLICATE') errorTitle = "Attendance Already Marked Today";
+      else if (data.action === 'INVALID_QR') errorTitle = "Invalid QR Code";
+      else if (data.action === 'NOT_FOUND') errorTitle = "Member Not Found";
+
+      alertBox.innerHTML = `<i data-lucide="alert-triangle" style="width: 18px; margin-top: -2px;"></i> ${errorTitle}`;
     }
 
     if (data.member) {
-      currentScannedMemberId = data.member.id;
       document.getElementById('resName').textContent = data.member.name;
       document.getElementById('resMemberId').textContent = data.member.member_id;
       document.getElementById('resPlan').textContent = data.member.plan;
@@ -881,20 +1032,30 @@
       const statusBadge = document.getElementById('resStatusBadge');
       if (data.success) {
         statusBadge.className = "fn-badge fn-badge-success";
-        statusBadge.textContent = "Attendance Verified";
+        statusBadge.innerHTML = `<span class="fn-status-dot active"></span> Present`;
       } else {
         statusBadge.className = "fn-badge fn-badge-danger";
-        statusBadge.textContent = data.action || "Access Blocked";
+        statusBadge.textContent = data.action || "Denied";
       }
+    } else {
+      document.getElementById('resName').textContent = "Unregistered Pass";
+      document.getElementById('resMemberId').textContent = "—";
+      document.getElementById('resPlan').textContent = "—";
+      document.getElementById('resExpiry').textContent = "—";
+      document.getElementById('resDate').textContent = "Today";
+      document.getElementById('resCheckIn').textContent = "—";
+      document.getElementById('resAvatar').textContent = "!";
+      document.getElementById('resStatusBadge').className = "fn-badge fn-badge-danger";
+      document.getElementById('resStatusBadge').textContent = "Denied";
     }
 
     if (typeof initLucide === 'function') initLucide();
   }
 
   /* --------------------------------------------------------------------------
-     8. Auto-Resume Countdown Engine (Requirement 2 & 5)
+     8. Automatic Next Scan Engine
      -------------------------------------------------------------------------- */
-  function triggerAutoResumeCooldown() {
+  function triggerAutoNextScan(delayMs = 1800) {
     const bar = document.getElementById('cooldownBar');
     const text = document.getElementById('cooldownText');
     if (autoResumeTimer) clearTimeout(autoResumeTimer);
@@ -903,33 +1064,28 @@
       bar.style.transition = 'none';
       bar.style.width = '100%';
       setTimeout(() => {
-        bar.style.transition = 'width 2.8s linear';
+        bar.style.transition = `width ${(delayMs / 1000).toFixed(1)}s linear`;
         bar.style.width = '0%';
-      }, 50);
+      }, 40);
     }
 
-    let remainingSeconds = 3;
-    const interval = setInterval(() => {
-      remainingSeconds--;
-      if (text && remainingSeconds > 0) {
-        text.innerHTML = `<i data-lucide="clock" style="width: 13px;"></i> Ready for next athlete in ${remainingSeconds}s...`;
-        if (typeof initLucide === 'function') initLucide();
-      } else {
-        clearInterval(interval);
-      }
-    }, 1000);
+    if (text) {
+      text.innerHTML = `<i data-lucide="clock" style="width: 13px;"></i> Ready for next athlete in ${(delayMs / 1000).toFixed(1)}s...`;
+      if (typeof initLucide === 'function') initLucide();
+    }
 
     autoResumeTimer = setTimeout(() => {
+      // Automatically unlock for next member scan while camera runs
       isProcessing = false;
       if (text) {
         text.innerHTML = `<span class="text-success"><i data-lucide="check" style="width: 13px;"></i> Scanner ready for next athlete</span>`;
         if (typeof initLucide === 'function') initLucide();
       }
-    }, 3000);
+    }, delayMs);
   }
 
   /* --------------------------------------------------------------------------
-     9. Live Prepend Attendance Record & KPI Update (Requirement 6)
+     9. Live Activity Feed Prepend & KPI Counters
      -------------------------------------------------------------------------- */
   function prependAttendanceRow(data) {
     const tableBody = document.getElementById('todayAttendanceTableBody');
@@ -977,34 +1133,43 @@
   }
 
   /* --------------------------------------------------------------------------
-     10. Reset Record for Testing Helper
+     10. Manual Input Fallback & File Upload Support
      -------------------------------------------------------------------------- */
-  function resetMemberAttendanceForTest() {
-    if (!currentScannedMemberId) return;
+  function submitManualScan() {
+    const val = document.getElementById('manualInput').value.trim();
+    if (val) {
+      handleScanPayload(val);
+      document.getElementById('manualInput').value = '';
+    }
+  }
 
-    const formData = new FormData();
-    formData.append('member_id', currentScannedMemberId);
-    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+  function scanQRImageFile(input) {
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
 
-    fetch("{% url 'attendance:api_reset_today' %}", {
-      method: 'POST',
-      body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        if (window.showFitNovaToast) window.showFitNovaToast(data.message, 'success');
-        document.getElementById('activeState').classList.add('d-none');
-        document.getElementById('idleState').classList.remove('d-none');
-        isProcessing = false;
-      }
-    });
+    const imageScanner = new Html5Qrcode("qrImageReaderTemp");
+    imageScanner.scanFile(file, true)
+      .then(decodedText => {
+        handleScanPayload(decodedText);
+        imageScanner.clear();
+        input.value = '';
+      })
+      .catch(err => {
+        playScanSound(false);
+        speakVoice("Invalid QR image.");
+        if (window.showFitNovaToast) {
+          window.showFitNovaToast("No valid QR pass detected in image file. Please upload a clear photo.", "danger");
+        }
+        imageScanner.clear();
+        input.value = '';
+      });
   }
 
   /* --------------------------------------------------------------------------
      11. Digital QR Pass Modal Display Helper
      -------------------------------------------------------------------------- */
-  function showQrModal(name, id, qrUrl, plan) {
+  function showQrModal(name, id, qrUrl, plan, payload) {
+    currentModalPayload = payload || ('FITNOVA:' + id);
     document.getElementById('modalMemberName').textContent = name;
     document.getElementById('modalMemberId').textContent = id;
     document.getElementById('modalQrImage').src = qrUrl;

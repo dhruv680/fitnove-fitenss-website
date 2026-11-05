@@ -10,6 +10,8 @@ router.register(r'logs', views.AttendanceViewSet, basename='api-attendance')
 urlpatterns = [
     path('', views.attendance_list, name='attendance_list'),
     path('scanner/', views.attendance_scanner, name='scanner'),
+    path('api/verify/', views.api_verify_member, name='api_verify'),
+    path('api/confirm/', views.api_confirm_attendance, name='api_confirm'),
     path('api/scan/', views.api_scan_qr, name='api_scan'),
     path('api/reset-today/', views.api_reset_today_attendance, name='api_reset_today'),
     path('api/', include(router.urls)),

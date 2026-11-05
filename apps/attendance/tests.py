@@ -57,3 +57,72 @@ class AttendanceServiceTestCase(TestCase):
         self.assertEqual(action, 'DUPLICATE')
         self.assertIn('already completed attendance today', msg)
 
+    def test_verify_member_ready_check_in(self):
+        qr_payload = f"FITNOVA:{self.member.member_id}:{self.member.qr_token}"
+        can_confirm, msg, member, action, existing = AttendanceService.verify_member_for_attendance(qr_payload)
+        self.assertTrue(can_confirm)
+        self.assertEqual(action, 'READY_CHECK_IN')
+        self.assertEqual(member.id, self.member.id)
+        # Verify no attendance was written to DB!
+        self.assertEqual(Attendance.objects.filter(member=self.member).count(), 0)
+
+    def test_verify_member_expired(self):
+        self.membership.end_date = timezone.now().date() - timezone.timedelta(days=2)
+        self.membership.status = Membership.Status.EXPIRED
+        self.membership.save()
+
+        qr_payload = f"FITNOVA:{self.member.member_id}:{self.member.qr_token}"
+        can_confirm, msg, member, action, existing = AttendanceService.verify_member_for_attendance(qr_payload)
+        self.assertFalse(can_confirm)
+        self.assertEqual(action, 'EXPIRED')
+        self.assertIn('Membership expired', msg)
+
+    def test_verify_member_inactive(self):
+        self.member.status = Member.Status.INACTIVE
+        self.member.save()
+
+        qr_payload = f"FITNOVA:{self.member.member_id}:{self.member.qr_token}"
+        can_confirm, msg, member, action, existing = AttendanceService.verify_member_for_attendance(qr_payload)
+        self.assertFalse(can_confirm)
+        self.assertEqual(action, 'INACTIVE')
+        self.assertIn('INACTIVE', msg)
+
+    def test_verify_member_forged_token(self):
+        qr_payload = f"FITNOVA:{self.member.member_id}:invalid-token-12345"
+        can_confirm, msg, member, action, existing = AttendanceService.verify_member_for_attendance(qr_payload)
+        self.assertFalse(can_confirm)
+        self.assertEqual(action, 'INVALID_QR')
+
+    def test_api_verify_and_confirm_workflow(self):
+        # Authenticate staff user
+        staff_user = User.objects.create_user(
+            username='staffadmin',
+            password='password123',
+            organization=self.org,
+            branch=self.branch,
+            role=User.Role.STAFF
+        )
+        self.client.login(username='staffadmin', password='password123')
+
+        qr_payload = f"FITNOVA:{self.member.member_id}:{self.member.qr_token}"
+
+        # Step 1: Verify API
+        response = self.client.post('/attendance/api/verify/', {'identifier': qr_payload})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertEqual(data['action'], 'READY_CHECK_IN')
+        self.assertEqual(data['member']['member_id'], self.member.member_id)
+        # Ensure no attendance record yet
+        self.assertEqual(Attendance.objects.filter(member=self.member).count(), 0)
+
+        # Step 2: Confirm API
+        response = self.client.post('/attendance/api/confirm/', {'identifier': qr_payload})
+        self.assertEqual(response.status_code, 200)
+        confirm_data = response.json()
+        self.assertTrue(confirm_data['success'])
+        self.assertEqual(confirm_data['action'], 'CHECK_IN')
+        self.assertEqual(Attendance.objects.filter(member=self.member).count(), 1)
+
+
+
