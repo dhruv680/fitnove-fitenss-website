@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Live QR Attendance Scanner – FitNova{% endblock %}
+{% block title %}Automatic QR Attendance Scanner – FitNova{% endblock %}
 
 {% block extra_head %}
 <!-- HTML5 QR Code Scanner Library -->
@@ -9,16 +9,20 @@
 <style>
   .fn-scanner-box {
     position: relative;
-    border-radius: 16px;
+    border-radius: 18px;
     overflow: hidden;
-    min-height: 340px;
+    min-height: 400px;
     background: #0B1120;
     border: 2px solid #1E293B;
     transition: border-color 0.25s ease, box-shadow 0.25s ease;
   }
   .fn-scanner-box.scan-success {
     border-color: #10B981 !important;
-    box-shadow: 0 0 32px rgba(16, 185, 129, 0.6) !important;
+    box-shadow: 0 0 40px rgba(16, 185, 129, 0.7) !important;
+  }
+  .fn-scanner-box.scan-error {
+    border-color: #EF4444 !important;
+    box-shadow: 0 0 40px rgba(239, 68, 68, 0.7) !important;
   }
   .fn-scanner-laser {
     position: absolute;
@@ -26,32 +30,110 @@
     right: 4%;
     height: 3px;
     background: linear-gradient(90deg, transparent 0%, #10B981 50%, transparent 100%);
-    box-shadow: 0 0 16px #10B981;
+    box-shadow: 0 0 18px #10B981;
     border-radius: 50%;
     z-index: 10;
     pointer-events: none;
-    animation: fnScanSweep 1.8s ease-in-out infinite;
+    animation: fnScanSweep 2s ease-in-out infinite;
   }
+  @keyframes fnScanSweep {
+    0% { top: 8%; opacity: 0.25; }
+    50% { top: 90%; opacity: 0.95; }
+    100% { top: 8%; opacity: 0.25; }
+  }
+  /* Floating Top Indicator inside Camera Viewport */
+  .fn-scanner-top-badge {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.78);
+    backdrop-filter: blur(8px);
+    color: #F8FAFC;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    z-index: 12;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  }
+  /* QR Guide Target Reticle */
+  .fn-target-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 240px;
+    height: 240px;
+    pointer-events: none;
+    z-index: 8;
+  }
+  .fn-qr-target-guide {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border: 2px dashed rgba(255, 255, 255, 0.35);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .fn-corner {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    border-color: #10B981;
+    border-style: solid;
+    pointer-events: none;
+  }
+  .fn-corner-tl { top: -2px; left: -2px; border-width: 4px 0 0 4px; border-top-left-radius: 8px; }
+  .fn-corner-tr { top: -2px; right: -2px; border-width: 4px 4px 0 0; border-top-right-radius: 8px; }
+  .fn-corner-bl { bottom: -2px; left: -2px; border-width: 0 0 4px 4px; border-bottom-left-radius: 8px; }
+  .fn-corner-br { bottom: -2px; right: -2px; border-width: 0 4px 4px 0; border-bottom-right-radius: 8px; }
+
+  .fn-qr-watermark {
+    color: rgba(255, 255, 255, 0.45);
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+
   #reader {
     width: 100% !important;
-    border-radius: 14px;
-    overflow: hidden;
+    min-height: 400px;
   }
   #reader video {
-    border-radius: 14px;
+    border-radius: 16px;
     object-fit: cover !important;
     width: 100% !important;
+    height: 100% !important;
   }
-  /* Remove html5-qrcode cropped center overlay so camera scans full frame directly */
   #reader svg {
     display: none !important;
   }
   .demo-member-card {
-    transition: transform 0.2s ease, border-color 0.2s ease;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   }
   .demo-member-card:hover {
     transform: translateY(-2px);
     border-color: #7657E8 !important;
+    box-shadow: 0 4px 12px rgba(118, 87, 232, 0.1);
+  }
+  .scan-cooldown-bar {
+    height: 4px;
+    background: #10B981;
+    width: 100%;
+    transition: width 3s linear;
   }
 </style>
 {% endblock %}
@@ -61,8 +143,8 @@
   <!-- Page Header -->
   <div class="col-12 d-flex flex-wrap align-items-center justify-content-between gap-3">
     <div>
-      <h2 class="fw-bold text-dark mb-1">Front Desk Attendance Kiosk</h2>
-      <p class="text-muted small mb-0">Scan athlete digital passes via live webcam, upload QR image, or input Member ID.</p>
+      <h2 class="fw-bold text-dark mb-1">Automatic Attendance Kiosk</h2>
+      <p class="text-muted small mb-0">Hands-free real-time QR attendance verification with autofocus & automatic check-in.</p>
     </div>
     <div class="d-flex align-items-center gap-2">
       <div class="d-flex align-items-center gap-3 px-3 py-2 bg-white rounded-3 border small shadow-sm">
@@ -72,7 +154,7 @@
         </div>
         <div class="border-start ps-3">
           <span class="text-muted">In Gym Now:</span>
-          <strong class="text-success fs-6 ms-1"><span class="fn-status-dot active"></span> {{ active_now }}</strong>
+          <strong class="text-success fs-6 ms-1"><span class="fn-status-dot active"></span> <span id="liveActiveNow">{{ active_now }}</span></strong>
         </div>
       </div>
       <a href="{% url 'attendance:attendance_list' %}" class="btn btn-fn-outline">
@@ -82,14 +164,14 @@
     </div>
   </div>
 
-  <!-- Main Left: Camera Viewfinder & Alternate Inputs -->
+  <!-- Main Left: Automatic Camera Viewfinder -->
   <div class="col-lg-7">
     <div class="fn-card p-4">
-      <!-- Camera Toolbar: Camera device switcher & status -->
+      <!-- Camera Controls Bar -->
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div class="d-flex align-items-center gap-2">
           <span class="fn-badge fn-badge-accent" id="scannerStatusBadge">
-            <i data-lucide="camera" style="width: 13px;"></i> Camera Standby
+            <span class="fn-status-dot active"></span> Auto-Starting Camera...
           </span>
           <select id="cameraSelect" class="fn-select py-1 px-2" style="font-size: 0.8rem; max-width: 200px;">
             <option value="">Detecting cameras...</option>
@@ -97,101 +179,158 @@
         </div>
 
         <div class="d-flex gap-2">
-          <!-- Start Camera Button -->
-          <button id="startScanBtn" class="btn btn-fn-primary btn-sm" onclick="startScanner()">
-            <i data-lucide="video" style="width: 14px;"></i> Start Camera
+          <!-- Switch Camera Button (Front/Rear Toggle) -->
+          <button type="button" class="btn btn-fn-outline btn-sm" id="switchCameraBtn" onclick="toggleCameraSwitch()" title="Switch Front/Rear Camera">
+            <i data-lucide="refresh-cw" style="width: 14px;"></i> Switch Camera
           </button>
           <!-- Stop Camera Button -->
-          <button id="stopScanBtn" class="btn btn-fn-outline btn-sm d-none" onclick="stopScanner()">
-            <i data-lucide="video-off" style="width: 14px;"></i> Stop Camera
+          <button id="stopScanBtn" class="btn btn-fn-outline btn-sm" onclick="stopScanner()">
+            <i data-lucide="video-off" style="width: 14px;"></i> Pause Camera
+          </button>
+          <!-- Start Camera Button (Hidden unless stopped) -->
+          <button id="startScanBtn" class="btn btn-fn-primary btn-sm d-none" onclick="startScanner()">
+            <i data-lucide="video" style="width: 14px;"></i> Resume Camera
           </button>
           <!-- Upload QR Image File Button -->
           <label class="btn btn-fn-outline btn-sm mb-0" style="cursor: pointer;" title="Scan from QR Code Image File">
-            <i data-lucide="upload" style="width: 14px;"></i> Upload QR Image
+            <i data-lucide="upload" style="width: 14px;"></i> Upload QR
             <input type="file" id="qrFileInput" accept="image/*" class="d-none" onchange="scanQRImageFile(this)">
           </label>
         </div>
       </div>
 
-      <!-- Camera Scanner Frame -->
+      <!-- Live Viewfinder Frame -->
       <div class="fn-scanner-box mb-3 d-flex align-items-center justify-content-center" id="scannerBox">
-        <div id="reader" style="width: 100%; min-height: 320px;"></div>
-        <div id="scannerLaser" class="fn-scanner-laser d-none"></div>
+        <div id="reader"></div>
+        <div id="scannerLaser" class="fn-scanner-laser"></div>
 
-        <!-- Camera Standby Overlay -->
-        <div id="cameraStandbyOverlay" class="text-center p-4" style="color: #94A3B8;">
-          <div class="mx-auto mb-3" style="width: 64px; height: 64px; background: rgba(255, 255, 255, 0.06); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #7657E8;">
-            <i data-lucide="scan-line" style="width: 32px; height: 32px;"></i>
+        <!-- Floating Live Scanning Hint -->
+        <div class="fn-scanner-top-badge" id="scannerTopBadge">
+          <i data-lucide="qr-code" style="width: 14px;"></i>
+          <span>Auto-Scan Active • Point QR Pass at Camera</span>
+        </div>
+
+        <!-- QR Guide Target Reticle Overlay -->
+        <div class="fn-target-overlay" id="targetOverlay">
+          <div class="fn-qr-target-guide">
+            <div class="fn-corner fn-corner-tl"></div>
+            <div class="fn-corner fn-corner-tr"></div>
+            <div class="fn-corner fn-corner-bl"></div>
+            <div class="fn-corner fn-corner-br"></div>
+            <div class="fn-qr-watermark">
+              <i data-lucide="scan" style="width: 38px; height: 38px; stroke-width: 1.5; margin-bottom: 4px;"></i>
+              <div>Point QR Here</div>
+            </div>
           </div>
-          <h5 class="fw-bold text-white mb-1">Webcam Ready to Connect</h5>
-          <p class="small text-white-50 mb-3" style="max-width: 340px; margin: 0 auto;">Click <strong>"Start Camera"</strong> to activate real-time QR pass optical scanning, or upload an image file.</p>
-          <button class="btn btn-fn-accent btn-sm px-4" onclick="startScanner()">
-            <i data-lucide="camera" style="width: 15px;"></i> Turn On Camera
+        </div>
+
+        <!-- Camera Permission Denied / Error Card (Hidden by default) -->
+        <div id="cameraErrorOverlay" class="d-none text-center p-4 position-absolute bg-dark text-white rounded-3 shadow" style="max-width: 440px; z-index: 20;">
+          <div class="mx-auto mb-3" style="width: 58px; height: 58px; background: rgba(239, 68, 68, 0.15); color: #EF4444; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="camera-off" style="width: 30px; height: 30px;"></i>
+          </div>
+          <h5 class="fw-bold text-white mb-2" id="cameraErrorTitle">Camera Permission Required</h5>
+          <p class="small text-white-50 mb-3" id="cameraErrorMessage">
+            Please allow camera access in your browser to enable automatic QR scanning. Click the camera icon in your browser URL bar and set it to <strong>"Always Allow"</strong>.
+          </p>
+          <button class="btn btn-fn-accent btn-sm px-4" onclick="retryCameraPermission()">
+            <i data-lucide="refresh-cw" style="width: 14px;"></i> Try Again / Grant Permission
           </button>
         </div>
       </div>
 
-      <!-- Manual Input Option -->
+      <!-- Quick Guidance Tip Banner -->
+      <div class="p-2 px-3 bg-light rounded-3 border mb-3 d-flex align-items-center gap-2 small text-muted">
+        <i data-lucide="sparkles" class="text-primary flex-shrink-0" style="width: 15px;"></i>
+        <span><strong>Hands-Free Automatic Scan:</strong> Simply show any athlete QR pass (on screen or printed) ~15–30 cm from camera. Full-frame optical detection marks attendance instantly.</span>
+      </div>
+
+      <!-- Manual Pass Input Option (Fallback) -->
       <div class="p-3 bg-light rounded-3 border">
-        <label class="fn-form-label mb-2">Manual Athlete Pass Check-In</label>
-        <div class="input-group">
-          <input type="text" id="manualInput" class="fn-input" placeholder="Enter Member ID (e.g. FN-2026-0001), phone, or username..." onkeydown="if(event.key==='Enter') submitManualScan()">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <label class="fn-form-label mb-0">Manual Member Pass ID / Phone Check-In</label>
+          <span class="text-muted small">Automatic optical scan is active above</span>
+        </div>
+        <div class="input-group mt-2">
+          <input type="text" id="manualInput" class="fn-input" placeholder="e.g. FN-2026-0001, phone (+1 555-0192), or username..." onkeydown="if(event.key==='Enter') submitManualScan()">
           <button class="btn btn-fn-accent px-4" type="button" onclick="submitManualScan()">
-            <i data-lucide="check" style="width: 15px;"></i> Check In / Out
+            <i data-lucide="check" style="width: 15px;"></i> Check In
           </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Main Right: Live Scan Result & Member Profile -->
+  <!-- Main Right: Instant Scan Result UI (Section 5) -->
   <div class="col-lg-5">
     <div class="fn-card h-100 p-4" id="scanResultCard">
-      <!-- Idle State -->
+      <!-- Idle Ready State -->
       <div class="py-5 text-center my-auto" id="idleState">
         <div class="mx-auto mb-3" style="width: 72px; height: 72px; background: rgba(118, 87, 232, 0.1); color: #7657E8; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-          <i data-lucide="qr-code" style="width: 36px; height: 36px;"></i>
+          <i data-lucide="scan-line" style="width: 36px; height: 36px;"></i>
         </div>
-        <h5 class="fw-bold text-dark mb-1">Waiting for QR Pass</h5>
-        <p class="text-muted small px-3 mb-0">Show a member's digital QR pass in front of the camera, pick an image file, or click any demo pass below.</p>
+        <h5 class="fw-bold text-dark mb-1">Scanner Active & Listening</h5>
+        <p class="text-muted small px-3 mb-0">Hold any athlete digital QR pass anywhere in front of the camera. Attendance will be verified and saved automatically!</p>
       </div>
 
-      <!-- Active Scan Result -->
+      <!-- Professional Scan Result UI (Section 5) -->
       <div class="d-none fn-animate-in" id="activeState">
-        <!-- Status Alert Banner -->
-        <div class="alert text-center fw-bold py-2 px-3 mb-3 rounded-3" id="scanAlert"></div>
+        <!-- Result Header Alert Banner -->
+        <div class="text-center py-2 px-3 mb-3 rounded-3 fw-bold" id="scanAlert">
+          <!-- Populated dynamically: SUCCESS – ATTENDANCE MARKED / BLOCKED -->
+        </div>
+
+        <!-- Cooldown Re-arm Progress Bar -->
+        <div class="bg-light rounded-pill overflow-hidden mb-3" style="height: 4px;">
+          <div id="cooldownBar" class="scan-cooldown-bar"></div>
+        </div>
 
         <!-- Member Profile Header -->
         <div class="text-center mb-3">
-          <div class="fn-avatar mx-auto mb-2" id="resAvatar" style="width: 72px; height: 72px; font-size: 1.6rem; border: 3px solid #E2E8F0;"></div>
-          <h4 class="fw-bold text-dark mb-1" id="resName"></h4>
-          <span class="badge bg-light text-dark font-monospace px-2 py-1 border" id="resMemberId"></span>
+          <div class="fn-avatar mx-auto mb-2" id="resAvatar" style="width: 76px; height: 76px; font-size: 1.8rem; border: 3px solid #E2E8F0;"></div>
+          <h4 class="fw-bold text-dark mb-1" id="resName">Athlete Name</h4>
+          <span class="badge bg-light text-dark font-monospace px-2 py-1 border" id="resMemberId">FN-2026-0001</span>
         </div>
 
         <!-- Details Grid -->
         <div class="p-3 bg-light rounded-3 small border mb-3">
           <div class="d-flex justify-content-between py-2 border-bottom">
-            <span class="text-muted">Subscription Plan:</span>
-            <span class="fw-bold text-dark" id="resPlan"></span>
+            <span class="text-muted">Membership Tier:</span>
+            <span class="fw-bold text-dark" id="resPlan">Active Plan</span>
+          </div>
+          <div class="d-flex justify-content-between py-2 border-bottom">
+            <span class="text-muted">Plan Expiry:</span>
+            <span class="fw-semibold text-dark" id="resExpiry">Valid</span>
+          </div>
+          <div class="d-flex justify-content-between py-2 border-bottom">
+            <span class="text-muted">Check-In Date:</span>
+            <span class="fw-semibold text-dark" id="resDate">Today</span>
           </div>
           <div class="d-flex justify-content-between py-2 border-bottom">
             <span class="text-muted">Check-In Timestamp:</span>
-            <span class="fw-semibold text-primary" id="resCheckIn"></span>
+            <span class="fw-semibold text-primary" id="resCheckIn">Just now</span>
           </div>
           <div class="d-flex justify-content-between py-2 border-bottom d-none" id="resCheckOutRow">
             <span class="text-muted">Check-Out Timestamp:</span>
-            <span class="fw-semibold text-success" id="resCheckOut"></span>
+            <span class="fw-semibold text-success" id="resCheckOut">—</span>
           </div>
           <div class="d-flex justify-content-between py-2 d-none" id="resDurationRow">
             <span class="text-muted">Session Duration:</span>
-            <span class="fw-bold text-dark" id="resDuration"></span>
+            <span class="fw-bold text-dark" id="resDuration">—</span>
+          </div>
+          <div class="d-flex justify-content-between py-2">
+            <span class="text-muted">Verification Status:</span>
+            <span id="resStatusBadge" class="fn-badge fn-badge-success">Verified</span>
           </div>
         </div>
 
-        <!-- Re-test helper for staff / testing -->
-        <div class="text-center pt-2">
-          <button type="button" class="btn btn-sm btn-outline-secondary" id="resetTestBtn" onclick="resetMemberAttendanceForTest()">
-            <i data-lucide="rotate-ccw" style="width: 13px;"></i> Reset Record for Re-testing
+        <!-- Auto-Resume Countdown Footer -->
+        <div class="d-flex justify-content-between align-items-center pt-2">
+          <span class="text-muted small" id="cooldownText">
+            <i data-lucide="clock" style="width: 13px;"></i> Ready for next athlete...
+          </span>
+          <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.75rem;" onclick="resetMemberAttendanceForTest()">
+            <i data-lucide="rotate-ccw" style="width: 12px;"></i> Clear for Re-test
           </button>
         </div>
       </div>
@@ -203,8 +342,8 @@
     <div class="fn-card p-4">
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div>
-          <h5 class="fn-card-title mb-0">Quick Test Athlete Passes</h5>
-          <div class="fn-card-subtitle">Click "Show QR Pass" to display the QR code on screen and test optical scanning, or click "Instant Check-In" to test directly.</div>
+          <h5 class="fn-card-title mb-0">Active Athlete Digital QR Passes</h5>
+          <div class="fn-card-subtitle">Show this pass to the camera, or open on a phone screen to test hands-free scanning.</div>
         </div>
       </div>
 
@@ -234,7 +373,7 @@
               </button>
               {% endif %}
               <button type="button" class="btn btn-sm btn-fn-accent py-1 px-2" style="font-size: 0.75rem;" onclick="handleScanPayload('FITNOVA:{{ m.member_id }}:{{ m.qr_token }}')">
-                <i data-lucide="zap" style="width: 13px;"></i> Test Scan
+                <i data-lucide="zap" style="width: 13px;"></i> Instant Check-In
               </button>
             </div>
           </div>
@@ -244,13 +383,13 @@
     </div>
   </div>
 
-  <!-- Section 4: Live Check-Ins Activity Feed on This Page -->
+  <!-- Section 6: Today's Live Attendance Dashboard Feed -->
   <div class="col-12">
     <div class="fn-card p-4">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
           <h5 class="fn-card-title mb-0">Today's Check-In Activity Feed</h5>
-          <div class="fn-card-subtitle">Real-time attendance logs recorded at the front desk today.</div>
+          <div class="fn-card-subtitle">Real-time attendance records stored in database for today.</div>
         </div>
         <span class="fn-badge fn-badge-success"><span class="fn-status-dot active"></span> Live Updating</span>
       </div>
@@ -295,7 +434,7 @@
               </td>
             </tr>
             {% empty %}
-            <tr id="emptyLogsRow"><td colspan="7" class="text-center text-muted py-3">No check-ins logged yet today. Use the scanner above to record attendance!</td></tr>
+            <tr id="emptyLogsRow"><td colspan="7" class="text-center text-muted py-3">No check-ins recorded yet today. Hold an athlete QR pass in front of the camera to begin!</td></tr>
             {% endfor %}
           </tbody>
         </table>
@@ -305,7 +444,7 @@
 </div>
 
 <!-- ==========================================================================
-     Digital QR Pass Preview Modal (Displays Large QR for Camera Testing)
+     Digital QR Pass Preview Modal (Displays Large QR for Screen-to-Camera Scan)
      ========================================================================== -->
 <div class="modal fade" id="qrPassModal" tabindex="-1" aria-labelledby="qrPassModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-sm">
@@ -316,12 +455,12 @@
       <div class="modal-body pt-0">
         <h5 class="fw-bold text-dark mb-1" id="modalMemberName">Athlete Name</h5>
         <div class="badge bg-light text-dark font-monospace border mb-3" id="modalMemberId">FN-2026-0001</div>
-        
+
         <div class="p-3 bg-white border rounded-4 d-inline-block shadow-sm mb-3">
           <img id="modalQrImage" src="" alt="Athlete Pass" style="width: 220px; height: 220px; object-fit: contain;">
         </div>
 
-        <p class="text-muted small mb-0">Point your phone to scan, or open this modal on another screen to test webcam optical recognition.</p>
+        <p class="text-muted small mb-0">Show this QR code to the laptop webcam or phone camera to test automatic optical check-in.</p>
       </div>
     </div>
   </div>
@@ -336,14 +475,25 @@
   let html5QrcodeScanner = null;
   let isProcessing = false;
   let currentScannedMemberId = null;
+  let availableCameras = [];
+  let currentCameraIndex = 0;
+  let autoResumeTimer = null;
 
-  // Initialize camera selector on page load
+  // Auto-Start on Page Load (Requirement 1)
   document.addEventListener('DOMContentLoaded', function () {
-    initCameraSelection();
+    initAndAutoStartScanner();
+  });
+
+  // Release camera resources when navigating away (Requirement 8)
+  window.addEventListener('beforeunload', function () {
+    stopScanner();
+  });
+  window.addEventListener('pagehide', function () {
+    stopScanner();
   });
 
   /* --------------------------------------------------------------------------
-     1. Web Audio API Scanner Chime Synthesizer
+     1. Web Audio API Chime Synthesizer
      -------------------------------------------------------------------------- */
   function playScanSound(success = true) {
     try {
@@ -357,7 +507,7 @@
       gain.connect(ctx.destination);
 
       if (success) {
-        // High-pitched pleasant gym kiosk beep (880Hz -> 1320Hz)
+        // High-pitched pleasant gym kiosk chime (880Hz -> 1320Hz)
         osc.type = 'sine';
         osc.frequency.setValueAtTime(880, ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.12);
@@ -366,74 +516,118 @@
         osc.start(ctx.currentTime);
         osc.stop(ctx.currentTime + 0.22);
       } else {
-        // Low double-buzz alert for warning / duplicate
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(240, ctx.currentTime);
+        // Low double-buzz alert for warning / error
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, ctx.currentTime);
         gain.gain.setValueAtTime(0.3, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.28);
         osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.25);
+        osc.stop(ctx.currentTime + 0.28);
       }
     } catch (e) {
-      console.warn('Audio feedback blocked by browser autoplay policy until interaction', e);
+      console.warn('AudioContext feedback waiting for user gesture', e);
     }
   }
 
   /* --------------------------------------------------------------------------
-     2. Camera Selection & Hardware Discovery
+     2. Initialize Cameras & Auto-Start (Requirement 1)
      -------------------------------------------------------------------------- */
-  function initCameraSelection() {
+  function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  }
+
+  function initAndAutoStartScanner() {
     if (typeof Html5Qrcode === 'undefined') return;
 
     Html5Qrcode.getCameras().then(devices => {
+      availableCameras = devices || [];
       const select = document.getElementById('cameraSelect');
-      if (devices && devices.length) {
+
+      if (devices && devices.length > 0) {
         select.innerHTML = '';
+        let preferredIndex = 0;
+
         devices.forEach((device, index) => {
           const opt = document.createElement('option');
           opt.value = device.id;
           opt.text = device.label || `Camera ${index + 1}`;
           select.appendChild(opt);
+
+          // On mobile prefer rear/back camera, on desktop prefer webcam
+          const lbl = (device.label || '').toLowerCase();
+          if (isMobileDevice() && (lbl.includes('back') || lbl.includes('rear') || lbl.includes('environment'))) {
+            preferredIndex = index;
+          }
         });
 
-        // Auto restart if user switches camera dropdown
+        currentCameraIndex = preferredIndex;
+        select.selectedIndex = preferredIndex;
+
+        // Auto change listener
         select.onchange = function () {
-          if (html5QrcodeScanner && html5QrcodeScanner.isScanning) {
-            startScanner();
-          }
+          currentCameraIndex = select.selectedIndex;
+          startScanner();
         };
+
+        // Start scanning automatically immediately
+        startScanner();
       } else {
-        select.innerHTML = '<option value="">Default Webcam</option>';
+        // If no enumerated devices, start with facingMode constraint
+        startScanner();
       }
     }).catch(err => {
-      const select = document.getElementById('cameraSelect');
-      if (select) select.innerHTML = '<option value="">Default Webcam</option>';
+      console.warn('Camera enumeration error, attempting direct start:', err);
+      startScanner();
     });
   }
 
+  function toggleCameraSwitch() {
+    if (availableCameras.length > 1) {
+      currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
+      const select = document.getElementById('cameraSelect');
+      select.selectedIndex = currentCameraIndex;
+      startScanner();
+    } else {
+      if (window.showFitNovaToast) {
+        window.showFitNovaToast("Only one camera device detected on this system.", "info");
+      }
+    }
+  }
+
   /* --------------------------------------------------------------------------
-     3. Start & Stop Live Camera Scanner (FULL-FRAME DIRECT SCANNING)
+     3. Start Continuous Scanner with Autofocus (Requirement 1 & 2)
      -------------------------------------------------------------------------- */
   function startScanner() {
     if (html5QrcodeScanner) {
       try { html5QrcodeScanner.stop(); } catch (e) {}
     }
 
-    const standbyOverlay = document.getElementById('cameraStandbyOverlay');
-    if (standbyOverlay) standbyOverlay.classList.add('d-none');
+    const errorOverlay = document.getElementById('cameraErrorOverlay');
+    if (errorOverlay) errorOverlay.classList.add('d-none');
 
-    const selectedCameraId = document.getElementById('cameraSelect').value;
-    const cameraConfig = selectedCameraId ? { deviceId: { exact: selectedCameraId } } : { facingMode: "user" };
+    const select = document.getElementById('cameraSelect');
+    const selectedCameraId = select && select.value ? select.value : null;
+
+    // Prefer back camera on mobile, or explicit camera ID
+    let cameraConfig;
+    if (selectedCameraId) {
+      cameraConfig = { deviceId: { exact: selectedCameraId } };
+    } else if (isMobileDevice()) {
+      cameraConfig = { facingMode: "environment" };
+    } else {
+      cameraConfig = { facingMode: "user" };
+    }
 
     html5QrcodeScanner = new Html5Qrcode("reader");
 
-    // FULL FRAME DIRECT SCAN CONFIGURATION (No restrictive box cropping)
+    // High-performance Full-frame Autofocus Config (Zero Aspect Distortion)
     const scanConfig = {
-      fps: 25, // High scanning frequency (25 frames/second)
-      aspectRatio: 1.333333,
+      fps: 15, // Optimal 15 fps for real-time decoding without CPU throttling
       disableFlip: false,
-      experimentalFeatures: {
-        useBarCodeDetectorIfSupported: true // Native hardware GPU BarcodeDetector acceleration
+      videoConstraints: {
+        width: { min: 640, ideal: 1280 },
+        height: { min: 480, ideal: 720 },
+        advanced: [{ focusMode: "continuous" }]
       }
     };
 
@@ -441,31 +635,39 @@
       cameraConfig,
       scanConfig,
       (decodedText) => {
+        // Automatically detect QR codes (Requirement 2 & 3)
         if (!isProcessing) {
           isProcessing = true;
-          // Visual Green Flash on whole scanner frame
-          const box = document.getElementById('scannerBox');
-          if (box) {
-            box.classList.add('scan-success');
-            setTimeout(() => box.classList.remove('scan-success'), 900);
-          }
           handleScanPayload(decodedText);
         }
       },
-      (error) => {
+      (errorMessage) => {
         // Continuous search loop
       }
     ).then(() => {
       document.getElementById('startScanBtn').classList.add('d-none');
       document.getElementById('stopScanBtn').classList.remove('d-none');
       document.getElementById('scannerLaser').classList.remove('d-none');
+      document.getElementById('targetOverlay').classList.remove('d-none');
+      const topBadge = document.getElementById('scannerTopBadge');
+      if (topBadge) topBadge.classList.remove('d-none');
+
       const badge = document.getElementById('scannerStatusBadge');
       if (badge) {
         badge.className = "fn-badge fn-badge-success";
-        badge.innerHTML = `<span class="fn-status-dot active"></span> Full-Frame Live Scanning`;
+        badge.innerHTML = `<span class="fn-status-dot active"></span> Auto-Scanning Live`;
       }
     }).catch(err => {
-      // Fallback: try default facingMode
+      handleCameraFailure(err, scanConfig);
+    });
+  }
+
+  function handleCameraFailure(err, scanConfig) {
+    console.error('Camera start failed:', err);
+    const errStr = (err ? err.toString() : '').toLowerCase();
+
+    // If environment camera failed on desktop, fallback to user camera
+    if (errStr.includes('overconstrained') || errStr.includes('facingmode') || errStr.includes('notfound')) {
       html5QrcodeScanner.start(
         { facingMode: "user" },
         scanConfig,
@@ -480,13 +682,46 @@
         document.getElementById('startScanBtn').classList.add('d-none');
         document.getElementById('stopScanBtn').classList.remove('d-none');
         document.getElementById('scannerLaser').classList.remove('d-none');
-      }).catch(finalErr => {
-        if (standbyOverlay) standbyOverlay.classList.remove('d-none');
-        if (window.showFitNovaToast) {
-          window.showFitNovaToast("Camera access error: " + finalErr, "danger");
-        }
+        return;
+      }).catch(fallbackErr => {
+        showCameraPermissionError(fallbackErr);
       });
-    });
+    } else {
+      showCameraPermissionError(err);
+    }
+  }
+
+  function showCameraPermissionError(err) {
+    const errorOverlay = document.getElementById('cameraErrorOverlay');
+    const laser = document.getElementById('scannerLaser');
+    const target = document.getElementById('targetOverlay');
+    const topBadge = document.getElementById('scannerTopBadge');
+    if (laser) laser.classList.add('d-none');
+    if (target) target.classList.add('d-none');
+    if (topBadge) topBadge.classList.add('d-none');
+
+    if (errorOverlay) {
+      errorOverlay.classList.remove('d-none');
+      const errStr = (err ? err.toString() : '').toLowerCase();
+      if (errStr.includes('notallowed') || errStr.includes('permission')) {
+        document.getElementById('cameraErrorTitle').textContent = "Camera Permission Denied";
+        document.getElementById('cameraErrorMessage').innerHTML = "Camera permission was blocked. Please click the camera icon in your browser address bar and select <strong>'Allow'</strong>, then click Try Again.";
+      } else {
+        document.getElementById('cameraErrorTitle').textContent = "Camera Unavailable";
+        document.getElementById('cameraErrorMessage').textContent = "The camera could not be started or is in use by another application. Please close other camera apps and retry.";
+      }
+    }
+
+    const badge = document.getElementById('scannerStatusBadge');
+    if (badge) {
+      badge.className = "fn-badge fn-badge-danger";
+      badge.innerHTML = `<i data-lucide="alert-circle" style="width: 13px;"></i> Camera Error`;
+      if (typeof initLucide === 'function') initLucide();
+    }
+  }
+
+  function retryCameraPermission() {
+    startScanner();
   }
 
   function stopScanner() {
@@ -495,12 +730,14 @@
         document.getElementById('startScanBtn').classList.remove('d-none');
         document.getElementById('stopScanBtn').classList.add('d-none');
         document.getElementById('scannerLaser').classList.add('d-none');
-        const standbyOverlay = document.getElementById('cameraStandbyOverlay');
-        if (standbyOverlay) standbyOverlay.classList.remove('d-none');
+        document.getElementById('targetOverlay').classList.add('d-none');
+        const topBadge = document.getElementById('scannerTopBadge');
+        if (topBadge) topBadge.classList.add('d-none');
+
         const badge = document.getElementById('scannerStatusBadge');
         if (badge) {
           badge.className = "fn-badge fn-badge-accent";
-          badge.innerHTML = `<i data-lucide="camera" style="width: 13px;"></i> Camera Standby`;
+          badge.innerHTML = `<i data-lucide="video-off" style="width: 13px;"></i> Camera Paused`;
           if (typeof initLucide === 'function') initLucide();
         }
       }).catch(err => console.log(err));
@@ -517,7 +754,6 @@
     const imageScanner = new Html5Qrcode("qrImageReaderTemp");
     imageScanner.scanFile(file, true)
       .then(decodedText => {
-        playScanSound(true);
         handleScanPayload(decodedText);
         imageScanner.clear();
         input.value = '';
@@ -525,7 +761,7 @@
       .catch(err => {
         playScanSound(false);
         if (window.showFitNovaToast) {
-          window.showFitNovaToast("No QR pass found in uploaded image. Please upload a clear photo of the pass.", "danger");
+          window.showFitNovaToast("No valid QR pass detected in image file. Please upload a clear photo.", "danger");
         }
         imageScanner.clear();
         input.value = '';
@@ -544,7 +780,7 @@
   }
 
   /* --------------------------------------------------------------------------
-     6. Payload Verification & API Call
+     6. Instant Attendance Marking & Backend Verification (Requirement 3 & 4)
      -------------------------------------------------------------------------- */
   function handleScanPayload(payload) {
     const formData = new FormData();
@@ -557,6 +793,14 @@
     })
     .then(res => res.json())
     .then(data => {
+      // Visual Feedback & Audio
+      const box = document.getElementById('scannerBox');
+      if (box) {
+        box.classList.remove('scan-success', 'scan-error');
+        box.classList.add(data.success ? 'scan-success' : 'scan-error');
+        setTimeout(() => box.classList.remove('scan-success', 'scan-error'), 1200);
+      }
+
       playScanSound(data.success);
       displayScanResult(data);
 
@@ -564,12 +808,17 @@
         window.showFitNovaToast(data.message, data.success ? "success" : "danger");
       }
 
+      // Prepend to Today's Live Table and Update KPI counters (Requirement 6)
       if (data.success && data.member) {
         prependAttendanceRow(data);
       }
 
-      // Allow next scan after 2.5 seconds cooldown
-      setTimeout(() => { isProcessing = false; }, 2500);
+      if (data.stats) {
+        updateAttendanceStats(data.stats);
+      }
+
+      // Auto-Resume Cooldown Countdown (Requirement 2 & 5)
+      triggerAutoResumeCooldown();
     })
     .catch(err => {
       isProcessing = false;
@@ -581,7 +830,7 @@
   }
 
   /* --------------------------------------------------------------------------
-     7. Render Result Display Card
+     7. Display Professional Scan Result UI (Requirement 5)
      -------------------------------------------------------------------------- */
   function displayScanResult(data) {
     document.getElementById('idleState').classList.add('d-none');
@@ -590,13 +839,13 @@
 
     const alertBox = document.getElementById('scanAlert');
     if (data.success) {
-      alertBox.className = "alert alert-success text-center fw-bold py-2 px-3 mb-3";
-      alertBox.textContent = data.message;
+      alertBox.className = "alert alert-success text-center fw-bold py-2 px-3 mb-2 shadow-sm";
+      alertBox.innerHTML = `<i data-lucide="check-circle" style="width: 16px; margin-top: -2px;"></i> ${data.message}`;
     } else {
       alertBox.className = (data.action === 'DUPLICATE')
-        ? "alert alert-warning text-center fw-bold py-2 px-3 mb-3"
-        : "alert alert-danger text-center fw-bold py-2 px-3 mb-3";
-      alertBox.textContent = data.message;
+        ? "alert alert-warning text-center fw-bold py-2 px-3 mb-2 shadow-sm"
+        : "alert alert-danger text-center fw-bold py-2 px-3 mb-2 shadow-sm";
+      alertBox.innerHTML = `<i data-lucide="alert-triangle" style="width: 16px; margin-top: -2px;"></i> ${data.message}`;
     }
 
     if (data.member) {
@@ -604,6 +853,8 @@
       document.getElementById('resName').textContent = data.member.name;
       document.getElementById('resMemberId').textContent = data.member.member_id;
       document.getElementById('resPlan').textContent = data.member.plan;
+      document.getElementById('resExpiry').textContent = data.member.plan_expiry || '—';
+      document.getElementById('resDate').textContent = data.member.check_in_date || 'Today';
       document.getElementById('resCheckIn').textContent = data.member.check_in_time || 'Just now';
 
       const avatar = document.getElementById('resAvatar');
@@ -626,11 +877,59 @@
       } else {
         document.getElementById('resDurationRow').classList.add('d-none');
       }
+
+      const statusBadge = document.getElementById('resStatusBadge');
+      if (data.success) {
+        statusBadge.className = "fn-badge fn-badge-success";
+        statusBadge.textContent = "Attendance Verified";
+      } else {
+        statusBadge.className = "fn-badge fn-badge-danger";
+        statusBadge.textContent = data.action || "Access Blocked";
+      }
     }
+
+    if (typeof initLucide === 'function') initLucide();
   }
 
   /* --------------------------------------------------------------------------
-     8. Live Prepend Attendance Record to Table
+     8. Auto-Resume Countdown Engine (Requirement 2 & 5)
+     -------------------------------------------------------------------------- */
+  function triggerAutoResumeCooldown() {
+    const bar = document.getElementById('cooldownBar');
+    const text = document.getElementById('cooldownText');
+    if (autoResumeTimer) clearTimeout(autoResumeTimer);
+
+    if (bar) {
+      bar.style.transition = 'none';
+      bar.style.width = '100%';
+      setTimeout(() => {
+        bar.style.transition = 'width 2.8s linear';
+        bar.style.width = '0%';
+      }, 50);
+    }
+
+    let remainingSeconds = 3;
+    const interval = setInterval(() => {
+      remainingSeconds--;
+      if (text && remainingSeconds > 0) {
+        text.innerHTML = `<i data-lucide="clock" style="width: 13px;"></i> Ready for next athlete in ${remainingSeconds}s...`;
+        if (typeof initLucide === 'function') initLucide();
+      } else {
+        clearInterval(interval);
+      }
+    }, 1000);
+
+    autoResumeTimer = setTimeout(() => {
+      isProcessing = false;
+      if (text) {
+        text.innerHTML = `<span class="text-success"><i data-lucide="check" style="width: 13px;"></i> Scanner ready for next athlete</span>`;
+        if (typeof initLucide === 'function') initLucide();
+      }
+    }, 3000);
+  }
+
+  /* --------------------------------------------------------------------------
+     9. Live Prepend Attendance Record & KPI Update (Requirement 6)
      -------------------------------------------------------------------------- */
   function prependAttendanceRow(data) {
     const tableBody = document.getElementById('todayAttendanceTableBody');
@@ -664,17 +963,21 @@
     `;
 
     tableBody.insertBefore(newTr, tableBody.firstChild);
+  }
 
-    // Increment today's live counter
-    const counterEl = document.getElementById('liveTodayCount');
-    if (counterEl && data.action === 'CHECK_IN') {
-      const current = parseInt(counterEl.innerText) || 0;
-      counterEl.innerText = current + 1;
+  function updateAttendanceStats(stats) {
+    const todayCountEl = document.getElementById('liveTodayCount');
+    const activeNowEl = document.getElementById('liveActiveNow');
+    if (todayCountEl && stats.today_total !== undefined) {
+      todayCountEl.innerText = stats.today_total;
+    }
+    if (activeNowEl && stats.active_now !== undefined) {
+      activeNowEl.innerText = stats.active_now;
     }
   }
 
   /* --------------------------------------------------------------------------
-     9. Reset Attendance for Testing Helper
+     10. Reset Record for Testing Helper
      -------------------------------------------------------------------------- */
   function resetMemberAttendanceForTest() {
     if (!currentScannedMemberId) return;
@@ -693,12 +996,13 @@
         if (window.showFitNovaToast) window.showFitNovaToast(data.message, 'success');
         document.getElementById('activeState').classList.add('d-none');
         document.getElementById('idleState').classList.remove('d-none');
+        isProcessing = false;
       }
     });
   }
 
   /* --------------------------------------------------------------------------
-     10. Show Digital QR Pass Modal
+     11. Digital QR Pass Modal Display Helper
      -------------------------------------------------------------------------- */
   function showQrModal(name, id, qrUrl, plan) {
     document.getElementById('modalMemberName').textContent = name;

@@ -31,7 +31,10 @@ class AttendanceService:
             tok = fn_token_match.group(2).strip() if fn_token_match.group(2) else None
             if tok:
                 member = Member.objects.filter(member_id__iexact=mid, qr_token=tok).select_related('user', 'organization', 'branch').first()
-            if not member:
+                if not member:
+                    # Token was provided but failed verification -> Invalid / forged QR token!
+                    return False, "Invalid QR Code: Security token verification failed.", None, "INVALID_QR"
+            else:
                 member = Member.objects.filter(member_id__iexact=mid).select_related('user', 'organization', 'branch').first()
 
         # 2. Check FN-YYYY-XXXX pattern anywhere in string
@@ -49,12 +52,20 @@ class AttendanceService:
             member = Member.objects.filter(user__username__iexact=clean_input).select_related('user', 'organization', 'branch').first()
 
         if not member:
-            return False, "Member not found. Please verify member ID or QR pass.", None, "NOT_FOUND"
+            return False, "Invalid QR pass: Member record not found in database.", None, "NOT_FOUND"
 
-        # Validate Membership
+        # Check account status
+        if member.status == Member.Status.INACTIVE:
+            dummy_att = Attendance(member=member, date=today)
+            return False, f"Account for {member.full_name} is marked INACTIVE. Check-in blocked.", dummy_att, "INACTIVE"
+
+        # Validate Membership Expiry
         if not member.is_membership_active:
             dummy_att = Attendance(member=member, date=today)
-            return False, f"Membership expired or inactive for {member.full_name}. Please renew membership.", dummy_att, "EXPIRED"
+            expiry_str = ""
+            if member.current_membership and member.current_membership.end_date:
+                expiry_str = f" (Expired on {member.current_membership.end_date.strftime('%b %d, %Y')})"
+            return False, f"Membership expired{expiry_str} for {member.full_name}. Check-in blocked, please renew.", dummy_att, "EXPIRED"
 
         # Check existing attendance for today
         existing = Attendance.objects.filter(member=member, date=today).first()
@@ -67,9 +78,9 @@ class AttendanceService:
                 existing.status = Attendance.Status.CHECKED_OUT
                 existing.save(update_fields=['check_out_time', 'status'])
                 duration = existing.duration_minutes
-                return True, f"Check-out successful for {member.full_name}! Workout duration: {duration} mins.", existing, "CHECK_OUT"
+                return True, f"SUCCESS – CHECK-OUT RECORDED! Goodbye {member.full_name}. Workout duration: {duration} mins.", existing, "CHECK_OUT"
             else:
-                return False, f"{member.full_name} has already completed attendance today ({existing.check_in_time.strftime('%I:%M %p')} - {existing.check_out_time.strftime('%I:%M %p') if existing.check_out_time else ''}). Duplicate check-in prevented.", existing, "DUPLICATE"
+                return False, f"Already checked in today: {member.full_name} has already completed attendance today for {today.strftime('%b %d, %Y')}.", existing, "DUPLICATE"
 
         # Create New Check-in
         attendance = Attendance.objects.create(
@@ -81,5 +92,5 @@ class AttendanceService:
             verified_by=verified_by,
             status=Attendance.Status.PRESENT
         )
-        return True, f"Check-in successful! Welcome {member.full_name} to FitNova.", attendance, "CHECK_IN"
+        return True, f"SUCCESS – ATTENDANCE MARKED! Welcome {member.full_name} to FitNova.", attendance, "CHECK_IN"
 

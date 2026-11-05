@@ -100,22 +100,39 @@ def api_scan_qr(request):
         member_data = None
         if attendance and attendance.member:
             member = attendance.member
+            curr_sub = member.current_membership
+            today = timezone.now().date()
             member_data = {
                 'id': member.id,
                 'name': member.full_name,
                 'member_id': member.member_id,
-                'plan': member.current_membership.plan.name if member.current_membership else 'No Plan',
+                'plan': curr_sub.plan.name if curr_sub else 'No Plan Assigned',
+                'plan_expiry': curr_sub.end_date.strftime('%b %d, %Y') if curr_sub and curr_sub.end_date else '—',
                 'photo_url': member.user.profile_picture.url if member.user.profile_picture else None,
+                'check_in_date': today.strftime('%b %d, %Y'),
                 'check_in_time': attendance.check_in_time.strftime('%I:%M %p') if attendance.check_in_time else '',
                 'check_out_time': attendance.check_out_time.strftime('%I:%M %p') if attendance.check_out_time else '',
                 'duration': f"{attendance.duration_minutes} mins" if attendance.duration_minutes else None,
+                'status': member.status,
+                'status_display': member.get_status_display(),
             }
+
+        # Updated real-time analytics
+        today_total_qs = AttendanceService.get_scoped_attendance(request.user).filter(date=timezone.now().date())
+        today_total = today_total_qs.count()
+        active_now = today_total_qs.filter(status=Attendance.Status.PRESENT, check_out_time__isnull=True).count()
+        completed_today = today_total_qs.filter(status=Attendance.Status.CHECKED_OUT).count()
 
         return JsonResponse({
             'success': success,
             'message': message,
             'action': action_type,
-            'member': member_data
+            'member': member_data,
+            'stats': {
+                'today_total': today_total,
+                'active_now': active_now,
+                'completed_today': completed_today,
+            }
         })
 
     return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
