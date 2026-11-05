@@ -32,9 +32,9 @@
 </head>
 <body>
 
-<div class="fn-auth-card">
+<div class="fn-auth-card fn-animate-in">
   <div class="text-center mb-4">
-    <div class="d-inline-flex align-items-center justify-content-center p-3 rounded-4 mb-3" style="background: linear-gradient(135deg, #7657E8 0%, #172554 100%); color: white; width: 64px; height: 64px;">
+    <div class="d-inline-flex align-items-center justify-content-center p-3 rounded-4 mb-3" style="background: linear-gradient(135deg, #7657E8 0%, #172554 100%); color: white; width: 64px; height: 64px; box-shadow: 0 10px 25px -5px rgba(118, 87, 232, 0.4);">
       <i data-lucide="dumbbell" style="width: 32px; height: 32px;"></i>
     </div>
     <h3 class="fw-bold text-dark mb-1">FitNova SaaS</h3>
@@ -43,7 +43,7 @@
 
   {% if messages %}
     {% for message in messages %}
-    <div class="alert alert-{{ message.tags|default:'info' }} py-2 px-3 small rounded-3 mb-3" role="alert">
+    <div class="alert alert-{{ message.tags|default:'info' }} py-2 px-3 small rounded-3 mb-3 fn-animate-in" role="alert">
       {{ message }}
     </div>
     {% endfor %}
@@ -63,7 +63,7 @@
       <input type="password" name="password" id="authPassword" class="fn-input mt-1" placeholder="••••••••" required>
     </div>
 
-    <button type="submit" class="btn btn-fn-accent w-100 py-2 mt-2 justify-content-center">
+    <button type="submit" class="btn btn-fn-accent w-100 py-2 mt-2 justify-content-center shadow-sm">
       <i data-lucide="log-in" style="width: 18px;"></i>
       <span>Sign In to Dashboard</span>
     </button>
@@ -88,6 +88,7 @@
   </div>
 </div>
 
+<script src="{% static 'js/fitnova.js' %}"></script>
 <script>
   if (typeof lucide !== 'undefined') {
     lucide.createIcons();

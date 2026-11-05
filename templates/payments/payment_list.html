@@ -17,26 +17,26 @@
     </div>
   </div>
 
-  <div class="col-md-6">
-    <div class="fn-card p-3 d-flex align-items-center gap-3">
+  <div class="col-md-6 fn-animate-in fn-delay-1">
+    <div class="fn-stat-card p-3 d-flex align-items-center gap-3">
       <div class="fn-stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.12); color: #10B981;">
         <i data-lucide="dollar-sign" style="width: 22px;"></i>
       </div>
       <div>
         <div class="text-muted small fw-semibold text-uppercase">Total Settled Revenue</div>
-        <div class="fs-4 fw-bold text-success">{{ current_org.currency|default:'$' }}{{ total_revenue|floatformat:2 }}</div>
+        <div class="fs-4 fw-bold text-success fn-counter">{{ current_org.currency|default:'$' }}{{ total_revenue|floatformat:2 }}</div>
       </div>
     </div>
   </div>
 
-  <div class="col-md-6">
-    <div class="fn-card p-3 d-flex align-items-center gap-3">
+  <div class="col-md-6 fn-animate-in fn-delay-2">
+    <div class="fn-stat-card p-3 d-flex align-items-center gap-3">
       <div class="fn-stat-icon-wrapper" style="background: rgba(118, 87, 232, 0.12); color: #7657E8;">
         <i data-lucide="receipt" style="width: 22px;"></i>
       </div>
       <div>
         <div class="text-muted small fw-semibold text-uppercase">Processed Transactions</div>
-        <div class="fs-4 fw-bold" style="color: #7657E8;">{{ total_payments }}</div>
+        <div class="fs-4 fw-bold fn-counter" style="color: #7657E8;">{{ total_payments }}</div>
       </div>
     </div>
   </div>

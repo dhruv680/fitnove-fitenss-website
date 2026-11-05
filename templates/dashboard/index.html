@@ -30,12 +30,12 @@
 
   <!-- Section 3: 8 Professional Dashboard Cards -->
   <!-- 1. Total Members -->
-  <div class="col-xl-3 col-md-6">
+  <div class="col-xl-3 col-md-6 fn-animate-in fn-delay-1">
     <div class="fn-stat-card">
       <div class="fn-stat-top">
         <div>
           <div class="fn-stat-label">Total Members</div>
-          <div class="fn-stat-value">{{ total_members }}</div>
+          <div class="fn-stat-value fn-counter">{{ total_members }}</div>
         </div>
         <div class="fn-stat-icon-wrapper" style="background: rgba(23, 37, 84, 0.08); color: #172554;">
           <i data-lucide="users" style="width: 24px; height: 24px;"></i>
@@ -51,12 +51,15 @@
   </div>
 
   <!-- 2. Active Members -->
-  <div class="col-xl-3 col-md-6">
+  <div class="col-xl-3 col-md-6 fn-animate-in fn-delay-1">
     <div class="fn-stat-card">
       <div class="fn-stat-top">
         <div>
           <div class="fn-stat-label">Active Members</div>
-          <div class="fn-stat-value text-success">{{ active_members }}</div>
+          <div class="fn-stat-value text-success d-flex align-items-center gap-2">
+            <span class="fn-status-dot active"></span>
+            <span class="fn-counter">{{ active_members }}</span>
+          </div>
         </div>
         <div class="fn-stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.12); color: #10B981;">
           <i data-lucide="user-check" style="width: 24px; height: 24px;"></i>
@@ -69,12 +72,12 @@
   </div>
 
   <!-- 3. New Registrations -->
-  <div class="col-xl-3 col-md-6">
+  <div class="col-xl-3 col-md-6 fn-animate-in fn-delay-2">
     <div class="fn-stat-card">
       <div class="fn-stat-top">
         <div>
           <div class="fn-stat-label">New Registrations</div>
-          <div class="fn-stat-value" style="color: #7657E8;">{{ new_registrations }}</div>
+          <div class="fn-stat-value fn-counter" style="color: #7657E8;">{{ new_registrations }}</div>
         </div>
         <div class="fn-stat-icon-wrapper" style="background: rgba(118, 87, 232, 0.12); color: #7657E8;">
           <i data-lucide="sparkles" style="width: 24px; height: 24px;"></i>
@@ -87,12 +90,12 @@
   </div>
 
   <!-- 4. Total Revenue -->
-  <div class="col-xl-3 col-md-6">
+  <div class="col-xl-3 col-md-6 fn-animate-in fn-delay-2">
     <div class="fn-stat-card">
       <div class="fn-stat-top">
         <div>
           <div class="fn-stat-label">Total Revenue</div>
-          <div class="fn-stat-value">{{ currency }}{{ total_revenue|floatformat:0 }}</div>
+          <div class="fn-stat-value fn-counter">{{ currency }}{{ total_revenue|floatformat:0 }}</div>
         </div>
         <div class="fn-stat-icon-wrapper" style="background: rgba(59, 130, 246, 0.12); color: #3B82F6;">
           <i data-lucide="dollar-sign" style="width: 24px; height: 24px;"></i>
@@ -106,12 +109,12 @@
   </div>
 
   <!-- 5. Pending Payments -->
-  <div class="col-xl-3 col-md-6">
+  <div class="col-xl-3 col-md-6 fn-animate-in fn-delay-3">
     <div class="fn-stat-card">
       <div class="fn-stat-top">
         <div>
           <div class="fn-stat-label">Pending Payments</div>
-          <div class="fn-stat-value text-warning">{{ pending_payments }}</div>
+          <div class="fn-stat-value text-warning fn-counter">{{ pending_payments }}</div>
         </div>
         <div class="fn-stat-icon-wrapper" style="background: rgba(245, 158, 11, 0.12); color: #F59E0B;">
           <i data-lucide="clock" style="width: 24px; height: 24px;"></i>
@@ -124,12 +127,12 @@
   </div>
 
   <!-- 6. Expiring Memberships -->
-  <div class="col-xl-3 col-md-6">
+  <div class="col-xl-3 col-md-6 fn-animate-in fn-delay-3">
     <div class="fn-stat-card">
       <div class="fn-stat-top">
         <div>
           <div class="fn-stat-label">Expiring Soon</div>
-          <div class="fn-stat-value text-danger">{{ expiring_memberships }}</div>
+          <div class="fn-stat-value text-danger fn-counter">{{ expiring_memberships }}</div>
         </div>
         <div class="fn-stat-icon-wrapper" style="background: rgba(239, 68, 68, 0.12); color: #EF4444;">
           <i data-lucide="alert-triangle" style="width: 24px; height: 24px;"></i>
@@ -142,12 +145,15 @@
   </div>
 
   <!-- 7. Today's Attendance -->
-  <div class="col-xl-3 col-md-6">
+  <div class="col-xl-3 col-md-6 fn-animate-in fn-delay-4">
     <div class="fn-stat-card">
       <div class="fn-stat-top">
         <div>
           <div class="fn-stat-label">Today's Attendance</div>
-          <div class="fn-stat-value" style="color: #059669;">{{ today_attendance }}</div>
+          <div class="fn-stat-value d-flex align-items-center gap-2" style="color: #059669;">
+            <span class="fn-status-dot active"></span>
+            <span class="fn-counter">{{ today_attendance }}</span>
+          </div>
         </div>
         <div class="fn-stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.12); color: #10B981;">
           <i data-lucide="scan" style="width: 24px; height: 24px;"></i>
@@ -160,12 +166,12 @@
   </div>
 
   <!-- 8. Monthly Growth -->
-  <div class="col-xl-3 col-md-6">
+  <div class="col-xl-3 col-md-6 fn-animate-in fn-delay-4">
     <div class="fn-stat-card">
       <div class="fn-stat-top">
         <div>
           <div class="fn-stat-label">Monthly Growth</div>
-          <div class="fn-stat-value" style="color: #7657E8;">+{{ growth_pct }}%</div>
+          <div class="fn-stat-value fn-counter" style="color: #7657E8;">+{{ growth_pct }}%</div>
         </div>
         <div class="fn-stat-icon-wrapper" style="background: rgba(118, 87, 232, 0.12); color: #7657E8;">
           <i data-lucide="trending-up" style="width: 24px; height: 24px;"></i>
@@ -181,7 +187,7 @@
 <!-- Section 3: Charts Grid -->
 <div class="row g-4 mb-4">
   <!-- Chart 1: Monthly Revenue Trend -->
-  <div class="col-lg-8">
+  <div class="col-lg-8 fn-animate-in fn-delay-2">
     <div class="fn-card h-100">
       <div class="fn-card-header">
         <div>
@@ -197,7 +203,7 @@
   </div>
 
   <!-- Chart 3: Membership Distribution (Doughnut) -->
-  <div class="col-lg-4">
+  <div class="col-lg-4 fn-animate-in fn-delay-2">
     <div class="fn-card h-100">
       <div class="fn-card-header">
         <div>
@@ -212,7 +218,7 @@
   </div>
 
   <!-- Chart 2: Weekly Attendance -->
-  <div class="col-lg-4">
+  <div class="col-lg-4 fn-animate-in fn-delay-3">
     <div class="fn-card h-100">
       <div class="fn-card-header">
         <div>
@@ -227,7 +233,7 @@
   </div>
 
   <!-- Chart 4: Member Growth -->
-  <div class="col-lg-4">
+  <div class="col-lg-4 fn-animate-in fn-delay-3">
     <div class="fn-card h-100">
       <div class="fn-card-header">
         <div>
@@ -242,12 +248,12 @@
   </div>
 
   <!-- Chart 5: Payment Analytics -->
-  <div class="col-lg-4">
+  <div class="col-lg-4 fn-animate-in fn-delay-3">
     <div class="fn-card h-100">
       <div class="fn-card-header">
         <div>
           <h5 class="fn-card-title">Payment Channels</h5>
-          <div class="fn-card-subtitle">Transaction value by method</div>
+          <div class="fn-card-subtitle">Transaction volume by method</div>
         </div>
       </div>
       <div style="height: 240px; position: relative;">
@@ -258,7 +264,7 @@
 </div>
 
 <!-- Section 3: Additional Data Sections -->
-<div class="row g-4">
+<div class="row g-4 fn-animate-in fn-delay-4">
   <!-- Recent Member Registrations -->
   <div class="col-lg-6">
     <div class="fn-card h-100">
@@ -446,14 +452,33 @@
   // Safe Chart Initialization using database values passed from view
   const rawChartData = {{ chart_data_json|safe }};
 
+  // Modern Chart.js Global Typography & Theme
+  if (window.Chart) {
+    Chart.defaults.font.family = "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif";
+    Chart.defaults.color = '#64748B';
+    Chart.defaults.plugins.tooltip.backgroundColor = '#0F172A';
+    Chart.defaults.plugins.tooltip.titleColor = '#FFFFFF';
+    Chart.defaults.plugins.tooltip.titleFont = { size: 12, weight: '600' };
+    Chart.defaults.plugins.tooltip.bodyColor = '#CBD5E1';
+    Chart.defaults.plugins.tooltip.bodyFont = { size: 12 };
+    Chart.defaults.plugins.tooltip.padding = 10;
+    Chart.defaults.plugins.tooltip.cornerRadius = 8;
+    Chart.defaults.plugins.tooltip.displayColors = true;
+  }
+
   // Primary colors
   const primaryNavy = '#172554';
   const accentViolet = '#7657E8';
   const successEmerald = '#10B981';
 
-  // 1. Monthly Revenue Chart
-  const revCtx = document.getElementById('monthlyRevenueChart');
-  if (revCtx) {
+  // 1. Monthly Revenue Chart (Smooth Gradient Line)
+  const revCanvas = document.getElementById('monthlyRevenueChart');
+  if (revCanvas) {
+    const revCtx = revCanvas.getContext('2d');
+    const revGradient = revCtx.createLinearGradient(0, 0, 0, 240);
+    revGradient.addColorStop(0, 'rgba(118, 87, 232, 0.28)');
+    revGradient.addColorStop(1, 'rgba(118, 87, 232, 0.01)');
+
     new Chart(revCtx, {
       type: 'line',
       data: {
@@ -462,26 +487,51 @@
           label: 'Gross Revenue',
           data: rawChartData.revenue_values,
           borderColor: accentViolet,
-          backgroundColor: 'rgba(118, 87, 232, 0.1)',
+          borderWidth: 2.5,
+          backgroundColor: revGradient,
           fill: true,
-          tension: 0.35,
+          tension: 0.38,
           pointBackgroundColor: accentViolet,
-          pointRadius: 5
+          pointBorderColor: '#FFFFFF',
+          pointBorderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        animation: {
+          duration: 1200,
+          easing: 'easeOutQuart'
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return ' {{ currency }}' + context.parsed.y.toLocaleString();
+              }
+            }
+          }
+        },
         scales: {
-          y: { beginAtZero: true, grid: { color: '#F1F5F9' } },
+          y: {
+            beginAtZero: true,
+            grid: { color: '#F1F5F9' },
+            ticks: {
+              callback: function(val) {
+                return '{{ currency }}' + val.toLocaleString();
+              }
+            }
+          },
           x: { grid: { display: false } }
         }
       }
     });
   }
 
-  // 2. Membership Distribution Chart
+  // 2. Membership Distribution Chart (Animated Doughnut)
   const planCtx = document.getElementById('membershipDistributionChart');
   if (planCtx) {
     new Chart(planCtx, {
@@ -492,21 +542,28 @@
           data: rawChartData.plan_counts,
           backgroundColor: ['#7657E8', '#172554', '#10B981', '#3B82F6', '#F59E0B'],
           borderWidth: 2,
-          borderColor: '#FFFFFF'
+          borderColor: '#FFFFFF',
+          hoverOffset: 6
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+        animation: {
+          animateRotate: true,
+          animateScale: true,
+          duration: 1200,
+          easing: 'easeOutQuart'
         },
-        cutout: '68%'
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11, weight: '500' } } }
+        },
+        cutout: '70%'
       }
     });
   }
 
-  // 3. Weekly Attendance Chart
+  // 3. Weekly Attendance Chart (Rounded Bar)
   const attCtx = document.getElementById('weeklyAttendanceChart');
   if (attCtx) {
     new Chart(attCtx, {
@@ -517,12 +574,17 @@
           label: 'Check-ins',
           data: rawChartData.weekly_att_values,
           backgroundColor: '#10B981',
+          hoverBackgroundColor: '#059669',
           borderRadius: 6
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+          duration: 1100,
+          easing: 'easeOutQuart'
+        },
         plugins: { legend: { display: false } },
         scales: {
           y: { beginAtZero: true, grid: { color: '#F1F5F9' }, ticks: { stepSize: 1 } },
@@ -543,15 +605,23 @@
           label: 'New Members',
           data: rawChartData.growth_values,
           borderColor: '#3B82F6',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          backgroundColor: 'rgba(59, 130, 246, 0.08)',
           fill: true,
-          tension: 0.3,
-          pointRadius: 4
+          tension: 0.35,
+          pointBackgroundColor: '#3B82F6',
+          pointBorderColor: '#FFFFFF',
+          pointBorderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+          duration: 1200,
+          easing: 'easeOutQuart'
+        },
         plugins: { legend: { display: false } },
         scales: {
           y: { beginAtZero: true, grid: { color: '#F1F5F9' }, ticks: { stepSize: 1 } },
@@ -561,7 +631,7 @@
     });
   }
 
-  // 5. Payment Methods Chart
+  // 5. Payment Methods Chart (Navy & Violet)
   const methodCtx = document.getElementById('paymentMethodsChart');
   if (methodCtx) {
     new Chart(methodCtx, {
@@ -569,15 +639,19 @@
       data: {
         labels: rawChartData.method_labels,
         datasets: [{
-          label: 'Volume',
+          label: 'Transactions',
           data: rawChartData.method_counts,
-          backgroundColor: '#172554',
+          backgroundColor: ['#172554', '#7657E8', '#3B82F6', '#10B981'],
           borderRadius: 6
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+          duration: 1100,
+          easing: 'easeOutQuart'
+        },
         plugins: { legend: { display: false } },
         scales: {
           y: { beginAtZero: true, grid: { color: '#F1F5F9' } },

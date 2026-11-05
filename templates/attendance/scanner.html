@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
+<div class="row justify-content-center fn-animate-in">
   <div class="col-lg-9">
     <div class="d-flex align-items-center justify-content-between mb-4">
       <div>
@@ -25,7 +25,10 @@
       <!-- Camera Scanner Window -->
       <div class="col-md-7">
         <div class="fn-card text-center p-3">
-          <div id="reader" style="width: 100%; border-radius: 12px; overflow: hidden; min-height: 280px; background: #0F172A;" class="mb-3"></div>
+          <div class="fn-scanner-frame mb-3 position-relative" style="border-radius: 12px; overflow: hidden; min-height: 280px; background: #0F172A;">
+            <div id="reader" style="width: 100%; min-height: 280px;"></div>
+            <div id="scannerLaser" class="fn-scanner-laser d-none"></div>
+          </div>
           <div class="d-flex justify-content-center gap-2">
             <button id="startScanBtn" class="btn btn-fn-primary btn-sm" onclick="startScanner()">
               <i data-lucide="camera" style="width: 14px;"></i> Start Camera
@@ -57,7 +60,7 @@
             <p class="text-muted small px-3">Point member's digital QR pass to the camera or enter their Member ID.</p>
           </div>
 
-          <div class="p-3 d-none text-start" id="activeState">
+          <div class="p-3 d-none text-start fn-animate-in" id="activeState">
             <div class="alert text-center fw-bold py-2 px-3 mb-3" id="scanAlert"></div>
 
             <div class="text-center mb-3">
@@ -114,8 +117,12 @@
     ).then(() => {
       document.getElementById('startScanBtn').classList.add('d-none');
       document.getElementById('stopScanBtn').classList.remove('d-none');
+      const laser = document.getElementById('scannerLaser');
+      if (laser) laser.classList.remove('d-none');
     }).catch(err => {
-      alert("Camera access denied or unavailable: " + err);
+      if (window.showFitNovaToast) {
+        window.showFitNovaToast("Camera access denied or unavailable: " + err, "danger");
+      }
     });
   }
 
@@ -124,6 +131,8 @@
       html5QrcodeScanner.stop().then(() => {
         document.getElementById('startScanBtn').classList.remove('d-none');
         document.getElementById('stopScanBtn').classList.add('d-none');
+        const laser = document.getElementById('scannerLaser');
+        if (laser) laser.classList.add('d-none');
       });
     }
   }
@@ -148,11 +157,16 @@
     .then(res => res.json())
     .then(data => {
       displayScanResult(data);
+      if (window.showFitNovaToast) {
+        window.showFitNovaToast(data.message, data.success ? "success" : "danger");
+      }
       setTimeout(() => { isProcessing = false; }, 2500);
     })
     .catch(err => {
       isProcessing = false;
-      alert("Network error processing scan.");
+      if (window.showFitNovaToast) {
+        window.showFitNovaToast("Network error processing scan.", "danger");
+      }
     });
   }
 

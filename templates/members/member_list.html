@@ -18,36 +18,36 @@
   </div>
 
   <!-- Quick Stats -->
-  <div class="col-md-4">
-    <div class="fn-card p-3 d-flex align-items-center gap-3">
+  <div class="col-md-4 fn-animate-in fn-delay-1">
+    <div class="fn-stat-card p-3 d-flex align-items-center gap-3">
       <div class="fn-stat-icon-wrapper" style="background: rgba(23, 37, 84, 0.08); color: #172554;">
         <i data-lucide="users" style="width: 22px;"></i>
       </div>
       <div>
         <div class="text-muted small fw-semibold text-uppercase">Total Enrolled</div>
-        <div class="fs-4 fw-bold text-dark">{{ total_members }}</div>
+        <div class="fs-4 fw-bold text-dark fn-counter">{{ total_members }}</div>
       </div>
     </div>
   </div>
-  <div class="col-md-4">
-    <div class="fn-card p-3 d-flex align-items-center gap-3">
+  <div class="col-md-4 fn-animate-in fn-delay-2">
+    <div class="fn-stat-card p-3 d-flex align-items-center gap-3">
       <div class="fn-stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.12); color: #10B981;">
         <i data-lucide="user-check" style="width: 22px;"></i>
       </div>
       <div>
         <div class="text-muted small fw-semibold text-uppercase">Active Members</div>
-        <div class="fs-4 fw-bold text-success">{{ active_count }}</div>
+        <div class="fs-4 fw-bold text-success fn-counter">{{ active_count }}</div>
       </div>
     </div>
   </div>
-  <div class="col-md-4">
-    <div class="fn-card p-3 d-flex align-items-center gap-3">
+  <div class="col-md-4 fn-animate-in fn-delay-3">
+    <div class="fn-stat-card p-3 d-flex align-items-center gap-3">
       <div class="fn-stat-icon-wrapper" style="background: rgba(239, 68, 68, 0.12); color: #EF4444;">
         <i data-lucide="user-x" style="width: 22px;"></i>
       </div>
       <div>
         <div class="text-muted small fw-semibold text-uppercase">Expired Subscriptions</div>
-        <div class="fs-4 fw-bold text-danger">{{ expired_count }}</div>
+        <div class="fs-4 fw-bold text-danger fn-counter">{{ expired_count }}</div>
       </div>
     </div>
   </div>
