@@ -11,6 +11,7 @@ urlpatterns = [
     path('', views.attendance_list, name='attendance_list'),
     path('scanner/', views.attendance_scanner, name='scanner'),
     path('api/scan/', views.api_scan_qr, name='api_scan'),
+    path('api/reset-today/', views.api_reset_today_attendance, name='api_reset_today'),
     path('api/', include(router.urls)),
 ]
 

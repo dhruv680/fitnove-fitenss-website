@@ -63,7 +63,24 @@ def attendance_list(request):
 @login_required
 @staff_or_admin
 def attendance_scanner(request):
-    return render(request, 'attendance/scanner.html')
+    from apps.members.services import MemberService
+    scoped_members = MemberService.get_scoped_members(request.user)
+    demo_members = scoped_members.filter(status='ACTIVE')[:6]
+
+    today = timezone.now().date()
+    today_total = AttendanceService.get_scoped_attendance(request.user).filter(date=today)
+    today_count = today_total.count()
+    active_now = today_total.filter(status=Attendance.Status.PRESENT, check_out_time__isnull=True).count()
+    completed_today = today_total.filter(status=Attendance.Status.CHECKED_OUT).count()
+    recent_logs = today_total.select_related('member__user').prefetch_related('member__memberships__plan').order_by('-id')[:8]
+
+    return render(request, 'attendance/scanner.html', {
+        'demo_members': demo_members,
+        'today_count': today_count,
+        'active_now': active_now,
+        'completed_today': completed_today,
+        'recent_logs': recent_logs,
+    })
 
 
 @login_required
@@ -102,6 +119,23 @@ def api_scan_qr(request):
         })
 
     return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
+
+
+@login_required
+@staff_or_admin
+def api_reset_today_attendance(request):
+    """Allows staff/admins to reset today's attendance for a specific member during kiosk testing."""
+    if request.method == 'POST':
+        member_id = request.POST.get('member_id')
+        if not member_id:
+            return JsonResponse({'success': False, 'message': 'Member ID required.'}, status=400)
+        today = timezone.now().date()
+        deleted_count, _ = Attendance.objects.filter(member_id=member_id, date=today).delete()
+        return JsonResponse({
+            'success': True,
+            'message': f"Today's attendance record cleared. You can now re-test check-in for this member."
+        })
+    return JsonResponse({'success': False, 'message': 'Method not allowed.'}, status=405)
 
 
 class AttendanceViewSet(viewsets.ModelViewSet):

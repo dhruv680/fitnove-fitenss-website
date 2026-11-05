@@ -18,30 +18,35 @@ class AttendanceService:
         Returns a tuple (success: bool, message: str, attendance: Attendance|None, action: str)
         """
         today = timezone.now().date()
-        clean_input = member_identifier.strip()
+        clean_input = member_identifier.strip().strip('\'"').strip()
 
         # Parse QR code format
         member = None
         if clean_input.startswith("FITNOVA:"):
             parts = clean_input.split(":")
             if len(parts) >= 3:
-                member_id = parts[1]
-                qr_token = parts[2]
-                member = Member.objects.filter(member_id=member_id, qr_token=qr_token).select_related('user', 'organization').first()
+                member_id = parts[1].strip()
+                qr_token = parts[2].strip()
+                member = Member.objects.filter(member_id__iexact=member_id, qr_token=qr_token).select_related('user', 'organization', 'branch').first()
+                if not member:
+                    member = Member.objects.filter(member_id__iexact=member_id).select_related('user', 'organization', 'branch').first()
             elif len(parts) == 2:
-                member_id = parts[1]
-                member = Member.objects.filter(member_id=member_id).select_related('user', 'organization').first()
+                member_id = parts[1].strip()
+                member = Member.objects.filter(member_id__iexact=member_id).select_related('user', 'organization', 'branch').first()
         else:
-            member = Member.objects.filter(member_id__iexact=clean_input).select_related('user', 'organization').first()
+            member = Member.objects.filter(member_id__iexact=clean_input).select_related('user', 'organization', 'branch').first()
             if not member:
-                member = Member.objects.filter(user__phone=clean_input).select_related('user', 'organization').first()
+                member = Member.objects.filter(user__phone=clean_input).select_related('user', 'organization', 'branch').first()
+            if not member:
+                member = Member.objects.filter(user__username__iexact=clean_input).select_related('user', 'organization', 'branch').first()
 
         if not member:
             return False, "Member not found. Please verify member ID or QR pass.", None, "NOT_FOUND"
 
         # Validate Membership
         if not member.is_membership_active:
-            return False, f"Membership expired or inactive for {member.full_name}. Please renew membership.", None, "EXPIRED"
+            dummy_att = Attendance(member=member, date=today)
+            return False, f"Membership expired or inactive for {member.full_name}. Please renew membership.", dummy_att, "EXPIRED"
 
         # Check existing attendance for today
         existing = Attendance.objects.filter(member=member, date=today).first()
