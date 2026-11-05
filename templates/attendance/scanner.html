@@ -11,31 +11,40 @@
     position: relative;
     border-radius: 16px;
     overflow: hidden;
-    min-height: 320px;
+    min-height: 340px;
     background: #0B1120;
     border: 2px solid #1E293B;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
   }
   .fn-scanner-box.scan-success {
     border-color: #10B981 !important;
-    box-shadow: 0 0 24px rgba(16, 185, 129, 0.4) !important;
+    box-shadow: 0 0 32px rgba(16, 185, 129, 0.6) !important;
   }
   .fn-scanner-laser {
     position: absolute;
-    left: 8%;
-    right: 8%;
+    left: 4%;
+    right: 4%;
     height: 3px;
     background: linear-gradient(90deg, transparent 0%, #10B981 50%, transparent 100%);
-    box-shadow: 0 0 12px #10B981;
+    box-shadow: 0 0 16px #10B981;
     border-radius: 50%;
     z-index: 10;
     pointer-events: none;
-    animation: fnScanSweep 2.2s ease-in-out infinite;
+    animation: fnScanSweep 1.8s ease-in-out infinite;
+  }
+  #reader {
+    width: 100% !important;
+    border-radius: 14px;
+    overflow: hidden;
   }
   #reader video {
-    border-radius: 12px;
+    border-radius: 14px;
     object-fit: cover !important;
     width: 100% !important;
+  }
+  /* Remove html5-qrcode cropped center overlay so camera scans full frame directly */
+  #reader svg {
+    display: none !important;
   }
   .demo-member-card {
     transition: transform 0.2s ease, border-color 0.2s ease;
@@ -386,6 +395,13 @@
           opt.text = device.label || `Camera ${index + 1}`;
           select.appendChild(opt);
         });
+
+        // Auto restart if user switches camera dropdown
+        select.onchange = function () {
+          if (html5QrcodeScanner && html5QrcodeScanner.isScanning) {
+            startScanner();
+          }
+        };
       } else {
         select.innerHTML = '<option value="">Default Webcam</option>';
       }
@@ -396,7 +412,7 @@
   }
 
   /* --------------------------------------------------------------------------
-     3. Start & Stop Live Camera Scanner
+     3. Start & Stop Live Camera Scanner (FULL-FRAME DIRECT SCANNING)
      -------------------------------------------------------------------------- */
   function startScanner() {
     if (html5QrcodeScanner) {
@@ -407,23 +423,17 @@
     if (standbyOverlay) standbyOverlay.classList.add('d-none');
 
     const selectedCameraId = document.getElementById('cameraSelect').value;
-    const cameraConfig = selectedCameraId ? selectedCameraId : { facingMode: "environment" };
+    const cameraConfig = selectedCameraId ? { deviceId: { exact: selectedCameraId } } : { facingMode: "user" };
 
     html5QrcodeScanner = new Html5Qrcode("reader");
 
+    // FULL FRAME DIRECT SCAN CONFIGURATION (No restrictive box cropping)
     const scanConfig = {
-      fps: 15,
-      qrbox: function (viewfinderWidth, viewfinderHeight) {
-        const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-        const edge = Math.floor(minEdge * 0.72);
-        return {
-          width: Math.max(200, Math.min(edge, 320)),
-          height: Math.max(200, Math.min(edge, 320))
-        };
-      },
-      aspectRatio: 1.0,
+      fps: 25, // High scanning frequency (25 frames/second)
+      aspectRatio: 1.333333,
+      disableFlip: false,
       experimentalFeatures: {
-        useBarCodeDetectorIfSupported: true
+        useBarCodeDetectorIfSupported: true // Native hardware GPU BarcodeDetector acceleration
       }
     };
 
@@ -433,7 +443,7 @@
       (decodedText) => {
         if (!isProcessing) {
           isProcessing = true;
-          // Visual Flash Frame
+          // Visual Green Flash on whole scanner frame
           const box = document.getElementById('scannerBox');
           if (box) {
             box.classList.add('scan-success');
@@ -443,7 +453,7 @@
         }
       },
       (error) => {
-        // Frame scanning loop ignore
+        // Continuous search loop
       }
     ).then(() => {
       document.getElementById('startScanBtn').classList.add('d-none');
@@ -452,10 +462,10 @@
       const badge = document.getElementById('scannerStatusBadge');
       if (badge) {
         badge.className = "fn-badge fn-badge-success";
-        badge.innerHTML = `<span class="fn-status-dot active"></span> Live Scanning`;
+        badge.innerHTML = `<span class="fn-status-dot active"></span> Full-Frame Live Scanning`;
       }
     }).catch(err => {
-      // Fallback to { facingMode: "user" } if environment was rejected
+      // Fallback: try default facingMode
       html5QrcodeScanner.start(
         { facingMode: "user" },
         scanConfig,

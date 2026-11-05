@@ -17,28 +17,36 @@ class AttendanceService:
         Processes check-in/out via QR payload (FITNOVA:member_id:qr_token) or raw member_id.
         Returns a tuple (success: bool, message: str, attendance: Attendance|None, action: str)
         """
+        import re
         today = timezone.now().date()
         clean_input = member_identifier.strip().strip('\'"').strip()
 
-        # Parse QR code format
+        # Parse QR code format flexibly with regex
         member = None
-        if clean_input.startswith("FITNOVA:"):
-            parts = clean_input.split(":")
-            if len(parts) >= 3:
-                member_id = parts[1].strip()
-                qr_token = parts[2].strip()
-                member = Member.objects.filter(member_id__iexact=member_id, qr_token=qr_token).select_related('user', 'organization', 'branch').first()
-                if not member:
-                    member = Member.objects.filter(member_id__iexact=member_id).select_related('user', 'organization', 'branch').first()
-            elif len(parts) == 2:
-                member_id = parts[1].strip()
-                member = Member.objects.filter(member_id__iexact=member_id).select_related('user', 'organization', 'branch').first()
-        else:
+
+        # 1. Check FITNOVA:ID:TOKEN pattern
+        fn_token_match = re.search(r'FITNOVA:([A-Za-z0-9\-]+)(?::([a-f0-9\-]+))?', clean_input, re.IGNORECASE)
+        if fn_token_match:
+            mid = fn_token_match.group(1).strip()
+            tok = fn_token_match.group(2).strip() if fn_token_match.group(2) else None
+            if tok:
+                member = Member.objects.filter(member_id__iexact=mid, qr_token=tok).select_related('user', 'organization', 'branch').first()
+            if not member:
+                member = Member.objects.filter(member_id__iexact=mid).select_related('user', 'organization', 'branch').first()
+
+        # 2. Check FN-YYYY-XXXX pattern anywhere in string
+        if not member:
+            id_match = re.search(r'FN-\d{4}-\d{4}', clean_input, re.IGNORECASE)
+            if id_match:
+                member = Member.objects.filter(member_id__iexact=id_match.group(0)).select_related('user', 'organization', 'branch').first()
+
+        # 3. Exact member_id, phone, or username
+        if not member:
             member = Member.objects.filter(member_id__iexact=clean_input).select_related('user', 'organization', 'branch').first()
-            if not member:
-                member = Member.objects.filter(user__phone=clean_input).select_related('user', 'organization', 'branch').first()
-            if not member:
-                member = Member.objects.filter(user__username__iexact=clean_input).select_related('user', 'organization', 'branch').first()
+        if not member:
+            member = Member.objects.filter(user__phone=clean_input).select_related('user', 'organization', 'branch').first()
+        if not member:
+            member = Member.objects.filter(user__username__iexact=clean_input).select_related('user', 'organization', 'branch').first()
 
         if not member:
             return False, "Member not found. Please verify member ID or QR pass.", None, "NOT_FOUND"
