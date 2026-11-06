@@ -5,7 +5,7 @@
 
 {% block extra_head %}
 <!-- HTML5 QR Code Scanner Library -->
-<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
 <style>
   /* Viewfinder Frame Container */
   .fn-scanner-box {
@@ -697,6 +697,17 @@
      -------------------------------------------------------------------------- */
   async function startScanner() {
     if (isStarting) return;
+
+    if (!window.isSecureContext && !['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+      showCameraPermissionError(new Error('Camera access requires a secure HTTPS context. Use https:// or localhost.'));
+      return;
+    }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showCameraPermissionError(new Error('This browser does not support camera access.'));
+      return;
+    }
+
     isStarting = true;
 
     // Properly stop existing stream
@@ -819,9 +830,11 @@
     if (errorOverlay) {
       errorOverlay.classList.remove('d-none');
       const errStr = (err ? err.toString() : '').toLowerCase();
-      if (errStr.includes('notallowed') || errStr.includes('permission')) {
+      if (errStr.includes('notallowed') || errStr.includes('permission') || errStr.includes('secure')) {
         document.getElementById('cameraErrorTitle').textContent = "Camera Permission Denied";
-        document.getElementById('cameraErrorMessage').innerHTML = "Camera permission was blocked. Please click the camera icon in your browser address bar and select <strong>'Allow'</strong>, then click Try Again.";
+        document.getElementById('cameraErrorMessage').innerHTML = errStr.includes('secure')
+          ? "This page must be loaded over HTTPS to access the camera. Please use the Render HTTPS URL and allow camera access in the browser." 
+          : "Camera permission was blocked. Please click the camera icon in your browser address bar and select <strong>'Allow'</strong>, then click Try Again.";
       } else {
         document.getElementById('cameraErrorTitle').textContent = "Camera Unavailable";
         document.getElementById('cameraErrorMessage').textContent = "The camera could not be started or is in use by another application. Please close other camera apps and retry.";
