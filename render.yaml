@@ -4,7 +4,7 @@ services:
     runtime: python
     buildCommand: "./build.sh"
     startCommand: "gunicorn fitnova.wsgi:application --bind 0.0.0.0:$PORT"
-    healthCheckPath: "/"
+    healthCheckPath: "/healthz/"
     envVars:
       - key: PYTHON_VERSION
         value: 3.13.0
