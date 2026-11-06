@@ -1,3 +1,5 @@
+import json
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -11,6 +13,26 @@ from apps.accounts.permissions import staff_or_admin, IsStaffOrAdminUser
 from .models import Attendance
 from .services import AttendanceService
 from .serializers import AttendanceSerializer
+
+
+def _read_request_value(request, key, default=''):
+    if request.method == 'POST':
+        if hasattr(request, 'data') and isinstance(request.data, dict):
+            value = request.data.get(key, default)
+            if value is not None:
+                return value
+        if request.content_type and 'application/json' in request.content_type.lower():
+            try:
+                payload = json.loads(request.body.decode('utf-8') or '{}')
+                if isinstance(payload, dict):
+                    value = payload.get(key, default)
+                    if value is not None:
+                        return value
+            except (TypeError, ValueError, UnicodeDecodeError):
+                pass
+        return request.POST.get(key, default)
+    return request.GET.get(key, default)
+
 
 @login_required
 @staff_or_admin
@@ -94,7 +116,7 @@ def api_verify_member(request):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
 
-    identifier = request.POST.get('identifier', '').strip()
+    identifier = str(_read_request_value(request, 'identifier', '')).strip()
     if not identifier:
         return JsonResponse({'success': False, 'message': 'No identifier provided.'}, status=400)
 
@@ -146,21 +168,26 @@ def api_confirm_attendance(request):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
 
-    identifier = request.POST.get('identifier', '').strip()
+    identifier = str(_read_request_value(request, 'identifier', '')).strip()
     if not identifier:
         return JsonResponse({'success': False, 'message': 'No identifier provided.'}, status=400)
+
+    raw_is_test = _read_request_value(request, 'is_test', False)
+    is_test = str(raw_is_test).lower() in ['true', '1', 'yes'] or raw_is_test is True
 
     success, message, attendance, action_type = AttendanceService.process_check_in(
         member_identifier=identifier,
         verified_by=request.user,
-        method=Attendance.CheckInMethod.QR_CODE
+        method=Attendance.CheckInMethod.QR_CODE,
+        is_test=is_test
     )
 
     member_data = None
     if attendance and attendance.member:
         member = attendance.member
         curr_sub = member.current_membership
-        today = timezone.now().date()
+        local_in = timezone.localtime(attendance.check_in_time) if attendance.check_in_time else timezone.localtime()
+        local_out = timezone.localtime(attendance.check_out_time) if attendance.check_out_time else None
         photo_url = None
         if member.user.profile_picture and hasattr(member.user.profile_picture, 'url'):
             try:
@@ -176,16 +203,16 @@ def api_confirm_attendance(request):
             'plan': curr_sub.plan.name if curr_sub else 'No Plan Assigned',
             'plan_expiry': curr_sub.end_date.strftime('%b %d, %Y') if curr_sub and curr_sub.end_date else '—',
             'photo_url': photo_url,
-            'check_in_date': today.strftime('%b %d, %Y'),
-            'check_in_time': attendance.check_in_time.strftime('%I:%M %p') if attendance.check_in_time else '',
-            'check_out_time': attendance.check_out_time.strftime('%I:%M %p') if attendance.check_out_time else '',
+            'check_in_date': local_in.strftime('%b %d, %Y'),
+            'check_in_time': local_in.strftime('%I:%M %p'),
+            'check_out_time': local_out.strftime('%I:%M %p') if local_out else '',
             'duration': f"{attendance.duration_minutes} mins" if attendance.duration_minutes else None,
             'status': member.status,
             'status_display': member.get_status_display(),
         }
 
     # Live statistics
-    today_total_qs = AttendanceService.get_scoped_attendance(request.user).filter(date=timezone.now().date())
+    today_total_qs = AttendanceService.get_scoped_attendance(request.user).filter(date=timezone.localdate())
     today_total = today_total_qs.count()
     active_now = today_total_qs.filter(status=Attendance.Status.PRESENT, check_out_time__isnull=True).count()
     completed_today = today_total_qs.filter(status=Attendance.Status.CHECKED_OUT).count()
@@ -194,6 +221,7 @@ def api_confirm_attendance(request):
         'success': success,
         'message': message,
         'action': action_type,
+        'is_test': is_test,
         'member': member_data,
         'stats': {
             'today_total': today_total,
@@ -244,10 +272,12 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         if not identifier:
             return Response({'success': False, 'message': 'Identifier required.'}, status=400)
 
+        is_test = request.data.get('is_test') in ['true', '1', True]
         success, msg, att, action_type = AttendanceService.process_check_in(
             member_identifier=identifier,
             verified_by=request.user,
-            method=Attendance.CheckInMethod.QR_CODE
+            method=Attendance.CheckInMethod.QR_CODE,
+            is_test=is_test
         )
         return Response({'success': success, 'message': msg, 'action': action_type})
 

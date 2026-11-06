@@ -33,29 +33,30 @@ class AttendanceServiceTestCase(TestCase):
         self.assertTrue(success)
         self.assertEqual(action, 'CHECK_IN')
         self.assertEqual(att.status, Attendance.Status.PRESENT)
-
-    def test_check_out_success(self):
-        qr_payload = f"FITNOVA:{self.member.member_id}:{self.member.qr_token}"
-        # First scan = Check in
-        AttendanceService.process_check_in(qr_payload)
-        # Second scan = Check out
-        success, msg, att, action = AttendanceService.process_check_in(qr_payload)
-        self.assertTrue(success)
-        self.assertEqual(action, 'CHECK_OUT')
-        self.assertEqual(att.status, Attendance.Status.CHECKED_OUT)
-        self.assertIsNotNone(att.check_out_time)
+        self.assertEqual(Attendance.objects.filter(member=self.member).count(), 1)
 
     def test_duplicate_prevention(self):
         qr_payload = f"FITNOVA:{self.member.member_id}:{self.member.qr_token}"
         # 1st scan = check in
-        AttendanceService.process_check_in(qr_payload)
-        # 2nd scan = check out
-        AttendanceService.process_check_in(qr_payload)
-        # 3rd scan on same day = duplicate blocked!
-        success, msg, att, action = AttendanceService.process_check_in(qr_payload)
-        self.assertFalse(success)
-        self.assertEqual(action, 'DUPLICATE')
-        self.assertIn('already completed attendance today', msg)
+        success1, msg1, att1, action1 = AttendanceService.process_check_in(qr_payload)
+        self.assertTrue(success1)
+        self.assertEqual(action1, 'CHECK_IN')
+
+        # 2nd scan on same day = duplicate blocked!
+        success2, msg2, att2, action2 = AttendanceService.process_check_in(qr_payload)
+        self.assertFalse(success2)
+        self.assertEqual(action2, 'DUPLICATE')
+        self.assertIn('Already Checked In', msg2)
+        # Verify still exactly 1 record in database
+        self.assertEqual(Attendance.objects.filter(member=self.member).count(), 1)
+
+    def test_test_mode_no_database_record(self):
+        qr_payload = f"FITNOVA:{self.member.member_id}:{self.member.qr_token}"
+        success, msg, att, action = AttendanceService.process_check_in(qr_payload, is_test=True)
+        self.assertTrue(success)
+        self.assertEqual(action, 'TEST_SUCCESS')
+        # Verify no attendance was created in DB
+        self.assertEqual(Attendance.objects.filter(member=self.member).count(), 0)
 
     def test_verify_member_ready_check_in(self):
         qr_payload = f"FITNOVA:{self.member.member_id}:{self.member.qr_token}"
@@ -123,6 +124,77 @@ class AttendanceServiceTestCase(TestCase):
         self.assertTrue(confirm_data['success'])
         self.assertEqual(confirm_data['action'], 'CHECK_IN')
         self.assertEqual(Attendance.objects.filter(member=self.member).count(), 1)
+
+    def test_api_scan_direct_and_duplicate(self):
+        staff_user = User.objects.create_user(
+            username='staffdirect',
+            password='password123',
+            organization=self.org,
+            branch=self.branch,
+            role=User.Role.STAFF
+        )
+        self.client.login(username='staffdirect', password='password123')
+        qr_payload = f"FITNOVA:{self.member.member_id}:{self.member.qr_token}"
+
+        # 1. Direct Scan API
+        response = self.client.post('/attendance/api/scan/', {'identifier': qr_payload})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertEqual(data['action'], 'CHECK_IN')
+        self.assertEqual(data['member']['name'], self.member.full_name)
+        self.assertIsNotNone(data['member']['check_in_time'])
+        self.assertEqual(Attendance.objects.filter(member=self.member).count(), 1)
+
+        # 2. Duplicate Scan via API
+        dup_response = self.client.post('/attendance/api/scan/', {'identifier': qr_payload})
+        self.assertEqual(dup_response.status_code, 200)
+        dup_data = dup_response.json()
+        self.assertFalse(dup_data['success'])
+        self.assertEqual(dup_data['action'], 'DUPLICATE')
+        self.assertIn('Already Checked In', dup_data['message'])
+        self.assertEqual(Attendance.objects.filter(member=self.member).count(), 1)
+
+    def test_api_scan_test_mode(self):
+        staff_user = User.objects.create_user(
+            username='stafftester',
+            password='password123',
+            organization=self.org,
+            branch=self.branch,
+            role=User.Role.STAFF
+        )
+        self.client.login(username='stafftester', password='password123')
+        qr_payload = f"FITNOVA:{self.member.member_id}:{self.member.qr_token}"
+
+        response = self.client.post('/attendance/api/scan/', {'identifier': qr_payload, 'is_test': 'true'})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertEqual(data['action'], 'TEST_SUCCESS')
+        self.assertTrue(data['is_test'])
+        # Ensure zero records created in DB
+        self.assertEqual(Attendance.objects.filter(member=self.member).count(), 0)
+
+    def test_api_scan_accepts_json_payload(self):
+        staff_user = User.objects.create_user(
+            username='staffjson',
+            password='password123',
+            organization=self.org,
+            branch=self.branch,
+            role=User.Role.STAFF
+        )
+        self.client.login(username='staffjson', password='password123')
+        qr_payload = f"FITNOVA:{self.member.member_id}:{self.member.qr_token}"
+
+        response = self.client.post(
+            '/attendance/api/scan/',
+            data='{"identifier": "%s"}' % qr_payload,
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertEqual(data['member']['name'], self.member.full_name)
 
 
 

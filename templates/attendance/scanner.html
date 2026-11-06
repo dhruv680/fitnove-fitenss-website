@@ -523,6 +523,24 @@
   let currentScannedMemberId = null;
   let currentModalPayload = null;
 
+  function updateScannerStatus(message, tone = 'info') {
+    const badge = document.getElementById('scannerStatusBadge');
+    if (!badge) return;
+
+    const toneMap = {
+      success: 'fn-badge-success',
+      danger: 'fn-badge-danger',
+      accent: 'fn-badge-accent',
+      info: 'fn-badge-muted'
+    };
+
+    const className = toneMap[tone] || 'fn-badge-muted';
+    const dotClass = tone === 'success' || tone === 'accent' ? 'active' : 'inactive';
+    badge.className = `fn-badge ${className}`;
+    badge.innerHTML = `<span class="fn-status-dot ${dotClass}"></span> ${message}`;
+    if (typeof initLucide === 'function') initLucide();
+  }
+
   /* --------------------------------------------------------------------------
      1. Auto-Start on Page Load (Requirement 1)
      -------------------------------------------------------------------------- */
@@ -618,13 +636,18 @@
   async function initAndAutoStartScanner() {
     if (typeof Html5Qrcode === 'undefined') return;
 
+    updateScannerStatus('Camera starting...');
+
     try {
       const devices = await Html5Qrcode.getCameras();
       availableCameras = devices || [];
       const select = document.getElementById('cameraSelect');
 
-      if (devices && devices.length > 0) {
+      if (select) {
         select.innerHTML = '';
+      }
+
+      if (devices && devices.length > 0) {
         let preferredIndex = 0;
 
         devices.forEach((device, index) => {
@@ -646,12 +669,13 @@
           currentCameraIndex = select.selectedIndex;
           startScanner();
         };
+      } else if (select) {
+        select.innerHTML = '<option value="">No camera detected</option>';
       }
     } catch (err) {
       console.warn('Camera enumeration error, will attempt direct start:', err);
     }
 
-    // Single unified auto-start
     startScanner();
   }
 
@@ -687,6 +711,8 @@
 
     const errorOverlay = document.getElementById('cameraErrorOverlay');
     if (errorOverlay) errorOverlay.classList.add('d-none');
+
+    updateScannerStatus('Camera starting...');
 
     const select = document.getElementById('cameraSelect');
     const selectedCameraId = select && select.value ? select.value : null;
@@ -729,12 +755,16 @@
       );
 
       isScanning = true;
+      updateScannerStatus('Camera ready. Detecting QR code...','success');
       document.getElementById('startScanBtn').classList.add('d-none');
       document.getElementById('stopScanBtn').classList.remove('d-none');
       document.getElementById('scannerLaser').classList.remove('d-none');
       document.getElementById('targetOverlay').classList.remove('d-none');
       const topBadge = document.getElementById('scannerTopBadge');
-      if (topBadge) topBadge.classList.remove('d-none');
+      if (topBadge) {
+        topBadge.classList.remove('d-none');
+        topBadge.innerHTML = '<span class="fn-status-dot active"></span><span>Instant Scan Live • Show member QR pass</span>';
+      }
 
       // Ensure camera video occupies full 420px height
       const vid = document.querySelector('#reader video');
@@ -744,11 +774,7 @@
         vid.style.objectFit = 'cover';
       }
 
-      const badge = document.getElementById('scannerStatusBadge');
-      if (badge) {
-        badge.className = "fn-badge fn-badge-success";
-        badge.innerHTML = `<span class="fn-status-dot active"></span> Auto-Scanning Live`;
-      }
+      updateScannerStatus('Camera ready. Detecting QR code...', 'success');
     } catch (err) {
       console.error('Camera start failed, attempting user camera fallback:', err);
       try {
@@ -802,12 +828,7 @@
       }
     }
 
-    const badge = document.getElementById('scannerStatusBadge');
-    if (badge) {
-      badge.className = "fn-badge fn-badge-danger";
-      badge.innerHTML = `<i data-lucide="alert-circle" style="width: 13px;"></i> Camera Error`;
-      if (typeof initLucide === 'function') initLucide();
-    }
+    updateScannerStatus('Camera Permission Denied.', 'danger');
   }
 
   function retryCameraPermission() {
@@ -829,12 +850,7 @@
       const topBadge = document.getElementById('scannerTopBadge');
       if (topBadge) topBadge.classList.add('d-none');
 
-      const badge = document.getElementById('scannerStatusBadge');
-      if (badge) {
-        badge.className = "fn-badge fn-badge-accent";
-        badge.innerHTML = `<i data-lucide="video-off" style="width: 13px;"></i> Camera Paused`;
-        if (typeof initLucide === 'function') initLucide();
-      }
+      updateScannerStatus('Camera paused. Resume when ready.', 'accent');
     }
   }
 
@@ -885,17 +901,6 @@
       console.error(err);
     });
   }
-      const topBadge = document.getElementById('scannerTopBadge');
-      if (topBadge) topBadge.classList.add('d-none');
-
-      const badge = document.getElementById('scannerStatusBadge');
-      if (badge) {
-        badge.className = "fn-badge fn-badge-accent";
-        badge.innerHTML = `<i data-lucide="video-off" style="width: 13px;"></i> Camera Paused`;
-        if (typeof initLucide === 'function') initLucide();
-      }
-    }
-  }
 
   /* --------------------------------------------------------------------------
      6. Instant Automatic Attendance Marking + Voice Feedback
@@ -903,6 +908,7 @@
   function handleScanPayload(payload) {
     if (isProcessing) return;
     isProcessing = true; // Lock to prevent multiple simultaneous requests
+    updateScannerStatus('Verifying member...', 'accent');
 
     const formData = new FormData();
     formData.append('identifier', payload);
@@ -950,6 +956,18 @@
         window.showFitNovaToast(data.message, data.success ? "success" : "danger");
       }
 
+      if (data.success) {
+        updateScannerStatus('Attendance Successful!', 'success');
+      } else if (data.action === 'DUPLICATE') {
+        updateScannerStatus('Already Checked In.', 'danger');
+      } else if (data.action === 'EXPIRED') {
+        updateScannerStatus('Membership Expired.', 'danger');
+      } else if (data.action === 'INVALID_QR' || data.action === 'NOT_FOUND') {
+        updateScannerStatus('Invalid QR Code.', 'danger');
+      } else {
+        updateScannerStatus('Scanner Error.', 'danger');
+      }
+
       // 6. Update live analytics & prepend activity table
       if (data.success && data.member) {
         prependAttendanceRow(data);
@@ -962,7 +980,9 @@
       triggerAutoNextScan(data.success ? 1800 : 2500);
     })
     .catch(err => {
+      console.error('QR scan request failed:', err);
       playScanSound(false);
+      updateScannerStatus('Scanner Error.', 'danger');
       speakVoice("Network error marking attendance.");
       displayScanResult({
         success: false,
@@ -1077,6 +1097,7 @@
     autoResumeTimer = setTimeout(() => {
       // Automatically unlock for next member scan while camera runs
       isProcessing = false;
+      updateScannerStatus('Camera ready. Detecting QR code...', 'success');
       if (text) {
         text.innerHTML = `<span class="text-success"><i data-lucide="check" style="width: 13px;"></i> Scanner ready for next athlete</span>`;
         if (typeof initLucide === 'function') initLucide();
