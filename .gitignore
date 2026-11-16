@@ -30,7 +30,7 @@ db.sqlite3-journal
 
 # Static and Media
 staticfiles/
-media/members/qr_codes/*.png
+media/
 
 # IDEs
 .idea/

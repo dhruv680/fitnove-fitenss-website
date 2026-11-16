@@ -13,4 +13,5 @@ python manage.py migrate
 
 # Seed initial gym data, plans, and admin user
 python manage.py seed_fitnova
+python manage.py seed_faces
 

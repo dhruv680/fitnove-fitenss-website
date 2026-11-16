@@ -13,6 +13,8 @@ urlpatterns = [
     path('api/verify/', views.api_verify_member, name='api_verify'),
     path('api/confirm/', views.api_confirm_attendance, name='api_confirm'),
     path('api/scan/', views.api_scan_qr, name='api_scan'),
+    path('api/face-verify/', views.api_face_verify, name='api_face_verify'),
+    path('api/face-enroll/', views.api_face_enroll, name='api_face_enroll'),
     path('api/reset-today/', views.api_reset_today_attendance, name='api_reset_today'),
     path('api/', include(router.urls)),
 ]

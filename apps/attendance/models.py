@@ -6,6 +6,7 @@ from apps.accounts.models import GymBranch
 class Attendance(models.Model):
     class CheckInMethod(models.TextChoices):
         QR_CODE = 'QR_CODE', 'QR Code Scan'
+        FACE_RECOGNITION = 'FACE_RECOGNITION', 'Face Recognition'
         MANUAL_STAFF = 'MANUAL_STAFF', 'Staff Manual'
         BIOMETRIC = 'BIOMETRIC', 'Biometric / RFID'
         MOBILE_APP = 'MOBILE_APP', 'Mobile App'
@@ -62,4 +63,25 @@ class Attendance(models.Model):
             delta = self.check_out_time - self.check_in_time
             return max(0, int(delta.total_seconds() / 60))
         return None
+
+
+class MemberFaceProfile(models.Model):
+    member = models.OneToOneField(
+        'members.Member',
+        on_delete=models.CASCADE,
+        related_name='face_profile'
+    )
+    face_image = models.ImageField(upload_to='members/faces/', blank=True, null=True)
+    face_descriptor = models.TextField(blank=True, default='')  # JSON float array from client face-api
+    feature_vector = models.TextField(blank=True, default='')   # JSON float array of visual feature gradients
+    enrolled_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = 'Member Face Profile'
+        verbose_name_plural = 'Member Face Profiles'
+
+    def __str__(self):
+        return f"Face Profile: {self.member.full_name} ({self.member.member_id})"
+
 

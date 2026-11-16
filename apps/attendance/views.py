@@ -10,6 +10,7 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from apps.accounts.permissions import staff_or_admin, IsStaffOrAdminUser
+from apps.members.models import Member
 from .models import Attendance
 from .services import AttendanceService
 from .serializers import AttendanceSerializer
@@ -89,6 +90,10 @@ def attendance_scanner(request):
     scoped_members = MemberService.get_scoped_members(request.user)
     demo_members = scoped_members.filter(status='ACTIVE')[:6]
     test_member = demo_members.first()
+    all_members = scoped_members.filter(status='ACTIVE')
+
+    from .models import MemberFaceProfile
+    enrolled_count = MemberFaceProfile.objects.filter(is_active=True).count()
 
     today = timezone.localdate()
     today_total = AttendanceService.get_scoped_attendance(request.user).filter(date=today)
@@ -99,7 +104,9 @@ def attendance_scanner(request):
 
     return render(request, 'attendance/scanner.html', {
         'demo_members': demo_members,
+        'all_members': all_members,
         'test_member': test_member,
+        'enrolled_count': enrolled_count,
         'today_count': today_count,
         'active_now': active_now,
         'completed_today': completed_today,
@@ -259,6 +266,180 @@ def api_reset_today_attendance(request):
             'message': f"Today's attendance record cleared ({deleted_count} deleted). You can now re-test check-in for this member."
         })
     return JsonResponse({'success': False, 'message': 'Method not allowed.'}, status=405)
+
+
+@login_required
+@staff_or_admin
+def api_face_verify(request):
+    """
+    Live AI Face Recognition Verification & Instant Attendance Marking.
+    Receives face snapshot and optional neural descriptor from the webcam,
+    matches against registered members, prevents duplicates, records attendance in DB,
+    and returns a success confirmation with redirect URL to the Gym Dashboard.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Method not allowed.'}, status=405)
+
+    face_image = request.POST.get('face_image', '').strip()
+    if not face_image:
+        return JsonResponse({'success': False, 'message': 'No face image captured.'}, status=400)
+
+    descriptor_raw = request.POST.get('face_descriptor', '')
+    descriptor = None
+    if descriptor_raw:
+        try:
+            descriptor = json.loads(descriptor_raw)
+        except Exception:
+            descriptor = None
+
+    from .face_service import FaceRecognitionService
+    organization = None if request.user.is_super_admin else request.user.organization
+
+    member, confidence, err = FaceRecognitionService.verify_and_recognize_face(
+        face_image, descriptor=descriptor, organization=organization
+    )
+
+    if not member:
+        return JsonResponse({
+            'success': False,
+            'action': 'UNREGISTERED',
+            'message': err or 'Face Not Recognized: Unregistered Face.',
+            'confidence': confidence,
+        })
+
+    # Validate Member Status
+    if member.status == Member.Status.INACTIVE:
+        return JsonResponse({
+            'success': False,
+            'action': 'INACTIVE',
+            'message': f'Account for {member.full_name} is marked INACTIVE. Check-in blocked.',
+            'member': {'name': member.full_name, 'member_id': member.member_id}
+        })
+
+    # Validate Membership Expiration
+    if not member.is_membership_active:
+        expiry_str = ""
+        if member.current_membership and member.current_membership.end_date:
+            expiry_str = f" (Expired on {member.current_membership.end_date.strftime('%b %d, %Y')})"
+        return JsonResponse({
+            'success': False,
+            'action': 'EXPIRED',
+            'message': f'Membership Expired: Membership expired{expiry_str} for {member.full_name}. Please renew.',
+            'member': {'name': member.full_name, 'member_id': member.member_id}
+        })
+
+    today = timezone.localdate()
+    now = timezone.now()
+
+    # Check Duplicate Attendance for Today
+    existing = Attendance.objects.filter(member=member, date=today).first()
+    if existing:
+        check_in_formatted = timezone.localtime(existing.check_in_time).strftime('%I:%M %p') if existing.check_in_time else "earlier today"
+        return JsonResponse({
+            'success': False,
+            'action': 'DUPLICATE',
+            'message': f'Already Checked In: {member.full_name} has already checked in at {check_in_formatted}.',
+            'member': {
+                'id': member.id,
+                'name': member.full_name,
+                'member_id': member.member_id,
+                'check_in_time': check_in_formatted,
+            }
+        })
+
+    # Atomically mark attendance
+    attendance = Attendance.objects.create(
+        member=member,
+        branch=member.branch,
+        date=today,
+        check_in_time=now,
+        method=Attendance.CheckInMethod.FACE_RECOGNITION,
+        verified_by=request.user,
+        status=Attendance.Status.PRESENT
+    )
+
+    curr_sub = member.current_membership
+    local_in = timezone.localtime(attendance.check_in_time)
+    photo_url = None
+    if member.user.profile_picture and hasattr(member.user.profile_picture, 'url'):
+        try:
+            photo_url = member.user.profile_picture.url
+        except Exception:
+            photo_url = None
+
+    member_data = {
+        'id': member.id,
+        'name': member.full_name,
+        'member_id': member.member_id,
+        'plan': curr_sub.plan.name if curr_sub else 'General Access',
+        'plan_expiry': curr_sub.end_date.strftime('%b %d, %Y') if curr_sub and curr_sub.end_date else '—',
+        'photo_url': photo_url,
+        'check_in_date': local_in.strftime('%b %d, %Y'),
+        'check_in_time': local_in.strftime('%I:%M %p'),
+        'status': 'Present',
+    }
+
+    # Live stats
+    today_total_qs = AttendanceService.get_scoped_attendance(request.user).filter(date=today)
+    today_total = today_total_qs.count()
+    active_now = today_total_qs.filter(status=Attendance.Status.PRESENT, check_out_time__isnull=True).count()
+
+    from django.urls import reverse
+    return JsonResponse({
+        'success': True,
+        'action': 'FACE_VERIFIED',
+        'message': f'Face Verified! Attendance Marked Successfully. Welcome {member.full_name} to FitNova.',
+        'confidence': confidence,
+        'member': member_data,
+        'stats': {
+            'today_total': today_total,
+            'active_now': active_now,
+        },
+        'redirect_url': reverse('dashboard:index')  # Requirement 5: Automatic redirect to Gym Dashboard
+    })
+
+
+@login_required
+@staff_or_admin
+def api_face_enroll(request):
+    """
+    Enrolls or updates a member's biometric face profile using a live webcam snapshot.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Method not allowed.'}, status=405)
+
+    member_id = request.POST.get('member_id', '').strip()
+    face_image = request.POST.get('face_image', '').strip()
+    descriptor_raw = request.POST.get('face_descriptor', '')
+
+    if not member_id or not face_image:
+        return JsonResponse({'success': False, 'message': 'Member ID and face image are required.'}, status=400)
+
+    from apps.members.services import MemberService
+    scoped_members = MemberService.get_scoped_members(request.user)
+    from django.db.models import Q
+    member = scoped_members.filter(
+        Q(member_id__iexact=member_id) | Q(id__iexact=int(member_id) if member_id.isdigit() else 0)
+    ).first()
+
+    if not member:
+        return JsonResponse({'success': False, 'message': 'Member not found.'}, status=404)
+
+    descriptor = None
+    if descriptor_raw:
+        try:
+            descriptor = json.loads(descriptor_raw)
+        except Exception:
+            descriptor = None
+
+    from .face_service import FaceRecognitionService
+    success, msg = FaceRecognitionService.enroll_member_face(member, face_image, descriptor=descriptor)
+    return JsonResponse({
+        'success': success,
+        'message': msg,
+        'member': {'name': member.full_name, 'member_id': member.member_id}
+    })
+
 
 
 class AttendanceViewSet(viewsets.ModelViewSet):
