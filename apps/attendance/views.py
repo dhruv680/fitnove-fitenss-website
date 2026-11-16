@@ -88,8 +88,9 @@ def attendance_scanner(request):
     from apps.members.services import MemberService
     scoped_members = MemberService.get_scoped_members(request.user)
     demo_members = scoped_members.filter(status='ACTIVE')[:6]
+    test_member = demo_members.first()
 
-    today = timezone.now().date()
+    today = timezone.localdate()
     today_total = AttendanceService.get_scoped_attendance(request.user).filter(date=today)
     today_count = today_total.count()
     active_now = today_total.filter(status=Attendance.Status.PRESENT, check_out_time__isnull=True).count()
@@ -98,6 +99,7 @@ def attendance_scanner(request):
 
     return render(request, 'attendance/scanner.html', {
         'demo_members': demo_members,
+        'test_member': test_member,
         'today_count': today_count,
         'active_now': active_now,
         'completed_today': completed_today,
@@ -125,7 +127,7 @@ def api_verify_member(request):
     member_data = None
     if member:
         curr_sub = member.current_membership
-        today = timezone.now().date()
+        today = timezone.localdate()
         photo_url = None
         if member.user.profile_picture and hasattr(member.user.profile_picture, 'url'):
             try:
@@ -246,7 +248,7 @@ def api_reset_today_attendance(request):
         member_id = request.POST.get('member_id', '').strip()
         if not member_id:
             return JsonResponse({'success': False, 'message': 'Member ID required.'}, status=400)
-        today = timezone.now().date()
+        today = timezone.localdate()
         from django.db.models import Q
         deleted_count, _ = Attendance.objects.filter(
             Q(member__member_id__iexact=member_id) | Q(member__id__iexact=int(member_id) if member_id.isdigit() else 0),

@@ -4,8 +4,13 @@
 {% block title %}Instant Automatic QR Attendance – FitNova{% endblock %}
 
 {% block extra_head %}
-<!-- HTML5 QR Code Scanner Library -->
-<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+<!-- HTML5 QR Code Scanner Library (Local static file + CDN fallback) -->
+<script src="{% static 'js/html5-qrcode.min.js' %}"></script>
+<script>
+  if (typeof Html5Qrcode === 'undefined') {
+    document.write('<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"><\/script>');
+  }
+</script>
 <style>
   /* Viewfinder Frame Container */
   .fn-scanner-box {
@@ -544,9 +549,14 @@
   /* --------------------------------------------------------------------------
      1. Auto-Start on Page Load (Requirement 1)
      -------------------------------------------------------------------------- */
-  document.addEventListener('DOMContentLoaded', function () {
-    initAndAutoStartScanner();
-  });
+  function ensureScannerStarted() {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initAndAutoStartScanner);
+    } else {
+      initAndAutoStartScanner();
+    }
+  }
+  ensureScannerStarted();
 
   // Cleanly release camera resources on unload (Requirement 9)
   window.addEventListener('beforeunload', function () {
@@ -633,21 +643,44 @@
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   }
 
+  async function waitForHtml5Qrcode(maxWaitMs = 8000) {
+    const start = Date.now();
+    while (typeof Html5Qrcode === 'undefined') {
+      if (Date.now() - start > maxWaitMs) {
+        throw new Error('QR scanner library could not be loaded. Please check your connection.');
+      }
+      await new Promise(r => setTimeout(r, 50));
+    }
+  }
+
   async function initAndAutoStartScanner() {
-    if (typeof Html5Qrcode === 'undefined') return;
+    updateScannerStatus('Camera starting...', 'accent');
 
-    updateScannerStatus('Camera starting...');
+    try {
+      await waitForHtml5Qrcode();
+    } catch (err) {
+      console.error('QR library load error:', err);
+      showCameraPermissionError(err);
+      return;
+    }
 
+    // Immediately start camera first (fastest user experience & opens browser camera prompt)
+    await startScanner();
+
+    // Populate camera select in background without blocking
+    refreshCameraList();
+  }
+
+  async function refreshCameraList() {
     try {
       const devices = await Html5Qrcode.getCameras();
       availableCameras = devices || [];
       const select = document.getElementById('cameraSelect');
-
-      if (select) {
-        select.innerHTML = '';
-      }
+      if (!select) return;
 
       if (devices && devices.length > 0) {
+        const previousVal = select.value;
+        select.innerHTML = '';
         let preferredIndex = 0;
 
         devices.forEach((device, index) => {
@@ -662,28 +695,30 @@
           }
         });
 
-        currentCameraIndex = preferredIndex;
-        select.selectedIndex = preferredIndex;
+        if (previousVal && devices.some(d => d.id === previousVal)) {
+          select.value = previousVal;
+        } else {
+          currentCameraIndex = preferredIndex;
+          select.selectedIndex = preferredIndex;
+        }
 
         select.onchange = function () {
           currentCameraIndex = select.selectedIndex;
           startScanner();
         };
-      } else if (select) {
-        select.innerHTML = '<option value="">No camera detected</option>';
+      } else {
+        select.innerHTML = '<option value="">Camera Active</option>';
       }
     } catch (err) {
-      console.warn('Camera enumeration error, will attempt direct start:', err);
+      console.warn('Background camera enumeration:', err);
     }
-
-    startScanner();
   }
 
   function toggleCameraSwitch() {
     if (availableCameras.length > 1) {
       currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
       const select = document.getElementById('cameraSelect');
-      select.selectedIndex = currentCameraIndex;
+      if (select) select.selectedIndex = currentCameraIndex;
       startScanner();
     } else {
       if (window.showFitNovaToast) {
@@ -697,18 +732,27 @@
      -------------------------------------------------------------------------- */
   async function startScanner() {
     if (isStarting) return;
+    isStarting = true;
+
+    try {
+      await waitForHtml5Qrcode();
+    } catch (e) {
+      isStarting = false;
+      showCameraPermissionError(e);
+      return;
+    }
 
     if (!window.isSecureContext && !['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+      isStarting = false;
       showCameraPermissionError(new Error('Camera access requires a secure HTTPS context. Use https:// or localhost.'));
       return;
     }
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      isStarting = false;
       showCameraPermissionError(new Error('This browser does not support camera access.'));
       return;
     }
-
-    isStarting = true;
 
     // Properly stop existing stream
     if (html5QrCode && isScanning) {
@@ -723,10 +767,10 @@
     const errorOverlay = document.getElementById('cameraErrorOverlay');
     if (errorOverlay) errorOverlay.classList.add('d-none');
 
-    updateScannerStatus('Camera starting...');
+    updateScannerStatus('Camera starting...', 'accent');
 
     const select = document.getElementById('cameraSelect');
-    const selectedCameraId = select && select.value ? select.value : null;
+    const selectedCameraId = (select && select.value) ? select.value : null;
 
     // Restrict strictly to QR Code format (10x faster decoding than all formats)
     const formats = (typeof Html5QrcodeSupportedFormats !== 'undefined')
@@ -749,24 +793,82 @@
       disableFlip: false
     };
 
-    // Camera parameter: exact string ID if enumerated, or facingMode
-    const cameraParam = selectedCameraId ? selectedCameraId : (isMobileDevice() ? { facingMode: "environment" } : { facingMode: "user" });
+    const onScanSuccess = (decodedText) => {
+      if (!isProcessing) {
+        handleScanPayload(decodedText, false);
+      }
+    };
 
-    try {
-      await html5QrCode.start(
-        cameraParam,
-        scanConfig,
-        (decodedText) => {
-          // Automatic Instant Detection & Attendance Marking
-          if (!isProcessing) {
-            handleScanPayload(decodedText);
-          }
-        },
-        () => {}
-      );
+    let started = false;
+    let lastError = null;
 
+    // Strategy 1: Explicit selected camera ID if available
+    if (selectedCameraId) {
+      try {
+        await html5QrCode.start(selectedCameraId, scanConfig, onScanSuccess, () => {});
+        started = true;
+      } catch (e) {
+        console.warn('Start with selectedCameraId failed:', e);
+        lastError = e;
+      }
+    }
+
+    // Strategy 2: Appropriate facingMode for device
+    if (!started) {
+      const preferredFacing = isMobileDevice() ? "environment" : "user";
+      try {
+        await html5QrCode.start({ facingMode: preferredFacing }, scanConfig, onScanSuccess, () => {});
+        started = true;
+      } catch (e) {
+        console.warn(`Start with facingMode ${preferredFacing} failed:`, e);
+        lastError = e;
+      }
+    }
+
+    // Strategy 3: Opposite facingMode
+    if (!started) {
+      const altFacing = isMobileDevice() ? "user" : "environment";
+      try {
+        await html5QrCode.start({ facingMode: altFacing }, scanConfig, onScanSuccess, () => {});
+        started = true;
+      } catch (e) {
+        console.warn(`Start with alt facingMode ${altFacing} failed:`, e);
+        lastError = e;
+      }
+    }
+
+    // Strategy 4: Try enumerated camera device IDs
+    if (!started && availableCameras.length > 0) {
+      for (const dev of availableCameras) {
+        try {
+          await html5QrCode.start(dev.id, scanConfig, onScanSuccess, () => {});
+          started = true;
+          break;
+        } catch (e) {
+          console.warn(`Start with device ${dev.id} failed:`, e);
+          lastError = e;
+        }
+      }
+    }
+
+    // Strategy 5: Ultimate fallback: fresh enumeration and first camera ID
+    if (!started) {
+      try {
+        const devices = await Html5Qrcode.getCameras();
+        if (devices && devices.length > 0) {
+          availableCameras = devices;
+          await html5QrCode.start(devices[0].id, scanConfig, onScanSuccess, () => {});
+          started = true;
+        }
+      } catch (e) {
+        console.warn('Fresh enumeration start failed:', e);
+        lastError = e;
+      }
+    }
+
+    if (started) {
       isScanning = true;
-      updateScannerStatus('Camera ready. Detecting QR code...','success');
+      updateScannerStatus('Camera ready. Detecting QR code...', 'success');
       document.getElementById('startScanBtn').classList.add('d-none');
       document.getElementById('stopScanBtn').classList.remove('d-none');
       document.getElementById('scannerLaser').classList.remove('d-none');
@@ -774,7 +876,7 @@
       const topBadge = document.getElementById('scannerTopBadge');
       if (topBadge) {
         topBadge.classList.remove('d-none');
-        topBadge.innerHTML = '<span class="fn-status-dot active"></span><span>Instant Scan Live • Show member QR pass</span>';
+        topBadge.innerHTML = '<span class="fn-status-dot active"></span><span>Instant Scan Live • Show athlete QR pass</span>';
       }
 
       // Ensure camera video occupies full 420px height
@@ -784,38 +886,11 @@
         vid.style.height = '420px';
         vid.style.objectFit = 'cover';
       }
-
-      updateScannerStatus('Camera ready. Detecting QR code...', 'success');
-    } catch (err) {
-      console.error('Camera start failed, attempting user camera fallback:', err);
-      try {
-        await html5QrCode.start(
-          { facingMode: "user" },
-          scanConfig,
-          (decodedText) => {
-            if (!isProcessing) handleScanPayload(decodedText);
-          },
-          () => {}
-        );
-        isScanning = true;
-        document.getElementById('startScanBtn').classList.add('d-none');
-        document.getElementById('stopScanBtn').classList.remove('d-none');
-        document.getElementById('scannerLaser').classList.remove('d-none');
-        document.getElementById('targetOverlay').classList.remove('d-none');
-        const topBadge = document.getElementById('scannerTopBadge');
-        if (topBadge) topBadge.classList.remove('d-none');
-        const vid = document.querySelector('#reader video');
-        if (vid) {
-          vid.style.width = '100%';
-          vid.style.height = '420px';
-          vid.style.objectFit = 'cover';
-        }
-      } catch (fallbackErr) {
-        showCameraPermissionError(fallbackErr);
-      }
-    } finally {
-      isStarting = false;
+    } else {
+      showCameraPermissionError(lastError || new Error('Could not access any camera.'));
     }
+
+    isStarting = false;
   }
 
   function showCameraPermissionError(err) {
@@ -830,18 +905,16 @@
     if (errorOverlay) {
       errorOverlay.classList.remove('d-none');
       const errStr = (err ? err.toString() : '').toLowerCase();
-      if (errStr.includes('notallowed') || errStr.includes('permission') || errStr.includes('secure')) {
+      if (errStr.includes('notallowed') || errStr.includes('permission') || errStr.includes('denied')) {
         document.getElementById('cameraErrorTitle').textContent = "Camera Permission Denied";
-        document.getElementById('cameraErrorMessage').innerHTML = errStr.includes('secure')
-          ? "This page must be loaded over HTTPS to access the camera. Please use the Render HTTPS URL and allow camera access in the browser." 
-          : "Camera permission was blocked. Please click the camera icon in your browser address bar and select <strong>'Allow'</strong>, then click Try Again.";
+        document.getElementById('cameraErrorMessage').innerHTML = "Camera permission was blocked. Please click the camera icon / site settings in your browser address bar and select <strong>'Allow'</strong>, then click Try Again.";
+        updateScannerStatus('Camera Permission Denied.', 'danger');
       } else {
-        document.getElementById('cameraErrorTitle').textContent = "Camera Unavailable";
-        document.getElementById('cameraErrorMessage').textContent = "The camera could not be started or is in use by another application. Please close other camera apps and retry.";
+        document.getElementById('cameraErrorTitle').textContent = "Scanner Error";
+        document.getElementById('cameraErrorMessage').textContent = "The camera could not be started or is in use by another application. Please check camera connections or close other camera apps and retry.";
+        updateScannerStatus('Scanner Error.', 'danger');
       }
     }
-
-    updateScannerStatus('Camera Permission Denied.', 'danger');
   }
 
   function retryCameraPermission() {
@@ -871,7 +944,13 @@
      Instant Test Pass & Helpers
      -------------------------------------------------------------------------- */
   function testSamplePass() {
-    handleScanPayload('FITNOVA:FN-2026-0004:99bb40e7-3a81-4266-8166-8b2d7459de1d');
+    {% if test_member %}
+    handleScanPayload('FITNOVA:{{ test_member.member_id }}:{{ test_member.qr_token }}', true);
+    {% elif demo_members %}
+    handleScanPayload('FITNOVA:{{ demo_members.0.member_id }}:{{ demo_members.0.qr_token }}', true);
+    {% else %}
+    handleScanPayload('FITNOVA:FN-2026-0004:99bb40e7-3a81-4266-8166-8b2d7459de1d', true);
+    {% endif %}
   }
 
   function scanCurrentModalMember() {
@@ -881,7 +960,7 @@
       if (modal) modal.hide();
     }
     if (currentModalPayload) {
-      handleScanPayload(currentModalPayload);
+      handleScanPayload(currentModalPayload, false);
     }
   }
 
@@ -918,7 +997,7 @@
   /* --------------------------------------------------------------------------
      6. Instant Automatic Attendance Marking + Voice Feedback
      -------------------------------------------------------------------------- */
-  function handleScanPayload(payload) {
+  function handleScanPayload(payload, isTest = false) {
     if (isProcessing) return;
     isProcessing = true; // Lock to prevent multiple simultaneous requests
     updateScannerStatus('Verifying member...', 'accent');
@@ -926,6 +1005,9 @@
     const formData = new FormData();
     formData.append('identifier', payload);
     formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    if (isTest) {
+      formData.append('is_test', 'true');
+    }
 
     fetch("{% url 'attendance:api_scan' %}", {
       method: 'POST',
@@ -946,7 +1028,9 @@
 
       // 3. Spoken Voice Announcement ("ok thayu bolvu jaie")
       if (data.success && data.member) {
-        if (data.action === 'CHECK_OUT') {
+        if (isTest) {
+          speakVoice(`Test pass OK! Verified ${data.member.name}`);
+        } else if (data.action === 'CHECK_OUT') {
           speakVoice(`Check-out OK! Goodbye ${data.member.name}`);
         } else {
           speakVoice(`Attendance OK! Welcome ${data.member.name}`);
@@ -981,11 +1065,11 @@
         updateScannerStatus('Scanner Error.', 'danger');
       }
 
-      // 6. Update live analytics & prepend activity table
-      if (data.success && data.member) {
+      // 6. Update live analytics & prepend activity table ONLY if real check-in
+      if (data.success && data.member && !isTest) {
         prependAttendanceRow(data);
       }
-      if (data.stats) {
+      if (data.stats && !isTest) {
         updateAttendanceStats(data.stats);
       }
 
