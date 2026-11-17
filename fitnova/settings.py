@@ -1,6 +1,10 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 import dj_database_url
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -95,13 +99,28 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'fitnova.wsgi.application'
 
-# Database Configuration:
-# Dynamic: If DATABASE_URL is provided (e.g. postgres://...), use it;
-# otherwise fall back reliably to local SQLite database so it works immediately without barriers.
+# Database Configuration (PostgreSQL by default)
+# Priority:
+# 1. DATABASE_URL environment variable (Render / Cloud / Supabase / Neon)
+# 2. Individual PostgreSQL connection parameters (DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT)
+# 3. Fallback to SQLite only if USE_SQLITE is explicitly set to True
 DATABASE_URL = os.environ.get('DATABASE_URL')
+USE_SQLITE = os.environ.get('USE_SQLITE', 'False').lower() in ('true', '1', 'yes')
+
 if DATABASE_URL:
     DATABASES = {
         'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
+    }
+elif not USE_SQLITE:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME', 'fitnova_db'),
+            'USER': os.environ.get('DB_USER', 'postgres'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'PORT': os.environ.get('DB_PORT', '5432'),
+        }
     }
 else:
     DATABASES = {
