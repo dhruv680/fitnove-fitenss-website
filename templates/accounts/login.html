@@ -18,7 +18,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 24px;
+      padding: 24px 16px;
+      font-family: 'Inter', sans-serif;
     }
     .fn-auth-card {
       background: #FFFFFF;
@@ -28,38 +29,53 @@
       max-width: 440px;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
     }
+    .fn-password-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      color: #64748B;
+      cursor: pointer;
+      padding: 4px;
+    }
   </style>
 </head>
 <body>
 
 <div class="fn-auth-card fn-animate-in">
+  <!-- FitNova Logo & Header -->
   <div class="text-center mb-4">
     <div class="d-inline-flex align-items-center justify-content-center p-3 rounded-4 mb-3" style="background: linear-gradient(135deg, #7657E8 0%, #172554 100%); color: white; width: 64px; height: 64px; box-shadow: 0 10px 25px -5px rgba(118, 87, 232, 0.4);">
       <i data-lucide="dumbbell" style="width: 32px; height: 32px;"></i>
     </div>
     <h3 class="fw-bold text-dark mb-1">FitNova SaaS</h3>
-    <p class="text-muted small mb-0">Biometric Protected Fitness Management Platform</p>
+    <p class="text-muted small mb-0">Premium Gym & Fitness Management Platform</p>
   </div>
 
   {% if registered_flag %}
     <div class="alert alert-success py-2 px-3 small rounded-3 mb-3 d-flex align-items-center gap-2 fn-animate-in" role="alert">
-      <i data-lucide="check-circle" style="width: 18px; color: #10B981;"></i>
-      <div><strong>Registration Complete!</strong> You can now sign in to your athlete account.</div>
+      <i data-lucide="check-circle" style="width: 18px; color: #10B981; flex-shrink: 0;"></i>
+      <div><strong>Registration Complete!</strong> You can now sign in with your credentials.</div>
     </div>
   {% endif %}
 
   {% if messages %}
     {% for message in messages %}
-    <div class="alert alert-{{ message.tags|default:'info' }} py-2 px-3 small rounded-3 mb-3 fn-animate-in" role="alert">
-      {{ message }}
+    <div class="alert alert-{{ message.tags|default:'info' }} py-2 px-3 small rounded-3 mb-3 d-flex align-items-center gap-2 fn-animate-in" role="alert">
+      <i data-lucide="info" style="width: 17px; flex-shrink: 0;"></i>
+      <div>{{ message }}</div>
     </div>
     {% endfor %}
   {% endif %}
 
   <form method="POST" action="{% url 'accounts:login' %}" id="loginForm">
     {% csrf_token %}
+
+    <!-- Username or Email -->
     <div class="mb-3">
-      <label class="fn-form-label" for="authUsername">Email Address or Username</label>
+      <label class="fn-form-label" for="authUsername">Username or Email</label>
       <div class="position-relative">
         <input type="text" name="username" id="authUsername" class="fn-input pe-5" placeholder="alex@fitnova.com" required autofocus>
         <span class="position-absolute end-0 top-50 translate-middle-y me-3 text-muted" style="pointer-events: none;">
@@ -68,6 +84,7 @@
       </div>
     </div>
 
+    <!-- Password -->
     <div class="mb-3">
       <div class="d-flex justify-content-between align-items-center mb-1">
         <label class="fn-form-label mb-0" for="authPassword">Password</label>
@@ -75,12 +92,13 @@
       </div>
       <div class="position-relative">
         <input type="password" name="password" id="authPassword" class="fn-input pe-5" placeholder="••••••••" required>
-        <button type="button" class="btn btn-link position-absolute end-0 top-50 translate-middle-y me-2 p-1 text-muted text-decoration-none" onclick="togglePasswordVisibility('authPassword', 'pwdEyeIcon')" title="Show / Hide Password">
+        <button type="button" class="fn-password-toggle" onclick="togglePasswordVisibility('authPassword', 'pwdEyeIcon')" title="Show / Hide Password">
           <i data-lucide="eye" id="pwdEyeIcon" style="width: 17px;"></i>
         </button>
       </div>
     </div>
 
+    <!-- Remember Me & Biometric Status -->
     <div class="d-flex justify-content-between align-items-center mb-3">
       <div class="form-check">
         <input class="form-check-input" type="checkbox" name="remember_me" id="rememberMe" checked>
@@ -89,40 +107,23 @@
         </label>
       </div>
       <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 small fw-semibold" style="font-size: 0.72rem;">
-        <i data-lucide="scan-face" style="width: 12px; margin-top: -2px;"></i> Face Auth Ready
+        <i data-lucide="scan-face" style="width: 12px; margin-top: -2px;"></i> Biometric Ready
       </span>
     </div>
 
+    <!-- Sign In Button -->
     <button type="submit" class="btn btn-fn-accent w-100 py-2 mt-2 justify-content-center shadow-sm">
       <i data-lucide="log-in" style="width: 18px;"></i>
-      <span>Sign In with Face Biometrics</span>
+      <span>Sign In to Dashboard</span>
     </button>
   </form>
 
-  <!-- Register Now Link -->
-  <div class="text-center mt-3 pt-2">
-    <span class="text-muted small">Don't have an account yet?</span>
+  <!-- Registration Option -->
+  <div class="text-center mt-4 pt-3 border-top">
+    <span class="text-muted small">Don't have an account?</span>
     <a href="{% url 'accounts:register' %}" class="fw-bold text-decoration-none text-primary small ms-1">
-      Register Now <i data-lucide="arrow-right" style="width: 13px; margin-top: -2px;"></i>
+      Create New Account <i data-lucide="arrow-right" style="width: 13px; margin-top: -2px;"></i>
     </a>
-  </div>
-
-  <div class="mt-4 pt-3 border-top text-center">
-    <div class="text-muted fw-semibold small mb-2">Demo Quick Sign-In Accounts</div>
-    <div class="d-flex flex-wrap gap-2 justify-content-center">
-      <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.76rem;" onclick="fillLogin('admin', 'FitNova@Admin2026')">
-        👑 Admin
-      </button>
-      <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.76rem;" onclick="fillLogin('staff1', 'Staff@FitNova2026')">
-        📋 Staff
-      </button>
-      <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.76rem;" onclick="fillLogin('alex_trainer', 'Trainer@FitNova2026')">
-        🏋️ Trainer
-      </button>
-      <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.76rem;" onclick="fillLogin('john_doe', 'Member@FitNova2026')">
-        🏃 Member
-      </button>
-    </div>
   </div>
 </div>
 
@@ -131,10 +132,7 @@
   if (typeof lucide !== 'undefined') {
     lucide.createIcons();
   }
-  function fillLogin(u, p) {
-    document.getElementById('authUsername').value = u;
-    document.getElementById('authPassword').value = p;
-  }
+
   function togglePasswordVisibility(inputId, iconId) {
     const input = document.getElementById(inputId);
     const icon = document.getElementById(iconId);
@@ -148,10 +146,10 @@
     }
     if (typeof lucide !== 'undefined') lucide.createIcons();
   }
+
   function forgotPasswordAlert() {
     alert("For password reset assistance, please contact your FitNova gym administrator or reception front desk (+1 555-749-2000).");
   }
 </script>
 </body>
 </html>
-

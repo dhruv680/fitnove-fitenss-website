@@ -50,6 +50,20 @@ class RoleBasedAccessControlTestCase(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('dashboard:index'))
 
+    def test_login_page_renders_cleanly_without_demo_buttons(self):
+        response = self.client.get(reverse('accounts:login'))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'Demo Quick Sign-In')
+        self.assertNotContains(response, 'fillLogin')
+        self.assertContains(response, 'Create New Account')
+        self.assertContains(response, reverse('accounts:register'))
+
+    def test_registration_page_has_sign_in_link(self):
+        response = self.client.get(reverse('accounts:register'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Sign In')
+        self.assertContains(response, reverse('accounts:login'))
+
 
 class RegistrationAndFaceAuthTestCase(TestCase):
     def setUp(self):
