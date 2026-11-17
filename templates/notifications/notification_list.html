@@ -51,10 +51,10 @@
             <p class="text-muted small mb-2">{{ notif.message }}</p>
             <div class="d-flex gap-2">
               {% if not notif.is_read %}
-              <a href="{% url 'notifications:mark_read' notif.id %}" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;">Mark as Read</a>
+              <a href="{% url 'notifications:mark_read' notif.id %}" class="btn btn-sm btn-outline-secondary py-0 px-2 fn-mark-read-btn" data-notif-id="{{ notif.id }}" style="font-size: 0.75rem;">Mark as Read</a>
               {% endif %}
               {% if notif.action_url %}
-              <a href="{{ notif.action_url }}" class="btn btn-sm btn-fn-accent py-0 px-2" style="font-size: 0.75rem;">View Details &rarr;</a>
+              <a href="{% url 'notifications:mark_read' notif.id %}?navigate=1" class="btn btn-sm btn-fn-accent py-0 px-2" style="font-size: 0.75rem;">View Details &rarr;</a>
               {% endif %}
             </div>
           </div>
@@ -70,5 +70,50 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.fn-mark-read-btn').forEach(btn => {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      const notifId = this.dataset.notifId;
+      const url = this.getAttribute('href');
+      const item = this.closest('.list-group-item');
+
+      fetch(url, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          if (item) item.classList.remove('bg-light');
+          this.remove();
+          // Update badges
+          document.querySelectorAll('.fn-nav-badge, .fn-badge-dot').forEach(el => {
+            if (data.unread_count > 0) {
+              if (el.classList.contains('fn-nav-badge')) el.textContent = data.unread_count;
+            } else {
+              el.remove();
+            }
+          });
+          const unreadPill = document.querySelector('a[href="?filter=unread"] .badge');
+          if (unreadPill) {
+            if (data.unread_count > 0) unreadPill.textContent = data.unread_count;
+            else unreadPill.remove();
+          }
+          if (window.showFitNovaToast) {
+            window.showFitNovaToast("Notification marked as read.", "success", 2500);
+          }
+        }
+      })
+      .catch(() => {
+        window.location.href = url;
+      });
+    });
+  });
+});
+</script>
 {% endblock %}
 

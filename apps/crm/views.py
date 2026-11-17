@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -16,31 +17,36 @@ class LeadSerializer(serializers.ModelSerializer):
 @login_required
 @staff_or_admin
 def lead_list(request):
-    leads = Lead.objects.all()
+    base_leads = Lead.objects.all()
     if not request.user.is_super_admin:
-        leads = leads.filter(organization=request.user.organization)
+        base_leads = base_leads.filter(organization=request.user.organization)
 
     search = request.GET.get('search', '').strip()
     status_filter = request.GET.get('status', '').strip()
 
+    # Search filter applied to pipeline
     if search:
-        leads = leads.filter(
+        search_qs = base_leads.filter(
             Q(full_name__icontains=search) |
             Q(phone__icontains=search) |
             Q(email__icontains=search)
         )
+    else:
+        search_qs = base_leads
 
+    # Accurate pipeline counts across all stages
+    counts = {
+        'total': base_leads.count(),
+        'new': base_leads.filter(status=Lead.Status.NEW).count(),
+        'contacted': base_leads.filter(status=Lead.Status.CONTACTED).count(),
+        'trial': base_leads.filter(status=Lead.Status.TRIAL_SCHEDULED).count(),
+        'converted': base_leads.filter(status=Lead.Status.CONVERTED).count(),
+        'lost': base_leads.filter(status=Lead.Status.LOST).count(),
+    }
+
+    leads = search_qs
     if status_filter:
         leads = leads.filter(status=status_filter)
-
-    counts = {
-        'total': leads.count(),
-        'new': leads.filter(status=Lead.Status.NEW).count(),
-        'contacted': leads.filter(status=Lead.Status.CONTACTED).count(),
-        'trial': leads.filter(status=Lead.Status.TRIAL_SCHEDULED).count(),
-        'converted': leads.filter(status=Lead.Status.CONVERTED).count(),
-        'lost': leads.filter(status=Lead.Status.LOST).count(),
-    }
 
     paginator = Paginator(leads, 12)
     page_obj = paginator.get_page(request.GET.get('page'))
@@ -67,6 +73,20 @@ def lead_create(request):
         follow_up_date = request.POST.get('follow_up_date') or None
         notes = request.POST.get('notes', '').strip()
 
+        if not full_name:
+            messages.error(request, "Prospect full name is required.")
+            return render(request, 'crm/lead_form.html', {
+                'sources': Lead.Source.choices,
+                'form_data': request.POST
+            })
+
+        if not phone:
+            messages.error(request, "Contact phone number is required.")
+            return render(request, 'crm/lead_form.html', {
+                'sources': Lead.Source.choices,
+                'form_data': request.POST
+            })
+
         lead = Lead.objects.create(
             organization=request.user.organization,
             branch=request.user.branch,
@@ -80,7 +100,7 @@ def lead_create(request):
             notes=notes,
             status=Lead.Status.NEW
         )
-        messages.success(request, f"Inquiry lead for {lead.full_name} captured!")
+        messages.success(request, f"Inquiry lead for {lead.full_name} captured successfully!")
         return redirect('crm:lead_list')
 
     return render(request, 'crm/lead_form.html', {
@@ -92,6 +112,10 @@ def lead_create(request):
 @staff_or_admin
 def lead_update_status(request, pk):
     lead = get_object_or_404(Lead, pk=pk)
+    if not request.user.is_super_admin and lead.organization != request.user.organization:
+        messages.error(request, "Permission denied.")
+        return redirect('crm:lead_list')
+
     if request.method == 'POST':
         new_status = request.POST.get('status')
         note = request.POST.get('note', '').strip()
@@ -100,7 +124,16 @@ def lead_update_status(request, pk):
             if note:
                 lead.notes += f"\n[{lead.get_status_display()}]: {note}"
             lead.save()
-            messages.success(request, f"Lead status updated to {lead.get_status_display()}.")
+            msg = f"Lead status updated to {lead.get_status_display()}."
+            messages.success(request, msg)
+
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'status': lead.status,
+                    'status_display': lead.get_status_display(),
+                    'message': msg
+                })
 
     return redirect('crm:lead_list')
 

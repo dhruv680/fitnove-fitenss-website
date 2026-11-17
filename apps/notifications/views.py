@@ -13,16 +13,20 @@ class NotificationSerializer(serializers.ModelSerializer):
 
 @login_required
 def notification_list(request):
-    notifications = request.user.notifications.all()
+    all_notifications = request.user.notifications.all()
+    unread_count = all_notifications.filter(is_read=False).count()
     filter_type = request.GET.get('filter', 'all')
 
     if filter_type == 'unread':
-        notifications = notifications.filter(is_read=False)
+        notifications = all_notifications.filter(is_read=False)
+    else:
+        notifications = all_notifications
 
     return render(request, 'notifications/notification_list.html', {
         'notifications': notifications,
         'filter_type': filter_type,
-        'unread_count': request.user.notifications.filter(is_read=False).count()
+        'unread_count': unread_count,
+        'total_count': all_notifications.count()
     })
 
 
@@ -31,8 +35,23 @@ def mark_read(request, pk):
     notification = get_object_or_404(request.user.notifications, pk=pk)
     notification.is_read = True
     notification.save()
-    if notification.action_url:
+
+    unread_count = request.user.notifications.filter(is_read=False).count()
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax') == '1':
+        return JsonResponse({
+            'success': True,
+            'id': notification.id,
+            'unread_count': unread_count,
+            'action_url': notification.action_url or ''
+        })
+
+    if request.GET.get('navigate') == '1' and notification.action_url:
         return redirect(notification.action_url)
+
+    referer = request.META.get('HTTP_REFERER')
+    if referer and 'notifications' in referer:
+        return redirect(referer)
     return redirect('notifications:list')
 
 
@@ -40,6 +59,13 @@ def mark_read(request, pk):
 def mark_all_read(request):
     request.user.notifications.filter(is_read=False).update(is_read=True)
     messages.success(request, "All notifications marked as read.")
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax') == '1':
+        return JsonResponse({'success': True, 'unread_count': 0})
+
+    referer = request.META.get('HTTP_REFERER')
+    if referer and 'notifications' in referer:
+        return redirect(referer)
     return redirect('notifications:list')
 
 

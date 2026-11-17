@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
@@ -49,12 +50,30 @@ def class_create(request):
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
         trainer_id = request.POST.get('trainer_id')
-        capacity = int(request.POST.get('capacity', '20'))
+        capacity_raw = request.POST.get('capacity', '20')
         room = request.POST.get('room', 'Studio A').strip()
         schedule_time = request.POST.get('schedule_time')
-        duration = int(request.POST.get('duration_minutes', '60'))
+        duration_raw = request.POST.get('duration_minutes', '60')
         days = request.POST.get('days_of_week', 'Mon, Wed, Fri').strip()
         description = request.POST.get('description', '').strip()
+
+        if not name:
+            messages.error(request, "Class name is required.")
+            return render(request, 'classes/class_form.html', {'trainers': trainers})
+
+        if not schedule_time:
+            messages.error(request, "Schedule start time is required.")
+            return render(request, 'classes/class_form.html', {'trainers': trainers})
+
+        try:
+            capacity = max(1, int(capacity_raw))
+        except (ValueError, TypeError):
+            capacity = 20
+
+        try:
+            duration = max(15, int(duration_raw))
+        except (ValueError, TypeError):
+            duration = 60
 
         trainer = trainers.filter(id=trainer_id).first() if trainer_id else None
 
@@ -64,10 +83,10 @@ def class_create(request):
             name=name,
             trainer=trainer,
             capacity=capacity,
-            room=room,
+            room=room or 'Main Studio',
             schedule_time=schedule_time,
             duration_minutes=duration,
-            days_of_week=days,
+            days_of_week=days or 'Monday, Wednesday, Friday',
             description=description
         )
         messages.success(request, f"Class '{cls.name}' scheduled successfully!")
@@ -82,11 +101,16 @@ def class_detail(request, pk):
     today = timezone.now().date()
     bookings = cls.bookings.filter(booking_date__gte=today).select_related('member__user').order_by('booking_date')
 
+    members = Member.objects.filter(status='ACTIVE')
+    if not request.user.is_super_admin:
+        members = members.filter(organization=request.user.organization)
+
     return render(request, 'classes/class_detail.html', {
         'cls': cls,
         'bookings': bookings,
         'today': today,
-        'slots_left': cls.available_slots(today)
+        'slots_left': cls.available_slots(today),
+        'members': members
     })
 
 
@@ -95,19 +119,36 @@ def book_class(request, pk):
     cls = get_object_or_404(FitnessClass, pk=pk)
     today = timezone.now().date()
 
+    if request.method != 'POST':
+        return redirect('classes:class_detail', pk=cls.pk)
+
     if request.user.is_member:
-        member = request.user.member_profile
+        member = getattr(request.user, 'member_profile', None)
+        if not member:
+            messages.error(request, "Member profile not found for this account.")
+            return redirect('classes:class_list')
     else:
         member_id = request.POST.get('member_id')
-        member = get_object_or_404(Member, id=member_id)
+        if not member_id:
+            messages.error(request, "Please select an active member to book.")
+            next_url = request.POST.get('next') or request.META.get('HTTP_REFERER')
+            return redirect(next_url or 'classes:class_list')
+
+        member = Member.objects.filter(id=member_id).first()
+        if not member:
+            messages.error(request, "Selected member could not be found.")
+            next_url = request.POST.get('next') or request.META.get('HTTP_REFERER')
+            return redirect(next_url or 'classes:class_list')
 
     if not member.is_membership_active:
         messages.error(request, f"Member {member.full_name} does not have an active membership subscription.")
-        return redirect('classes:class_list')
+        next_url = request.POST.get('next') or request.META.get('HTTP_REFERER')
+        return redirect(next_url or 'classes:class_list')
 
     if cls.available_slots(today) <= 0:
         messages.error(request, f"Sorry, '{cls.name}' is already at full capacity ({cls.capacity} seats).")
-        return redirect('classes:class_list')
+        next_url = request.POST.get('next') or request.META.get('HTTP_REFERER')
+        return redirect(next_url or 'classes:class_list')
 
     booking, created = ClassBooking.objects.get_or_create(
         fitness_class=cls,
@@ -117,10 +158,24 @@ def book_class(request, pk):
     )
 
     if not created:
-        messages.info(request, f"{member.full_name} is already booked for this class today.")
+        msg = f"{member.full_name} is already booked for this class today."
+        messages.info(request, msg)
     else:
-        messages.success(request, f"Seat confirmed for {member.full_name} in {cls.name}!")
+        msg = f"Seat confirmed for {member.full_name} in {cls.name}!"
+        messages.success(request, msg)
 
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({
+            'success': True,
+            'created': created,
+            'message': msg,
+            'slots_left': cls.available_slots(today),
+            'is_full': cls.available_slots(today) <= 0
+        })
+
+    next_url = request.POST.get('next')
+    if next_url:
+        return redirect(next_url)
     return redirect('classes:class_detail', pk=cls.pk)
 
 

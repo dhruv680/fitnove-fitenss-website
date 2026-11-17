@@ -40,13 +40,17 @@
             <label class="fn-form-label">Specialization Area <span class="text-danger">*</span></label>
             <input type="text" name="specialization" class="fn-input" value="{{ trainer.specialization }}" required placeholder="e.g. Strength & Conditioning, HIIT, Yoga">
           </div>
-          <div class="col-md-3">
+          <div class="col-md-4">
             <label class="fn-form-label">Years of Experience</label>
             <input type="number" name="experience_years" class="fn-input" value="{{ trainer.experience_years|default:3 }}">
           </div>
-          <div class="col-md-3">
-            <label class="fn-form-label">Hourly Coaching Rate</label>
+          <div class="col-md-4">
+            <label class="fn-form-label">Hourly Coaching Rate ({{ current_org.currency|default:'$' }})</label>
             <input type="number" step="0.01" name="hourly_rate" class="fn-input" value="{{ trainer.hourly_rate|default:'45.00' }}">
+          </div>
+          <div class="col-md-4">
+            <label class="fn-form-label">Trainer Rating (1.0 - 5.0)</label>
+            <input type="number" step="0.1" min="1.0" max="5.0" name="rating" class="fn-input" value="{{ trainer.rating|default:'5.0' }}">
           </div>
           <div class="col-12">
             <label class="fn-form-label">Certifications & Credentials</label>

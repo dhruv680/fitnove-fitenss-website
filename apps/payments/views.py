@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -151,10 +152,11 @@ def expense_list(request):
     if search_query:
         expenses = expenses.filter(
             Q(title__icontains=search_query) |
-            Q(paid_to__icontains=search_query)
+            Q(paid_to__icontains=search_query) |
+            Q(notes__icontains=search_query)
         )
 
-    total_expense = expenses.aggregate(Sum('amount'))['amount__sum'] or 0
+    total_expense = expenses.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
 
     paginator = Paginator(expenses, 12)
     page_number = request.GET.get('page')
@@ -175,10 +177,31 @@ def expense_create(request):
     if request.method == 'POST':
         title = request.POST.get('title', '').strip()
         category = request.POST.get('category', 'OTHER')
-        amount = request.POST.get('amount', '0.00')
+        amount_raw = request.POST.get('amount', '0.00').strip()
         date = request.POST.get('date') or timezone.now().date()
         paid_to = request.POST.get('paid_to', '').strip()
         notes = request.POST.get('notes', '').strip()
+
+        if not title:
+            messages.error(request, "Expense title is required.")
+            return render(request, 'payments/expense_form.html', {
+                'categories': Expense.Category.choices,
+                'form_data': request.POST
+            })
+
+        try:
+            amount = Decimal(amount_raw)
+            if amount <= 0:
+                raise ValueError("Amount must be greater than zero.")
+        except Exception:
+            messages.error(request, "Please enter a valid positive expense amount (e.g. 50.00).")
+            return render(request, 'payments/expense_form.html', {
+                'categories': Expense.Category.choices,
+                'form_data': request.POST
+            })
+
+        if category not in Expense.Category.values:
+            category = Expense.Category.OTHER
 
         Expense.objects.create(
             organization=request.user.organization,

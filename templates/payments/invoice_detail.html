@@ -5,18 +5,37 @@
 {% block extra_head %}
 <style>
   @media print {
-    .fn-sidebar, .fn-topbar, .btn-print-hide {
+    body, html {
+      background: #FFFFFF !important;
+      color: #000000 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    .fn-sidebar, .fn-topbar, .btn-print-hide, .fn-toast-container {
       display: none !important;
+    }
+    .fn-app-wrapper {
+      display: block !important;
     }
     .fn-main-content {
       margin-left: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      max-width: 100% !important;
     }
     .fn-page-container {
       padding: 0 !important;
+      margin: 0 !important;
     }
     .fn-card {
       box-shadow: none !important;
-      border: 1px solid #ddd !important;
+      border: 1px solid #D1D5DB !important;
+      padding: 24px !important;
+    }
+    .badge, .fn-badge {
+      border: 1px solid #10B981 !important;
+      color: #059669 !important;
+      background: #ECFDF5 !important;
     }
   }
 </style>

@@ -216,7 +216,7 @@
           <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 p-0" style="width: 320px; border-radius: 16px; overflow: hidden;">
             <div class="p-3 bg-light border-bottom d-flex align-items-center justify-content-between">
               <span class="fw-bold text-dark fs-6">Notifications</span>
-              <a href="{% url 'notifications:mark_all_read' %}" class="text-decoration-none text-muted small">Mark all read</a>
+              <a href="{% url 'notifications:mark_all_read' %}" class="text-decoration-none text-muted small fn-mark-all-read-topbar">Mark all read</a>
             </div>
             <div class="list-group list-group-flush" style="max-height: 280px; overflow-y: auto;">
               {% for notif in recent_notifications %}

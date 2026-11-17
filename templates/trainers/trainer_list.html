@@ -17,6 +17,29 @@
     </div>
   </div>
 
+  <!-- Search & Filter Bar -->
+  <div class="col-12">
+    <div class="fn-card p-3">
+      <form method="GET" action="{% url 'trainers:trainer_list' %}" class="row g-2 align-items-center">
+        <div class="col-md-6">
+          <input type="text" name="search" class="fn-input" placeholder="Search trainer name, email, specialization, or ID..." value="{{ search_query }}">
+        </div>
+        <div class="col-md-4">
+          <select name="status" class="fn-select">
+            <option value="">All Trainer Statuses</option>
+            <option value="ACTIVE" {% if status_filter == 'ACTIVE' %}selected{% endif %}>Active Coaches</option>
+            <option value="ON_LEAVE" {% if status_filter == 'ON_LEAVE' %}selected{% endif %}>On Leave</option>
+            <option value="INACTIVE" {% if status_filter == 'INACTIVE' %}selected{% endif %}>Inactive</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+          <button type="submit" class="btn btn-fn-primary w-100">Filter</button>
+          <a href="{% url 'trainers:trainer_list' %}" class="btn btn-fn-outline" title="Reset"><i data-lucide="rotate-ccw" style="width: 16px;"></i></a>
+        </div>
+      </form>
+    </div>
+  </div>
+
   {% for t in page_obj %}
   <div class="col-lg-4 col-md-6">
     <div class="fn-card h-100 text-center p-4">

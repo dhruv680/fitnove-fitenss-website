@@ -52,8 +52,28 @@ def trainer_create(request):
         specialization = request.POST.get('specialization', '').strip()
         experience_years = request.POST.get('experience_years', '1')
         hourly_rate = request.POST.get('hourly_rate', '0.00')
+        rating = request.POST.get('rating', '5.0')
         bio = request.POST.get('bio', '').strip()
         certifications = request.POST.get('certifications', '').strip()
+
+        if not first_name or not last_name or not email:
+            messages.error(request, "First name, last name, and email address are required.")
+            return render(request, 'trainers/trainer_form.html', {'is_edit': False})
+
+        try:
+            exp_yrs = max(0, int(experience_years))
+        except (ValueError, TypeError):
+            exp_yrs = 1
+
+        try:
+            rate = max(0.0, float(hourly_rate))
+        except (ValueError, TypeError):
+            rate = 0.0
+
+        try:
+            rat = min(5.0, max(1.0, float(rating)))
+        except (ValueError, TypeError):
+            rat = 5.0
 
         try:
             trainer = TrainerService.create_trainer(
@@ -63,16 +83,17 @@ def trainer_create(request):
                 last_name=last_name,
                 email=email,
                 phone=phone,
-                specialization=specialization,
-                experience_years=int(experience_years),
-                hourly_rate=float(hourly_rate),
+                specialization=specialization or 'General Fitness',
+                experience_years=exp_yrs,
+                hourly_rate=rate,
+                rating=rat,
                 bio=bio,
                 certifications=certifications
             )
-            messages.success(request, f"Trainer {trainer.full_name} created successfully!")
+            messages.success(request, f"Trainer {trainer.full_name} onboarded successfully!")
             return redirect('trainers:trainer_detail', pk=trainer.pk)
         except Exception as e:
-            messages.error(request, f"Error creating trainer: {str(e)}")
+            messages.error(request, f"Error onboarding trainer: {str(e)}")
 
     return render(request, 'trainers/trainer_form.html', {'is_edit': False})
 
@@ -96,15 +117,42 @@ def trainer_edit(request, pk):
     trainer = get_object_or_404(trainers, pk=pk)
 
     if request.method == 'POST':
-        trainer.user.first_name = request.POST.get('first_name', '').strip()
-        trainer.user.last_name = request.POST.get('last_name', '').strip()
-        trainer.user.phone = request.POST.get('phone', '').strip()
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        phone = request.POST.get('phone', '').strip()
+
+        if first_name:
+            trainer.user.first_name = first_name
+        if last_name:
+            trainer.user.last_name = last_name
+        if phone:
+            trainer.user.phone = phone
         trainer.user.save()
 
-        trainer.specialization = request.POST.get('specialization', '').strip()
-        trainer.experience_years = int(request.POST.get('experience_years', '1'))
-        trainer.hourly_rate = float(request.POST.get('hourly_rate', '0.00'))
-        trainer.status = request.POST.get('status', trainer.status)
+        specialization = request.POST.get('specialization', '').strip()
+        if specialization:
+            trainer.specialization = specialization
+
+        try:
+            trainer.experience_years = max(0, int(request.POST.get('experience_years', trainer.experience_years)))
+        except (ValueError, TypeError):
+            pass
+
+        try:
+            trainer.hourly_rate = max(0.0, float(request.POST.get('hourly_rate', trainer.hourly_rate)))
+        except (ValueError, TypeError):
+            pass
+
+        if request.POST.get('rating'):
+            try:
+                trainer.rating = min(5.0, max(1.0, float(request.POST.get('rating'))))
+            except (ValueError, TypeError):
+                pass
+
+        new_status = request.POST.get('status')
+        if new_status in Trainer.Status.values:
+            trainer.status = new_status
+
         trainer.bio = request.POST.get('bio', '').strip()
         trainer.certifications = request.POST.get('certifications', '').strip()
         trainer.save()

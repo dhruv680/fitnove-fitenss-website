@@ -12,7 +12,7 @@ class TrainerService:
 
     @staticmethod
     @transaction.atomic
-    def create_trainer(organization, branch, first_name, last_name, email, phone, specialization, experience_years, hourly_rate, bio='', certifications=''):
+    def create_trainer(organization, branch, first_name, last_name, email, phone, specialization, experience_years, hourly_rate, rating=5.0, bio='', certifications=''):
         username = email.split('@')[0]
         base_username = username
         counter = 1
@@ -34,6 +34,9 @@ class TrainerService:
 
         emp_count = Trainer.objects.filter(organization=organization).count() + 1
         emp_id = f"TRN-{emp_count:04d}"
+        while Trainer.objects.filter(employee_id=emp_id).exists():
+            emp_count += 1
+            emp_id = f"TRN-{emp_count:04d}"
 
         trainer = Trainer.objects.create(
             user=user,
@@ -43,6 +46,7 @@ class TrainerService:
             specialization=specialization,
             experience_years=experience_years,
             hourly_rate=hourly_rate,
+            rating=rating,
             bio=bio,
             certifications=certifications
         )

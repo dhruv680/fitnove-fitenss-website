@@ -21,17 +21,17 @@
         {% csrf_token %}
         <div class="mb-3">
           <label class="fn-form-label">Full Name <span class="text-danger">*</span></label>
-          <input type="text" name="full_name" class="fn-input" required placeholder="e.g. Rachel Adams">
+          <input type="text" name="full_name" class="fn-input" value="{{ form_data.full_name|default:'' }}" required placeholder="e.g. Rachel Adams">
         </div>
 
         <div class="row g-3 mb-3">
           <div class="col-md-6">
             <label class="fn-form-label">Phone Number <span class="text-danger">*</span></label>
-            <input type="tel" name="phone" class="fn-input" required placeholder="+1 555-0182">
+            <input type="tel" name="phone" class="fn-input" value="{{ form_data.phone|default:'' }}" required placeholder="+1 555-0182">
           </div>
           <div class="col-md-6">
             <label class="fn-form-label">Email Address</label>
-            <input type="email" name="email" class="fn-input" placeholder="rachel@example.com">
+            <input type="email" name="email" class="fn-input" value="{{ form_data.email|default:'' }}" placeholder="rachel@example.com">
           </div>
         </div>
 
@@ -40,30 +40,30 @@
             <label class="fn-form-label">Inquiry Source</label>
             <select name="source" class="fn-select">
               {% for s_val, s_label in sources %}
-              <option value="{{ s_val }}">{{ s_label }}</option>
+              <option value="{{ s_val }}" {% if form_data.source == s_val %}selected{% endif %}>{{ s_label }}</option>
               {% endfor %}
             </select>
           </div>
           <div class="col-md-6">
             <label class="fn-form-label">Program of Interest</label>
-            <input type="text" name="interest" class="fn-input" value="Annual VIP Membership" placeholder="e.g. Weight loss, Personal Training">
+            <input type="text" name="interest" class="fn-input" value="{{ form_data.interest|default:'Annual VIP Membership' }}" placeholder="e.g. Weight loss, Personal Training">
           </div>
         </div>
 
         <div class="row g-3 mb-3">
           <div class="col-md-6">
             <label class="fn-form-label">Free Trial Date</label>
-            <input type="date" name="trial_date" class="fn-input">
+            <input type="date" name="trial_date" class="fn-input" value="{{ form_data.trial_date|default:'' }}">
           </div>
           <div class="col-md-6">
             <label class="fn-form-label">Next Follow-Up Date</label>
-            <input type="date" name="follow_up_date" class="fn-input">
+            <input type="date" name="follow_up_date" class="fn-input" value="{{ form_data.follow_up_date|default:'' }}">
           </div>
         </div>
 
         <div class="mb-4">
           <label class="fn-form-label">Prospect Notes</label>
-          <textarea name="notes" class="fn-textarea" rows="3" placeholder="Preferences, previous gyms, health conditions..."></textarea>
+          <textarea name="notes" class="fn-textarea" rows="3" placeholder="Preferences, previous gyms, health conditions...">{{ form_data.notes|default:'' }}</textarea>
         </div>
 
         <div class="text-end">

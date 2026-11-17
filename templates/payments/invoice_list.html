@@ -11,6 +11,29 @@
     </div>
   </div>
 
+  <!-- Search and Status Filter Bar -->
+  <div class="col-12">
+    <div class="fn-card p-3">
+      <form method="GET" action="{% url 'payments:invoice_list' %}" class="row g-2 align-items-center">
+        <div class="col-md-6">
+          <input type="text" name="search" class="fn-input" placeholder="Search invoice # or athlete name..." value="{{ search_query }}">
+        </div>
+        <div class="col-md-4">
+          <select name="status" class="fn-select">
+            <option value="">All Invoice Statuses</option>
+            <option value="PAID" {% if status_filter == 'PAID' %}selected{% endif %}>Paid</option>
+            <option value="ISSUED" {% if status_filter == 'ISSUED' %}selected{% endif %}>Issued</option>
+            <option value="CANCELLED" {% if status_filter == 'CANCELLED' %}selected{% endif %}>Cancelled</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+          <button type="submit" class="btn btn-fn-primary w-100">Filter</button>
+          <a href="{% url 'payments:invoice_list' %}" class="btn btn-fn-outline" title="Reset"><i data-lucide="rotate-ccw" style="width: 16px;"></i></a>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div class="col-12">
     <div class="fn-table-responsive">
       <table class="fn-table">

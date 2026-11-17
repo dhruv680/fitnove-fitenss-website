@@ -220,11 +220,11 @@ function initFormInteractions() {
         const originalWidth = submitBtn.offsetWidth;
         const originalContent = submitBtn.innerHTML;
         submitBtn.style.minWidth = `${originalWidth}px`;
-        submitBtn.disabled = true;
+        submitBtn.style.pointerEvents = 'none';
         submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Saving...`;
 
         setTimeout(() => {
-          submitBtn.disabled = false;
+          submitBtn.style.pointerEvents = '';
           submitBtn.innerHTML = originalContent;
           delete form.dataset.submitting;
         }, 8000);
@@ -232,6 +232,120 @@ function initFormInteractions() {
     });
   });
 }
+
+/* --------------------------------------------------------------------------
+   7. Modern Toast Notification & Auto-Dismiss System
+   -------------------------------------------------------------------------- */
+function initToasts() {
+  // Auto dismiss existing flash messages after 5 seconds
+  const alerts = document.querySelectorAll('.alert-dismissible');
+  alerts.forEach(alert => {
+    setTimeout(() => {
+      if (typeof bootstrap !== 'undefined' && bootstrap.Alert) {
+        const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+        if (bsAlert) bsAlert.close();
+      } else {
+        alert.remove();
+      }
+    }, 5000);
+  });
+
+  // Topbar quick "Mark all read" AJAX handler
+  const markAllBtn = document.querySelector('.fn-mark-all-read-topbar');
+  if (markAllBtn) {
+    markAllBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      const url = this.getAttribute('href');
+      fetch(url, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          document.querySelectorAll('.fn-badge-dot, .fn-nav-badge').forEach(b => b.remove());
+          const notifList = document.querySelector('.fn-topbar .dropdown-menu .list-group');
+          if (notifList) {
+            notifList.innerHTML = `
+              <div class="p-4 text-center text-muted small">
+                <i data-lucide="bell-off" class="mb-2" style="width: 24px;"></i>
+                <div>No new notifications</div>
+              </div>
+            `;
+            initLucide();
+          }
+          if (window.showFitNovaToast) {
+            window.showFitNovaToast("All alerts marked as read.", "success", 2500);
+          }
+        }
+      })
+      .catch(() => {
+        window.location.href = url;
+      });
+    });
+  }
+}
+
+// Global Toast Dispatcher
+window.showFitNovaToast = function (message, type = 'success', duration = 4000) {
+  let container = document.querySelector('.fn-toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.className = 'fn-toast-container';
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement('div');
+  toast.className = 'fn-toast';
+
+  const iconName = (type === 'success') ? 'check-circle' : ((type === 'danger' || type === 'error') ? 'alert-circle' : ((type === 'warning') ? 'alert-triangle' : 'info'));
+  const iconColor = (type === 'success') ? '#10B981' : ((type === 'danger' || type === 'error') ? '#EF4444' : ((type === 'warning') ? '#F59E0B' : '#7657E8'));
+  const title = (type === 'danger' || type === 'error') ? 'Error' : (type.charAt(0).toUpperCase() + type.slice(1));
+
+  toast.innerHTML = `
+    <div style="color: ${iconColor}; display: flex; align-items: center; justify-content: center; margin-top: 2px;">
+      <i data-lucide="${iconName}" style="width: 20px; height: 20px;"></i>
+    </div>
+    <div class="flex-grow-1">
+      <div class="fw-bold text-dark small" style="font-size: 0.88rem; line-height: 1.3;">${title}</div>
+      <div class="text-muted small mt-1" style="font-size: 0.82rem; line-height: 1.4;">${message}</div>
+    </div>
+    <button type="button" class="btn-close" style="font-size: 0.65rem; margin-top: 2px;" aria-label="Close"></button>
+    <div class="fn-toast-progress" style="background: ${iconColor};"></div>
+  `;
+
+  const closeBtn = toast.querySelector('.btn-close');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(-10px)';
+      setTimeout(() => toast.remove(), 250);
+    });
+  }
+
+  container.appendChild(toast);
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+
+  // Progress animation
+  const progress = toast.querySelector('.fn-toast-progress');
+  if (progress) {
+    progress.style.transition = `width ${duration}ms linear`;
+    requestAnimationFrame(() => {
+      progress.style.width = '0%';
+    });
+  }
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(-10px)';
+    toast.style.transition = 'all 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+};
+
+// Replace browser native alert() with sleek FitNova toast
+window.alert = function (msg) {
+  window.showFitNovaToast(msg, 'info', 4500);
+};
 
 /* --------------------------------------------------------------------------
    8. Bootstrap Tooltips Initializer
