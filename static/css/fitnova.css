@@ -1534,3 +1534,147 @@ body.sidebar-collapsed .fn-nav-link i {
     scroll-behavior: auto !important;
   }
 }
+
+/* ==========================================================================
+   FitNova Global Footer & Social Media Hub
+   ========================================================================== */
+.fn-site-footer {
+  margin-top: 48px;
+  padding: 24px 32px;
+  background: #FFFFFF;
+  border-top: 1px solid var(--fn-border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -2px 10px rgba(15, 23, 42, 0.02);
+}
+
+.fn-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fn-footer-copy {
+  color: var(--fn-text-muted);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.fn-social-links {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fn-social-btn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF !important;
+  text-decoration: none;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, filter 0.2s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+}
+
+.fn-social-btn i,
+.fn-social-btn svg {
+  width: 19px;
+  height: 19px;
+  stroke-width: 2.2;
+}
+
+/* Instagram Official Gradient */
+.fn-social-btn.instagram {
+  background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+}
+.fn-social-btn.instagram:hover {
+  transform: translateY(-4px) scale(1.12);
+  box-shadow: 0 8px 20px rgba(214, 36, 159, 0.45);
+}
+
+/* LinkedIn Official Blue */
+.fn-social-btn.linkedin {
+  background: #0A66C2;
+}
+.fn-social-btn.linkedin:hover {
+  transform: translateY(-4px) scale(1.12);
+  box-shadow: 0 8px 20px rgba(10, 102, 194, 0.45);
+}
+
+/* WhatsApp Official Green */
+.fn-social-btn.whatsapp {
+  background: #25D366;
+}
+.fn-social-btn.whatsapp:hover {
+  transform: translateY(-4px) scale(1.12);
+  box-shadow: 0 8px 20px rgba(37, 211, 102, 0.45);
+}
+
+/* Twitter / X Official Dark */
+.fn-social-btn.twitter {
+  background: #0F172A;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.fn-social-btn.twitter:hover {
+  transform: translateY(-4px) scale(1.12);
+  background: #000000;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.45);
+}
+
+/* Platform Name Tooltip on Hover */
+.fn-social-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: #0F172A;
+  color: #FFFFFF;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  z-index: 100;
+}
+
+.fn-social-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 4px;
+  border-style: solid;
+  border-color: #0F172A transparent transparent transparent;
+}
+
+.fn-social-btn:hover .fn-social-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+@media (max-width: 768px) {
+  .fn-site-footer {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px 16px;
+    gap: 14px;
+  }
+  .fn-footer-brand {
+    justify-content: center;
+  }
+}
+

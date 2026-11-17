@@ -8,7 +8,10 @@
 <script src="{% static 'js/html5-qrcode.min.js' %}"></script>
 <script>
   if (typeof Html5Qrcode === 'undefined') {
-    document.write('<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"><\/script>');
+    const s = document.createElement('script');
+    s.src = "https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js";
+    s.async = false;
+    document.head.appendChild(s);
   }
 </script>
 
@@ -617,6 +620,7 @@
 
           <!-- Live QR Viewfinder Frame -->
           <div class="fn-scanner-box mb-3 d-flex align-items-center justify-content-center" id="scannerBox">
+            <video id="qrCamVideo" autoplay playsinline muted class="d-none" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px; position: absolute; top: 0; left: 0; z-index: 1;"></video>
             <div id="reader"></div>
             <div id="scannerLaser" class="fn-scanner-laser"></div>
 
@@ -929,6 +933,8 @@
 
   // QR Engine State
   let html5QrCode = null;
+  let qrNativeStream = null;
+  let qrNativeDetectInterval = null;
   let isQrScanning = false;
   let isQrProcessing = false;
   let isQrStarting = false;
@@ -941,25 +947,48 @@
      1. Initialization on Page Load
      -------------------------------------------------------------------------- */
   document.addEventListener('DOMContentLoaded', function () {
-    // Start Live Face Recognition by default
-    initFaceCamera();
+    const urlParams = new URLSearchParams(window.location.search);
+    const modeParam = (urlParams.get('mode') || '').toUpperCase();
+    const savedMode = (localStorage.getItem('fitnova_kiosk_mode') || '').toUpperCase();
+
+    let targetMode = 'FACE';
+    if (modeParam === 'QR' || (!modeParam && savedMode === 'QR')) {
+      targetMode = 'QR';
+    }
+
+    if (targetMode === 'QR') {
+      activeKioskMode = 'QR';
+      const btnFace = document.getElementById('modeFaceBtn');
+      const btnQr = document.getElementById('modeQrBtn');
+      const boxFace = document.getElementById('faceRecognitionContainer');
+      const boxQr = document.getElementById('qrScannerContainer');
+      if (btnFace) btnFace.classList.remove('active');
+      if (btnQr) btnQr.classList.add('active');
+      if (boxFace) boxFace.classList.add('d-none');
+      if (boxQr) boxQr.classList.remove('d-none');
+      setTimeout(() => { startScanner(); }, 120);
+    } else {
+      activeKioskMode = 'FACE';
+      initFaceCamera();
+    }
   });
 
   window.addEventListener('beforeunload', function () {
     stopAllCameras();
   });
 
-  function stopAllCameras() {
+  async function stopAllCameras() {
     stopFaceCamera();
-    stopScanner();
+    await stopScanner();
   }
 
   /* --------------------------------------------------------------------------
      2. Mode Switcher: Face Recognition vs QR Code
      -------------------------------------------------------------------------- */
-  function switchScannerMode(mode) {
+  async function switchScannerMode(mode) {
     if (mode === activeKioskMode) return;
     activeKioskMode = mode;
+    try { localStorage.setItem('fitnova_kiosk_mode', mode); } catch (e) {}
 
     const btnFace = document.getElementById('modeFaceBtn');
     const btnQr = document.getElementById('modeQrBtn');
@@ -967,19 +996,21 @@
     const boxQr = document.getElementById('qrScannerContainer');
 
     if (mode === 'FACE') {
-      btnFace.classList.add('active');
-      btnQr.classList.remove('active');
-      boxFace.classList.remove('d-none');
-      boxQr.classList.add('d-none');
-      stopScanner();
+      if (btnFace) btnFace.classList.add('active');
+      if (btnQr) btnQr.classList.remove('active');
+      if (boxFace) boxFace.classList.remove('d-none');
+      if (boxQr) boxQr.classList.add('d-none');
+      await stopScanner();
+      await new Promise(r => setTimeout(r, 160)); // Allow hardware webcam release
       initFaceCamera();
       speakVoice("Switched to Live Face Recognition.");
     } else {
-      btnQr.classList.add('active');
-      btnFace.classList.remove('active');
-      boxQr.classList.remove('d-none');
-      boxFace.classList.add('d-none');
+      if (btnQr) btnQr.classList.add('active');
+      if (btnFace) btnFace.classList.remove('active');
+      if (boxQr) boxQr.classList.remove('d-none');
+      if (boxFace) boxFace.classList.add('d-none');
       stopFaceCamera();
+      await new Promise(r => setTimeout(r, 160)); // Allow hardware webcam release
       startScanner();
       speakVoice("Switched to QR Pass Scanner.");
     }
@@ -1684,7 +1715,7 @@
   }
 
   /* =========================================================================
-     10. PRESERVED DIGITAL QR PASS SCANNER ENGINE (Requirement 8)
+     10. BULLETPROOF DUAL-ENGINE QR ATTENDANCE SCANNER
      ========================================================================= */
   function updateScannerStatus(message, tone = 'info') {
     const badge = document.getElementById('scannerStatusBadge');
@@ -1701,105 +1732,300 @@
     if (typeof initLucide === 'function') initLucide();
   }
 
-  async function waitForHtml5Qrcode(maxWaitMs = 6000) {
+  async function waitForHtml5Qrcode(maxWaitMs = 4000) {
     const start = Date.now();
     while (typeof Html5Qrcode === 'undefined') {
       if (Date.now() - start > maxWaitMs) {
         throw new Error('QR scanner library could not be loaded.');
       }
-      await new Promise(r => setTimeout(r, 50));
+      await new Promise(r => setTimeout(r, 40));
     }
+  }
+
+  function isMobilePlatform() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   }
 
   async function startScanner() {
     if (isQrStarting) return;
     isQrStarting = true;
 
-    try {
-      await waitForHtml5Qrcode();
-    } catch (e) {
+    const errorOverlay = document.getElementById('cameraErrorOverlay');
+    if (errorOverlay) errorOverlay.classList.add('d-none');
+
+    updateScannerStatus('Starting Camera...', 'accent');
+
+    // 1. Check secure context (HTTPS / localhost required for browser mediaDevices)
+    if (!window.isSecureContext && !['localhost', '127.0.0.1'].includes(window.location.hostname)) {
       isQrStarting = false;
-      showCameraPermissionError(e);
+      showCameraPermissionError(new Error('HTTPS connection required for camera access. Please use https://.'));
       return;
     }
 
-    if (html5QrCode && isQrScanning) {
-      try { await html5QrCode.stop(); } catch (e) {}
-      isQrScanning = false;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      isQrStarting = false;
+      showCameraPermissionError(new Error('This browser does not support camera access.'));
+      return;
     }
 
-    const select = document.getElementById('cameraSelect');
-    const selectedCameraId = (select && select.value) ? select.value : null;
-
-    const formats = (typeof Html5QrcodeSupportedFormats !== 'undefined')
-      ? [ Html5QrcodeSupportedFormats.QR_CODE ]
-      : [ 0 ];
-
-    if (!html5QrCode) {
-      html5QrCode = new Html5Qrcode("reader", {
-        formatsToSupport: formats,
-        experimentalFeatures: { useBarCodeDetectorIfSupported: true },
-        verbose: false
-      });
-    }
-
-    const scanConfig = { fps: 15, disableFlip: false };
-    const onScanSuccess = (decodedText) => {
-      if (!isQrProcessing) handleScanPayload(decodedText, false);
-    };
+    // Stop any existing QR streams cleanly
+    await stopScanner();
+    await new Promise(r => setTimeout(r, 100)); // Brief pause for OS camera driver release
 
     let started = false;
     let lastError = null;
 
-    if (selectedCameraId) {
-      try {
-        await html5QrCode.start(selectedCameraId, scanConfig, onScanSuccess, () => {});
-        started = true;
-      } catch (e) { lastError = e; }
-    }
+    try {
+      // 2. Discover available cameras
+      await refreshQrCameraList();
 
-    if (!started) {
-      try {
-        await html5QrCode.start({ facingMode: "user" }, scanConfig, onScanSuccess, () => {});
-        started = true;
-      } catch (e) {
+      const select = document.getElementById('cameraSelect');
+      const selectedCameraId = (select && select.value) ? select.value : null;
+      const isMobile = isMobilePlatform();
+
+      // Check if Html5Qrcode is available
+      let hasHtml5Qrcode = (typeof Html5Qrcode !== 'undefined');
+      if (!hasHtml5Qrcode) {
         try {
-          await html5QrCode.start({ facingMode: "environment" }, scanConfig, onScanSuccess, () => {});
-          started = true;
-        } catch (e2) { lastError = e2; }
+          await waitForHtml5Qrcode(2500);
+          hasHtml5Qrcode = true;
+        } catch (e) {
+          console.warn('Html5Qrcode load timeout, will use Native camera engine fallback.');
+        }
+      }
+
+      // PRIMARY TIER: Html5Qrcode engine
+      if (hasHtml5Qrcode) {
+        try {
+          const formats = (typeof Html5QrcodeSupportedFormats !== 'undefined')
+            ? [ Html5QrcodeSupportedFormats.QR_CODE ]
+            : [ 0 ];
+
+          const readerEl = document.getElementById('reader');
+          if (readerEl) {
+            readerEl.innerHTML = '';
+            readerEl.classList.remove('d-none');
+          }
+
+          html5QrCode = new Html5Qrcode("reader", {
+            formatsToSupport: formats,
+            experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+            verbose: false
+          });
+
+          const scanConfig = { fps: 15, disableFlip: false };
+          const onScanSuccess = (decodedText) => {
+            if (!isQrProcessing) handleScanPayload(decodedText, false);
+          };
+
+          // Step A: If user selected specific camera ID
+          if (selectedCameraId) {
+            try {
+              await html5QrCode.start(selectedCameraId, scanConfig, onScanSuccess, () => {});
+              started = true;
+            } catch (e) {
+              console.warn('Start with selectedCameraId failed:', e);
+              lastError = e;
+            }
+          }
+
+          // Step B: Use best enumerated camera ID if available
+          if (!started && availableQrCameras && availableQrCameras.length > 0) {
+            let targetIdx = 0;
+            if (isMobile) {
+              const backIdx = availableQrCameras.findIndex(d => {
+                const lbl = (d.label || '').toLowerCase();
+                return lbl.includes('back') || lbl.includes('rear') || lbl.includes('environment');
+              });
+              if (backIdx !== -1) targetIdx = backIdx;
+            }
+            try {
+              await html5QrCode.start(availableQrCameras[targetIdx].id, scanConfig, onScanSuccess, () => {});
+              started = true;
+              if (select) select.selectedIndex = targetIdx;
+            } catch (e) {
+              console.warn('Start with enumerated camera ID failed:', e);
+              lastError = e;
+            }
+          }
+
+          // Step C: Try facingMode constraints
+          if (!started) {
+            const prefFacing = isMobile ? "environment" : "user";
+            try {
+              await html5QrCode.start({ facingMode: prefFacing }, scanConfig, onScanSuccess, () => {});
+              started = true;
+            } catch (e) {
+              try {
+                const altFacing = isMobile ? "user" : "environment";
+                await html5QrCode.start({ facingMode: altFacing }, scanConfig, onScanSuccess, () => {});
+                started = true;
+              } catch (e2) {
+                lastError = e2;
+              }
+            }
+          }
+
+          // Step D: Try every enumerated camera in loop
+          if (!started && availableQrCameras && availableQrCameras.length > 0) {
+            for (let i = 0; i < availableQrCameras.length; i++) {
+              try {
+                await html5QrCode.start(availableQrCameras[i].id, scanConfig, onScanSuccess, () => {});
+                started = true;
+                if (select) select.selectedIndex = i;
+                break;
+              } catch (e) {
+                lastError = e;
+              }
+            }
+          }
+        } catch (errHtml5) {
+          console.warn('Html5Qrcode startup error:', errHtml5);
+          lastError = errHtml5;
+        }
+      }
+
+      // SECONDARY TIER: Native Browser getUserMedia + BarcodeDetector Engine
+      if (!started) {
+        console.log('Initiating Native getUserMedia Camera Engine...');
+        try {
+          const videoConstraints = selectedCameraId
+            ? { deviceId: { exact: selectedCameraId } }
+            : { facingMode: { ideal: isMobile ? "environment" : "user" } };
+
+          try {
+            qrNativeStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
+          } catch (eConstrained) {
+            qrNativeStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+          }
+
+          const qrVid = document.getElementById('qrCamVideo');
+          const readerDiv = document.getElementById('reader');
+          if (qrVid && qrNativeStream) {
+            qrVid.srcObject = qrNativeStream;
+            await qrVid.play();
+            qrVid.classList.remove('d-none');
+            if (readerDiv) readerDiv.classList.add('d-none');
+            started = true;
+            startNativeQrDetectionLoop(qrVid);
+          }
+        } catch (eNative) {
+          console.error('Native camera start failed:', eNative);
+          lastError = eNative;
+        }
+      }
+
+      if (started) {
+        isQrScanning = true;
+        updateScannerStatus('Camera Ready • Scanning for QR Pass...', 'success');
+        const startBtn = document.getElementById('startScanBtn');
+        const stopBtn = document.getElementById('stopScanBtn');
+        const laser = document.getElementById('scannerLaser');
+        const target = document.getElementById('targetOverlay');
+        if (startBtn) startBtn.classList.add('d-none');
+        if (stopBtn) stopBtn.classList.remove('d-none');
+        if (laser) laser.classList.remove('d-none');
+        if (target) target.classList.remove('d-none');
+
+        const vid = document.querySelector('#reader video');
+        if (vid) {
+          vid.style.width = '100%';
+          vid.style.height = '440px';
+          vid.style.objectFit = 'cover';
+          vid.style.borderRadius = '16px';
+        }
+        refreshQrCameraList();
+      } else {
+        showCameraPermissionError(lastError || new Error("Could not access camera."));
+      }
+    } catch (unexpectedErr) {
+      console.error('Unexpected error in startScanner:', unexpectedErr);
+      showCameraPermissionError(unexpectedErr);
+    } finally {
+      isQrStarting = false;
+    }
+  }
+
+  function startNativeQrDetectionLoop(video) {
+    if (qrNativeDetectInterval) clearInterval(qrNativeDetectInterval);
+
+    let barcodeDetector = null;
+    if ('BarcodeDetector' in window) {
+      try {
+        barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
+      } catch (e) {
+        barcodeDetector = null;
       }
     }
 
-    if (started) {
-      isQrScanning = true;
-      updateScannerStatus('Camera ready. Detecting QR code...', 'success');
-      document.getElementById('startScanBtn').classList.add('d-none');
-      document.getElementById('stopScanBtn').classList.remove('d-none');
-      document.getElementById('scannerLaser').classList.remove('d-none');
-      document.getElementById('targetOverlay').classList.remove('d-none');
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-      const vid = document.querySelector('#reader video');
-      if (vid) {
-        vid.style.width = '100%';
-        vid.style.height = '440px';
-        vid.style.objectFit = 'cover';
+    qrNativeDetectInterval = setInterval(async () => {
+      if (!isQrScanning || isQrProcessing || !video || video.readyState < 2) return;
+
+      if (barcodeDetector) {
+        try {
+          const codes = await barcodeDetector.detect(video);
+          if (codes && codes.length > 0 && codes[0].rawValue) {
+            handleScanPayload(codes[0].rawValue, false);
+            return;
+          }
+        } catch (e) {}
       }
-      refreshQrCameraList();
-    } else {
-      showCameraPermissionError(lastError || new Error("Could not access camera."));
-    }
 
-    isQrStarting = false;
+      // Fallback frame capture through Html5Qrcode scanFile if available
+      if (typeof Html5Qrcode !== 'undefined' && canvas) {
+        try {
+          if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+          }
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(blob => {
+            if (!blob || isQrProcessing) return;
+            const tempFile = new File([blob], "qr_frame.png", { type: "image/png" });
+            const tempScanner = new Html5Qrcode("qrImageReaderTemp");
+            tempScanner.scanFile(tempFile, false)
+              .then(decodedText => {
+                if (decodedText && !isQrProcessing) {
+                  handleScanPayload(decodedText, false);
+                }
+                tempScanner.clear();
+              })
+              .catch(() => {
+                tempScanner.clear();
+              });
+          }, 'image/png');
+        } catch (e) {}
+      }
+    }, 120);
   }
 
   async function refreshQrCameraList() {
     try {
-      const devices = await Html5Qrcode.getCameras();
+      let devices = [];
+      if (typeof Html5Qrcode !== 'undefined') {
+        try {
+          devices = await Html5Qrcode.getCameras();
+        } catch (e) {}
+      }
+
+      if (!devices || devices.length === 0) {
+        if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+          const allDevs = await navigator.mediaDevices.enumerateDevices();
+          devices = allDevs
+            .filter(d => d.kind === 'videoinput')
+            .map((d, i) => ({ id: d.deviceId, label: d.label || `Camera ${i + 1}` }));
+        }
+      }
+
       availableQrCameras = devices || [];
       const select = document.getElementById('cameraSelect');
       if (!select) return;
 
       if (devices && devices.length > 0) {
+        const curVal = select.value;
         select.innerHTML = '';
         devices.forEach((d, idx) => {
           const opt = document.createElement('option');
@@ -1807,8 +2033,21 @@
           opt.text = d.label || `Camera ${idx + 1}`;
           select.appendChild(opt);
         });
+
+        if (curVal && devices.some(d => d.id === curVal)) {
+          select.value = curVal;
+        }
+
+        select.onchange = function () {
+          currentQrCameraIndex = select.selectedIndex;
+          startScanner();
+        };
+      } else {
+        select.innerHTML = '<option value="">Default Camera</option>';
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('Camera enumeration warning:', e);
+    }
   }
 
   function toggleCameraSwitch() {
@@ -1819,23 +2058,94 @@
         select.selectedIndex = currentQrCameraIndex;
         startScanner();
       }
+      speakVoice(`Switched to camera ${currentQrCameraIndex + 1}`);
+    } else {
+      if (window.showFitNovaToast) {
+        window.showFitNovaToast("Only one camera device detected on this system.", "info");
+      }
+      refreshQrCameraList().then(() => {
+        if (availableQrCameras.length > 1) toggleCameraSwitch();
+      });
     }
   }
 
   async function stopScanner() {
-    if (html5QrCode && isQrScanning) {
-      try { await html5QrCode.stop(); } catch (e) {}
-      isQrScanning = false;
-      document.getElementById('startScanBtn').classList.remove('d-none');
-      document.getElementById('stopScanBtn').classList.add('d-none');
-      updateScannerStatus('Camera paused. Resume when ready.', 'accent');
+    if (qrNativeDetectInterval) {
+      clearInterval(qrNativeDetectInterval);
+      qrNativeDetectInterval = null;
     }
+    if (qrNativeStream) {
+      qrNativeStream.getTracks().forEach(t => t.stop());
+      qrNativeStream = null;
+    }
+    const qrVid = document.getElementById('qrCamVideo');
+    if (qrVid) {
+      qrVid.srcObject = null;
+      qrVid.classList.add('d-none');
+    }
+
+    if (html5QrCode) {
+      try {
+        const state = html5QrCode.getState ? html5QrCode.getState() : 0;
+        if (state === 2 || html5QrCode.isScanning) {
+          await html5QrCode.stop();
+        }
+        await html5QrCode.clear();
+      } catch (e) {
+        console.warn('Error clearing html5QrCode:', e);
+      }
+      html5QrCode = null;
+    }
+
+    isQrScanning = false;
+    const startBtn = document.getElementById('startScanBtn');
+    const stopBtn = document.getElementById('stopScanBtn');
+    if (startBtn) startBtn.classList.remove('d-none');
+    if (stopBtn) stopBtn.classList.add('d-none');
+    updateScannerStatus('Camera paused. Resume when ready.', 'accent');
   }
 
   function showCameraPermissionError(err) {
     const overlay = document.getElementById('cameraErrorOverlay');
+    const titleEl = document.getElementById('cameraErrorTitle');
+    const msgEl = document.getElementById('cameraErrorMessage');
+
+    let title = "Camera Permission Required";
+    let message = "Please allow camera access in your browser to enable automatic QR scanning. Click the camera or tune icon in the address bar to allow.";
+    let tone = "danger";
+    let badgeText = "Camera Permission Denied.";
+
+    if (err) {
+      const errName = err.name || '';
+      const errMsg = (err.message || '').toLowerCase();
+
+      if (errName === 'NotAllowedError' || errName === 'PermissionDeniedError' || errMsg.includes('permission') || errMsg.includes('denied')) {
+        title = "Camera Permission Blocked";
+        message = "Camera access was denied. Click the site settings / camera icon on the left side of your browser's address bar, choose 'Always allow', and click Try Again.";
+        badgeText = "Camera Permission Blocked";
+      } else if (errName === 'NotReadableError' || errName === 'TrackStartError' || errMsg.includes('in use') || errMsg.includes('could not start')) {
+        title = "Camera In Use by Another App";
+        message = "Your camera is currently being used by another application (Zoom, Teams, or another tab). Close the other app and click Try Again.";
+        badgeText = "Camera Busy / In Use";
+      } else if (errName === 'NotFoundError' || errName === 'DevicesNotFoundError' || errMsg.includes('not found') || errMsg.includes('no camera')) {
+        title = "No Camera Detected";
+        message = "No physical camera was found on this system. You can test instant attendance check-in anytime with the 'Test Scan Pass' button or 'Upload QR'.";
+        badgeText = "No Camera Detected";
+      } else if (errMsg.includes('https') || errMsg.includes('secure')) {
+        title = "HTTPS Required for Camera";
+        message = "Web browser security requires an HTTPS connection to access the webcam. Please verify your connection uses https://.";
+        badgeText = "HTTPS Connection Required";
+      } else {
+        title = "Camera Unavailable";
+        message = err.message || "Could not start camera stream. You can still use 'Test Scan Pass' or 'Upload QR'.";
+        badgeText = "Camera Offline";
+      }
+    }
+
+    if (titleEl) titleEl.textContent = title;
+    if (msgEl) msgEl.textContent = message;
     if (overlay) overlay.classList.remove('d-none');
-    updateScannerStatus('Camera Permission Denied.', 'danger');
+    updateScannerStatus(badgeText, tone);
   }
 
   function retryCameraPermission() {
@@ -1843,6 +2153,9 @@
   }
 
   function testSamplePass() {
+    const errOverlay = document.getElementById('cameraErrorOverlay');
+    if (errOverlay) errOverlay.classList.add('d-none');
+
     {% if test_member %}
     handleScanPayload('FITNOVA:{{ test_member.member_id }}:{{ test_member.qr_token }}', true);
     {% elif demo_members %}
@@ -1853,9 +2166,18 @@
   }
 
   function handleScanPayload(payload, isTest = false) {
-    if (isQrProcessing) return;
+    if (isQrProcessing) {
+      console.warn('Scan already processing, waiting...');
+      return;
+    }
     isQrProcessing = true;
-    updateScannerStatus('Verifying member...', 'accent');
+    updateScannerStatus(isTest ? 'Testing athlete pass...' : 'Verifying member...', 'accent');
+
+    // Safety watchdog: reset isQrProcessing after 6s in case network never responds
+    const processingWatchdog = setTimeout(() => {
+      isQrProcessing = false;
+      if (isQrScanning) updateScannerStatus('Camera Ready • Scanning for QR Pass...', 'success');
+    }, 6000);
 
     const formData = new FormData();
     formData.append('identifier', payload);
@@ -1868,6 +2190,7 @@
     })
     .then(res => res.json())
     .then(data => {
+      clearTimeout(processingWatchdog);
       const box = document.getElementById('scannerBox');
       if (box) {
         box.classList.remove('scan-success', 'scan-error');
@@ -1888,9 +2211,9 @@
       if (window.showFitNovaToast) window.showFitNovaToast(data.message, data.success ? "success" : "danger");
 
       if (data.success) updateScannerStatus('Attendance Successful!', 'success');
-      else if (data.action === 'DUPLICATE') updateScannerStatus('Already Checked In.', 'danger');
+      else if (data.action === 'DUPLICATE') updateScannerStatus('Already Checked In Today.', 'danger');
       else if (data.action === 'EXPIRED') updateScannerStatus('Membership Expired.', 'danger');
-      else updateScannerStatus('Invalid QR Code.', 'danger');
+      else updateScannerStatus('Invalid QR Pass.', 'danger');
 
       if (data.success && data.member && !isTest) {
         prependAttendanceRow(data);
@@ -1902,6 +2225,7 @@
       triggerAutoNextScan(data.success ? 1800 : 2500);
     })
     .catch(err => {
+      clearTimeout(processingWatchdog);
       playScanSound(false);
       updateScannerStatus('Scanner Error.', 'danger');
       displayScanResult({ success: false, message: "Network error saving attendance." });

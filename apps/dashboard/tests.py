@@ -140,3 +140,35 @@ class NavbarNavigationTests(TestCase):
         self.assertEqual(lead.source, Lead.Source.WEBSITE)
         self.assertEqual(lead.status, Lead.Status.NEW)
         self.assertIn('Clint Barton', lead.notes)
+
+    def test_social_media_section_in_footer(self):
+        url = reverse('dashboard:index')
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode('utf-8')
+
+        # Check all 4 official brand social media buttons are rendered
+        self.assertIn("fn-social-btn instagram", content)
+        self.assertIn("fn-social-btn linkedin", content)
+        self.assertIn("fn-social-btn whatsapp", content)
+        self.assertIn("fn-social-btn twitter", content)
+
+        # Check tooltips
+        self.assertIn("Instagram", content)
+        self.assertIn("LinkedIn", content)
+        self.assertIn("WhatsApp", content)
+        self.assertIn("Twitter / X", content)
+
+        # Check WhatsApp link uses phone from organization
+        self.assertIn("https://wa.me/15550100", content)
+
+    def test_social_media_section_in_contact_page(self):
+        url = reverse('dashboard:contact')
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode('utf-8')
+
+        self.assertIn("Connect Across Social Channels", content)
+        self.assertIn("fn-social-btn instagram", content)
+        self.assertIn("fn-social-btn whatsapp", content)
+

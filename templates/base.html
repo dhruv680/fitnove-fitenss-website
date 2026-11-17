@@ -352,6 +352,46 @@
     <!-- Page Content Slot -->
     <div class="fn-page-container fn-animate-in">
       {% block content %}{% endblock %}
+
+      <!-- Professional FitNova Footer with Social Media Hub -->
+      <footer class="fn-site-footer mt-5">
+        <div class="fn-footer-brand">
+          <div class="fn-brand-icon" style="width: 32px; height: 32px; font-size: 1rem; border-radius: 8px;">
+            <i data-lucide="dumbbell" style="width: 17px; height: 17px;"></i>
+          </div>
+          <div>
+            <p class="fn-footer-copy fw-medium text-dark mb-0">© 2026 {{ current_org.name|default:"FitNova Elite Fitness & Gym Management" }}. All rights reserved.</p>
+            <p class="text-muted small mb-0" style="font-size: 0.76rem;">Enterprise Health & Fitness SaaS Platform</p>
+          </div>
+        </div>
+
+        <!-- Official Brand Social Media Section -->
+        <div class="fn-social-links" aria-label="Follow FitNova on Social Media">
+          <!-- Instagram -->
+          <a href="{{ social_links.instagram|default:'https://www.instagram.com/fitnova_fitness/' }}" target="_blank" rel="noopener noreferrer" class="fn-social-btn instagram" aria-label="Follow us on Instagram">
+            <i data-lucide="instagram"></i>
+            <span class="fn-social-tooltip">Instagram</span>
+          </a>
+
+          <!-- LinkedIn -->
+          <a href="{{ social_links.linkedin|default:'https://www.linkedin.com/company/fitnova-fitness/' }}" target="_blank" rel="noopener noreferrer" class="fn-social-btn linkedin" aria-label="Connect on LinkedIn">
+            <i data-lucide="linkedin"></i>
+            <span class="fn-social-tooltip">LinkedIn</span>
+          </a>
+
+          <!-- WhatsApp Direct Chat -->
+          <a href="{{ social_links.whatsapp|default:'https://wa.me/15557492000?text=Hello%20FitNova!' }}" target="_blank" rel="noopener noreferrer" class="fn-social-btn whatsapp" aria-label="Chat with us on WhatsApp">
+            <i data-lucide="message-circle"></i>
+            <span class="fn-social-tooltip">WhatsApp</span>
+          </a>
+
+          <!-- Twitter / X -->
+          <a href="{{ social_links.twitter|default:'https://twitter.com/fitnovafit' }}" target="_blank" rel="noopener noreferrer" class="fn-social-btn twitter" aria-label="Follow us on Twitter / X">
+            <i data-lucide="twitter"></i>
+            <span class="fn-social-tooltip">Twitter / X</span>
+          </a>
+        </div>
+      </footer>
     </div>
 
   </main>
