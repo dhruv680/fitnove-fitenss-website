@@ -113,25 +113,26 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'fitnova.wsgi.application'
 
-# Database Configuration (PostgreSQL by default)
+# Database Configuration (PostgreSQL in production/Render, or local PostgreSQL when password is provided)
 # Priority:
-# 1. DATABASE_URL environment variable (Render / Cloud / Supabase / Neon)
-# 2. Individual PostgreSQL connection parameters (DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT)
-# 3. Fallback to SQLite only if USE_SQLITE is explicitly set to True
+# 1. DATABASE_URL environment variable (Render / Cloud / Supabase / Neon PostgreSQL)
+# 2. Local PostgreSQL if DB_PASSWORD is provided and USE_SQLITE is not True
+# 3. Automatic fallback to SQLite if DB_PASSWORD is empty or USE_SQLITE is True
 DATABASE_URL = os.environ.get('DATABASE_URL')
+DB_PASSWORD = os.environ.get('DB_PASSWORD', '').strip()
 USE_SQLITE = os.environ.get('USE_SQLITE', 'False').lower() in ('true', '1', 'yes')
 
 if DATABASE_URL:
     DATABASES = {
         'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
     }
-elif not USE_SQLITE:
+elif not USE_SQLITE and DB_PASSWORD:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': os.environ.get('DB_NAME', 'fitnova_db'),
             'USER': os.environ.get('DB_USER', 'postgres'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+            'PASSWORD': DB_PASSWORD,
             'HOST': os.environ.get('DB_HOST', 'localhost'),
             'PORT': os.environ.get('DB_PORT', '5432'),
         }
