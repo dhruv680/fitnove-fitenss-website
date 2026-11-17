@@ -4,60 +4,180 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Create Account – FitNova Gym Management SaaS</title>
+  <title>Create Account – FitNova SaaS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="stylesheet" href="{% static 'css/fitnova.css' %}">
   <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
     body {
-      background: linear-gradient(135deg, #172554 0%, #0F172A 100%);
+      background: radial-gradient(circle at 50% 30%, #151D33 0%, #0B101D 100%);
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 32px 16px;
-      font-family: 'Inter', sans-serif;
+      padding: 28px 16px;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #1E293B;
     }
     .fn-auth-card {
       background: #FFFFFF;
-      border-radius: 20px;
-      padding: 38px 40px;
+      border-radius: 30px;
+      padding: 42px 38px;
       width: 100%;
-      max-width: 500px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+      max-width: 490px;
+      box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      animation: fadeInCard 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .fn-password-toggle {
+    @keyframes fadeInCard {
+      from { opacity: 0; transform: translateY(16px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .fn-logo-badge {
+      background: linear-gradient(135deg, #7047EB 0%, #5237E2 100%);
+      width: 62px;
+      height: 62px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFFFFF;
+      box-shadow: 0 10px 25px -4px rgba(112, 71, 235, 0.45);
+      margin-bottom: 16px;
+    }
+    .fn-logo-badge i, .fn-logo-badge svg {
+      transform: rotate(-45deg);
+    }
+    .fn-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #0F172A;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+    .fn-subtitle {
+      font-size: 13.5px;
+      color: #64748B;
+      font-weight: 400;
+      margin-bottom: 22px;
+    }
+    .fn-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1E293B;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .fn-input-wrapper {
+      position: relative;
+      margin-bottom: 16px;
+    }
+    .fn-input-custom {
+      width: 100%;
+      background: #EEF2FF;
+      border: 1.5px solid transparent;
+      border-radius: 14px;
+      padding: 12px 42px 12px 16px;
+      font-size: 14.5px;
+      font-weight: 500;
+      color: #0F172A;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+    .fn-input-custom::placeholder {
+      color: #94A3B8;
+      font-weight: 400;
+    }
+    .fn-input-custom:focus {
+      background: #EEF2FF;
+      border-color: #818CF8;
+      box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.22);
+    }
+    .fn-input-icon {
       position: absolute;
-      right: 12px;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94A3B8;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+    }
+    .fn-btn-toggle-pwd {
+      position: absolute;
+      right: 10px;
       top: 50%;
       transform: translateY(-50%);
       background: transparent;
       border: none;
-      color: #64748B;
+      color: #94A3B8;
       cursor: pointer;
-      padding: 4px;
+      padding: 6px;
+      display: flex;
+      align-items: center;
+      transition: color 0.15s ease;
+    }
+    .fn-btn-toggle-pwd:hover {
+      color: #6366F1;
+    }
+    .fn-btn-primary {
+      background: linear-gradient(135deg, #7C3AED 0%, #6366F1 100%);
+      border: none;
+      border-radius: 14px;
+      padding: 13px 20px;
+      color: #FFFFFF;
+      font-weight: 600;
+      font-size: 15px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 10px 24px -4px rgba(124, 58, 237, 0.45);
+      transition: all 0.2s ease;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .fn-btn-primary:hover {
+      transform: translateY(-1.5px);
+      box-shadow: 0 14px 28px -4px rgba(124, 58, 237, 0.55);
+      color: #FFFFFF;
+    }
+    .fn-subtext-link {
+      color: #6366F1;
+      font-weight: 600;
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+    .fn-subtext-link:hover {
+      color: #4F46E5;
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
 
-<div class="fn-auth-card fn-animate-in">
+<div class="fn-auth-card">
   <!-- Brand Header -->
-  <div class="text-center mb-4">
-    <div class="d-inline-flex align-items-center justify-content-center p-3 rounded-4 mb-3" style="background: linear-gradient(135deg, #7657E8 0%, #172554 100%); color: white; width: 64px; height: 64px; box-shadow: 0 10px 25px -5px rgba(118, 87, 232, 0.4);">
+  <div class="text-center">
+    <div class="fn-logo-badge">
       <i data-lucide="dumbbell" style="width: 32px; height: 32px;"></i>
     </div>
-    <h3 class="fw-bold text-dark mb-1">Create FitNova Account</h3>
-    <p class="text-muted small mb-0">Join our Fitness Management SaaS Platform</p>
+    <h2 class="fn-title">FitNova SaaS</h2>
+    <p class="fn-subtitle">Create Account & Direct Face Detection</p>
   </div>
 
-  <!-- Messages & Validation Alerts -->
+  <!-- Messages -->
   {% if messages %}
     {% for message in messages %}
-    <div class="alert alert-{{ message.tags|default:'danger' }} py-2 px-3 small rounded-3 mb-3 d-flex align-items-center gap-2 fn-animate-in" role="alert">
+    <div class="alert alert-{{ message.tags|default:'danger' }} py-2 px-3 small rounded-3 mb-3 d-flex align-items-center gap-2" role="alert">
       <i data-lucide="alert-circle" style="width: 16px; flex-shrink: 0;"></i>
       <div>{{ message }}</div>
     </div>
@@ -73,21 +193,21 @@
     {% csrf_token %}
 
     <!-- Full Name & Username in 2 columns -->
-    <div class="row g-2 mb-3">
+    <div class="row g-2 mb-2">
       <div class="col-sm-6">
-        <label class="fn-form-label" for="regFullName">Full Name <span class="text-danger">*</span></label>
-        <div class="position-relative">
-          <input type="text" name="full_name" id="regFullName" class="fn-input pe-5" placeholder="Jessica Taylor" value="{{ form_data.full_name|default:'' }}" required autofocus>
-          <span class="position-absolute end-0 top-50 translate-middle-y me-3 text-muted" style="pointer-events: none;">
+        <label class="fn-label" for="regFullName">Full Name <span class="text-danger">*</span></label>
+        <div class="position-relative fn-input-wrapper mb-2">
+          <input type="text" name="full_name" id="regFullName" class="fn-input-custom" placeholder="Jessica Taylor" value="{{ form_data.full_name|default:'' }}" required autofocus>
+          <span class="fn-input-icon">
             <i data-lucide="user" style="width: 17px;"></i>
           </span>
         </div>
       </div>
       <div class="col-sm-6">
-        <label class="fn-form-label" for="regUsername">Username <span class="text-muted small fw-normal">(Optional)</span></label>
-        <div class="position-relative">
-          <input type="text" name="username" id="regUsername" class="fn-input pe-5" placeholder="jessica_t" value="{{ form_data.username|default:'' }}">
-          <span class="position-absolute end-0 top-50 translate-middle-y me-3 text-muted" style="pointer-events: none;">
+        <label class="fn-label" for="regUsername">Username <span class="text-muted small fw-normal">(Optional)</span></label>
+        <div class="position-relative fn-input-wrapper mb-2">
+          <input type="text" name="username" id="regUsername" class="fn-input-custom" placeholder="jessica_t" value="{{ form_data.username|default:'' }}">
+          <span class="fn-input-icon">
             <i data-lucide="at-sign" style="width: 17px;"></i>
           </span>
         </div>
@@ -95,31 +215,31 @@
     </div>
 
     <!-- Email Address -->
-    <div class="mb-3">
-      <label class="fn-form-label" for="regEmail">Email Address <span class="text-danger">*</span></label>
+    <div class="fn-input-wrapper">
+      <label class="fn-label" for="regEmail">Email Address <span class="text-danger">*</span></label>
       <div class="position-relative">
-        <input type="email" name="email" id="regEmail" class="fn-input pe-5" placeholder="jessica@example.com" value="{{ form_data.email|default:'' }}" required>
-        <span class="position-absolute end-0 top-50 translate-middle-y me-3 text-muted" style="pointer-events: none;">
+        <input type="email" name="email" id="regEmail" class="fn-input-custom" placeholder="jessica@example.com" value="{{ form_data.email|default:'' }}" required>
+        <span class="fn-input-icon">
           <i data-lucide="mail" style="width: 17px;"></i>
         </span>
       </div>
     </div>
 
     <!-- Mobile Number & Account Role -->
-    <div class="row g-2 mb-3">
+    <div class="row g-2 mb-2">
       <div class="col-sm-6">
-        <label class="fn-form-label" for="regPhone">Mobile Number <span class="text-danger">*</span></label>
-        <div class="position-relative">
-          <input type="tel" name="phone" id="regPhone" class="fn-input pe-5" placeholder="+1 (555) 749-2000" value="{{ form_data.phone|default:'' }}" required>
-          <span class="position-absolute end-0 top-50 translate-middle-y me-3 text-muted" style="pointer-events: none;">
+        <label class="fn-label" for="regPhone">Mobile Number <span class="text-danger">*</span></label>
+        <div class="position-relative fn-input-wrapper mb-2">
+          <input type="tel" name="phone" id="regPhone" class="fn-input-custom" placeholder="+1 (555) 749-2000" value="{{ form_data.phone|default:'' }}" required>
+          <span class="fn-input-icon">
             <i data-lucide="phone" style="width: 17px;"></i>
           </span>
         </div>
       </div>
       <div class="col-sm-6">
-        <label class="fn-form-label" for="regRole">Account Role <span class="text-danger">*</span></label>
-        <div class="position-relative">
-          <select name="role" id="regRole" class="fn-input" style="height: 42px;">
+        <label class="fn-label" for="regRole">Account Role <span class="text-danger">*</span></label>
+        <div class="position-relative fn-input-wrapper mb-2">
+          <select name="role" id="regRole" class="fn-input-custom" style="padding-right: 14px; cursor: pointer;">
             <option value="MEMBER" {% if form_data.role == 'MEMBER' or not form_data.role %}selected{% endif %}>🏃 Gym Member</option>
             <option value="TRAINER" {% if form_data.role == 'TRAINER' %}selected{% endif %}>🏋️ Fitness Trainer</option>
             <option value="STAFF" {% if form_data.role == 'STAFF' %}selected{% endif %}>📋 Staff Member</option>
@@ -130,22 +250,22 @@
     </div>
 
     <!-- Password -->
-    <div class="mb-3">
-      <label class="fn-form-label" for="regPassword">Password <span class="text-danger">*</span></label>
+    <div class="fn-input-wrapper">
+      <label class="fn-label" for="regPassword">Password <span class="text-danger">*</span></label>
       <div class="position-relative">
-        <input type="password" name="password" id="regPassword" class="fn-input pe-5" placeholder="Minimum 8 characters" required minlength="8">
-        <button type="button" class="fn-password-toggle" onclick="togglePasswordVisibility('regPassword', 'pwdEye1')" title="Show / Hide Password">
+        <input type="password" name="password" id="regPassword" class="fn-input-custom" placeholder="Minimum 8 characters" required minlength="8">
+        <button type="button" class="fn-btn-toggle-pwd" onclick="togglePasswordVisibility('regPassword', 'pwdEye1')" title="Show / Hide Password">
           <i data-lucide="eye" id="pwdEye1" style="width: 17px;"></i>
         </button>
       </div>
     </div>
 
     <!-- Confirm Password -->
-    <div class="mb-3">
-      <label class="fn-form-label" for="regConfirmPassword">Confirm Password <span class="text-danger">*</span></label>
+    <div class="fn-input-wrapper">
+      <label class="fn-label" for="regConfirmPassword">Confirm Password <span class="text-danger">*</span></label>
       <div class="position-relative">
-        <input type="password" name="confirm_password" id="regConfirmPassword" class="fn-input pe-5" placeholder="Re-enter your password" required minlength="8">
-        <button type="button" class="fn-password-toggle" onclick="togglePasswordVisibility('regConfirmPassword', 'pwdEye2')" title="Show / Hide Password">
+        <input type="password" name="confirm_password" id="regConfirmPassword" class="fn-input-custom" placeholder="Re-enter your password" required minlength="8">
+        <button type="button" class="fn-btn-toggle-pwd" onclick="togglePasswordVisibility('regConfirmPassword', 'pwdEye2')" title="Show / Hide Password">
           <i data-lucide="eye" id="pwdEye2" style="width: 17px;"></i>
         </button>
       </div>
@@ -154,24 +274,24 @@
     <!-- Terms and Conditions Checkbox -->
     <div class="mb-3">
       <div class="form-check">
-        <input class="form-check-input" type="checkbox" name="terms" id="regTerms" required checked>
-        <label class="form-check-label small text-muted user-select-none" for="regTerms" style="font-size: 0.82rem;">
-          I agree to the <a href="javascript:void(0)" class="text-primary text-decoration-none fw-medium" onclick="showTermsModal()">Terms of Service</a> & <a href="javascript:void(0)" class="text-primary text-decoration-none fw-medium" onclick="showTermsModal()">Privacy Policy</a>.
+        <input class="form-check-input" type="checkbox" name="terms" id="regTerms" required checked style="cursor: pointer;">
+        <label class="form-check-label small text-muted user-select-none" for="regTerms" style="font-size: 0.82rem; cursor: pointer;">
+          I agree to the <a href="javascript:void(0)" class="fn-subtext-link" onclick="showTermsModal()">Terms of Service</a> & <a href="javascript:void(0)" class="fn-subtext-link" onclick="showTermsModal()">Privacy Policy</a>.
         </label>
       </div>
     </div>
 
-    <!-- Submit Button -->
-    <button type="submit" class="btn btn-fn-accent w-100 py-2 mt-2 justify-content-center shadow-sm" id="submitBtn">
-      <i data-lucide="user-plus" style="width: 18px;"></i>
-      <span>Create Account</span>
+    <!-- Register & Direct Face Detection Button -->
+    <button type="submit" class="fn-btn-primary">
+      <i data-lucide="scan-face" style="width: 19px;"></i>
+      <span>Register & Start Face Detection</span>
     </button>
   </form>
 
   <!-- Existing User Sign In Link -->
   <div class="text-center mt-4 pt-3 border-top">
     <span class="text-muted small">Already have an account?</span>
-    <a href="{% url 'accounts:login' %}" class="fw-bold text-decoration-none text-primary small ms-1">
+    <a href="{% url 'accounts:login' %}" class="fn-subtext-link small ms-1">
       Sign In <i data-lucide="arrow-right" style="width: 13px; margin-top: -2px;"></i>
     </a>
   </div>
@@ -190,14 +310,13 @@
         <p class="mb-0">Your personal details are securely encrypted and protected in accordance with international data privacy standards.</p>
       </div>
       <div class="modal-footer border-0 pt-0">
-        <button type="button" class="btn btn-fn-primary btn-sm w-100" data-bs-dismiss="modal">I Understand</button>
+        <button type="button" class="btn btn-primary btn-sm w-100" data-bs-dismiss="modal">I Understand</button>
       </div>
     </div>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="{% static 'js/fitnova.js' %}"></script>
 <script>
   if (typeof lucide !== 'undefined') {
     lucide.createIcons();
@@ -281,6 +400,5 @@
     return true;
   }
 </script>
-
 </body>
 </html>

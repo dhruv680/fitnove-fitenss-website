@@ -85,7 +85,8 @@ class RegistrationAndFaceAuthTestCase(TestCase):
         }
         response = self.client.post(reverse('accounts:register'), data=payload)
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse('accounts:login') + '?registered=1')
+        # Directly opens Face Detection after Registration
+        self.assertEqual(response.url, reverse('accounts:face_enroll'))
 
         # User is created
         user = User.objects.get(email='marcus@fitnova.com')
@@ -95,13 +96,11 @@ class RegistrationAndFaceAuthTestCase(TestCase):
         self.assertEqual(user.role, 'MEMBER')
         self.assertEqual(user.gender, 'MALE')
 
-        # Newly registered user can immediately log in
-        login_resp = self.client.post(reverse('accounts:login'), data={
-            'username': 'marcus@fitnova.com',
-            'password': 'StrongPassword123!'
-        })
-        self.assertEqual(login_resp.status_code, 302)
-        self.assertEqual(login_resp.url, reverse('dashboard:index'))
+        # Direct face detection & enrollment immediately authenticates user to dashboard
+        img_b64 = generate_test_face_image_base64()
+        enroll_resp = self.client.post(reverse('accounts:api_face_enroll'), data={'image': img_b64})
+        self.assertEqual(enroll_resp.status_code, 200)
+        self.assertEqual(enroll_resp.json()['redirect_url'], reverse('dashboard:index'))
 
     def test_registration_duplicate_username_fails(self):
         User.objects.create_user(username='taken_user', email='first@fitnova.com', password='password123')
@@ -170,6 +169,9 @@ class RegistrationAndFaceAuthTestCase(TestCase):
         session['face_enroll_user_id'] = user.id
         session.save()
         self.client.post(reverse('accounts:api_face_enroll'), data={'image': img_b64})
+
+        # Ensure client is logged out before testing new login flow
+        self.client.logout()
 
         # Submit username/password at login
         login_resp = self.client.post(reverse('accounts:login'), data={

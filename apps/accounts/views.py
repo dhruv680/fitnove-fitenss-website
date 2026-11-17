@@ -157,9 +157,10 @@ def register_view(request):
             except Exception:
                 pass
 
-        # Set session flag and redirect to Login Page with success notification
-        messages.success(request, f'Registration successful! Welcome to FitNova, {first_name}. You can now sign in with your credentials.')
-        return redirect(reverse('accounts:login') + '?registered=1')
+        # DIRECT FACE DETECTION AFTER REGISTRATION
+        request.session['face_enroll_user_id'] = user.id
+        messages.success(request, f'Account created for {first_name}! Starting automatic face detection...')
+        return redirect('accounts:face_enroll')
 
     return render(request, 'accounts/register.html')
 
@@ -246,10 +247,14 @@ def api_face_enroll(request):
     if success:
         # Clean up registration enrollment session
         request.session.pop('face_enroll_user_id', None)
-        redirect_url = reverse('dashboard:index') if request.user.is_authenticated else (reverse('accounts:login') + '?registered=1')
+        # Log the user in directly with biometric verification flag
+        if not request.user.is_authenticated:
+            login(request, target_user, backend='django.contrib.auth.backends.ModelBackend')
+            request.session['face_authenticated'] = True
+        redirect_url = reverse('dashboard:index')
         return JsonResponse({
             'success': True,
-            'message': message,
+            'message': 'Face Detected & Enrolled! Welcome to FitNova.',
             'redirect_url': redirect_url
         })
     else:
