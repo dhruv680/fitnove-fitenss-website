@@ -20,9 +20,9 @@ class FaceAuthService:
     Includes liveness validation and anti-spoofing heuristics.
     """
 
-    DESCRIPTOR_EUCLIDEAN_THRESHOLD = 0.58     # Max distance for client neural face descriptor
-    VISUAL_COSINE_SIMILARITY_THRESHOLD = 0.68  # Min cosine similarity for visual feature vector
-    MIN_IMAGE_VARIANCE = 120.0                 # Anti-blank / anti-spoof minimum image variance
+    DESCRIPTOR_EUCLIDEAN_THRESHOLD = 0.60     # Max distance for client neural face descriptor
+    VISUAL_COSINE_SIMILARITY_THRESHOLD = 0.52  # Min cosine similarity for visual feature vector
+    MIN_IMAGE_VARIANCE = 30.0                  # Anti-blank / anti-spoof minimum image variance (allows normal room lighting)
 
     @staticmethod
     def decode_base64_image(image_data):
@@ -44,7 +44,7 @@ class FaceAuthService:
         Returns: (is_valid: bool, reason: str)
         """
         try:
-            if pil_image.width < 100 or pil_image.height < 100:
+            if pil_image.width < 80 or pil_image.height < 80:
                 return False, "Image resolution too low for biometric detection."
 
             gray = ImageOps.grayscale(pil_image)
@@ -52,9 +52,9 @@ class FaceAuthService:
             mean_brightness = stat.mean[0]
             variance = stat.var[0]
 
-            if mean_brightness < 20:
+            if mean_brightness < 10:
                 return False, "Lighting is too dark. Please face a light source."
-            if mean_brightness > 245:
+            if mean_brightness > 250:
                 return False, "Image is overexposed or washed out. Please reduce glare."
             if variance < FaceAuthService.MIN_IMAGE_VARIANCE:
                 return False, "No distinct facial details detected. Please position your face closer."

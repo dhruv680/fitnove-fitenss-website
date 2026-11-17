@@ -184,6 +184,14 @@
     <div class="corner-bracket corner-br"></div>
     <div class="scan-laser" id="scanLaser"></div>
 
+    <!-- Countdown & Status Badge on Viewport -->
+    <div id="countdownPill" class="position-absolute bottom-0 start-50 translate-middle-x mb-3 px-3 py-1 rounded-pill text-white fw-bold small d-none" style="background: rgba(16, 185, 129, 0.95); z-index: 6; backdrop-filter: blur(4px); box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 0.82rem; letter-spacing: 0.3px;">
+      <span id="countdownText"><i data-lucide="scan-face" style="width: 14px; margin-right: 4px;"></i> Face Detected! Capturing in 2s...</span>
+    </div>
+
+    <!-- Camera Flash Element -->
+    <div id="camFlash" class="position-absolute top-0 start-0 w-100 h-100" style="background: #FFFFFF; opacity: 0; pointer-events: none; transition: opacity 0.2s ease-out; z-index: 7;"></div>
+
     <!-- Camera Error / Initializing Placeholder -->
     <div id="camPlaceholder" class="position-absolute top-50 start-50 translate-middle text-center text-white p-3" style="width: 90%; z-index: 5;">
       <div class="spinner-border text-primary mb-3" role="status" style="width: 2.5rem; height: 2.5rem;">
@@ -254,7 +262,14 @@
   let camPlaceholder = document.getElementById('camPlaceholder');
   let faceFrame = document.getElementById('faceFrame');
   let webcamContainer = document.getElementById('webcamContainer');
+  let countdownPill = document.getElementById('countdownPill');
+  let countdownText = document.getElementById('countdownText');
+  let camFlash = document.getElementById('camFlash');
+
   let localStream = null;
+  let autoCaptureTimer = null;
+  let countdownSeconds = 2;
+  let isCapturing = false;
 
   async function initWebcam() {
     try {
@@ -273,10 +288,14 @@
         video.play();
         camPlaceholder.style.display = 'none';
         webcamContainer.classList.add('scanning');
-        statusText.textContent = 'Face centered and camera ready';
+        statusText.textContent = 'Face centered! Auto-detecting...';
         statusDot.style.background = '#10B981';
         faceFrame.classList.add('detected');
         captureBtn.disabled = false;
+        captureBtnText.textContent = 'Capture Now (or wait for auto-capture)';
+
+        // Start instant automatic countdown & capture
+        startAutoCaptureCountdown();
       };
     } catch (err) {
       console.error('Camera error:', err);
@@ -293,7 +312,38 @@
     }
   }
 
+  function startAutoCaptureCountdown() {
+    clearTimeout(autoCaptureTimer);
+    if (isCapturing) return;
+
+    countdownSeconds = 2;
+    if (countdownPill) {
+      countdownPill.classList.remove('d-none');
+    }
+
+    function step() {
+      if (isCapturing) return;
+      if (countdownSeconds > 0) {
+        if (countdownText) {
+          countdownText.innerHTML = `<i data-lucide="scan-face" style="width: 14px; margin-right: 4px;"></i> Face Detected! Auto-capturing in ${countdownSeconds}s...`;
+          lucide.createIcons();
+        }
+        statusText.textContent = `Face detected! Auto-capturing in ${countdownSeconds}s...`;
+        countdownSeconds--;
+        autoCaptureTimer = setTimeout(step, 1000);
+      } else {
+        if (countdownText) {
+          countdownText.innerHTML = `<i data-lucide="camera" style="width: 14px; margin-right: 4px;"></i> Capturing Face...`;
+          lucide.createIcons();
+        }
+        captureAndEnroll();
+      }
+    }
+    step();
+  }
+
   function restartCamera() {
+    clearTimeout(autoCaptureTimer);
     if (localStream) {
       localStream.getTracks().forEach(t => t.stop());
     }
@@ -322,27 +372,45 @@
   function toggleConsent() {
     const consent = document.getElementById('enrollConsentCheck');
     if (!consent.checked) {
+      clearTimeout(autoCaptureTimer);
+      if (countdownPill) countdownPill.classList.add('d-none');
       captureBtn.disabled = true;
       statusText.textContent = 'Consent required to enroll face biometrics';
     } else if (localStream && video.videoWidth) {
       captureBtn.disabled = false;
-      statusText.textContent = 'Face centered and camera ready';
+      startAutoCaptureCountdown();
     }
   }
 
   async function captureAndEnroll() {
+    if (isCapturing) return;
+
     const consent = document.getElementById('enrollConsentCheck');
     if (!consent || !consent.checked) {
       showAlert('Please check the biometric consent box to enroll your face.');
       return;
     }
 
-    if (!video || !localStream) return;
+    if (!video || !localStream || !video.videoWidth) return;
+
+    clearTimeout(autoCaptureTimer);
+    isCapturing = true;
+
+    // Trigger visual camera shutter flash
+    if (camFlash) {
+      camFlash.style.opacity = '0.85';
+      setTimeout(() => { camFlash.style.opacity = '0'; }, 180);
+    }
 
     captureBtn.disabled = true;
     captureBtnText.textContent = 'Enrolling Biometrics...';
     statusText.textContent = 'Extracting facial feature vectors...';
     statusDot.style.background = '#F59E0B';
+
+    if (countdownText) {
+      countdownText.innerHTML = `<i data-lucide="loader" style="width: 14px; margin-right: 4px;"></i> Saving biometric template...`;
+      lucide.createIcons();
+    }
 
     // Draw frame to canvas
     const width = video.videoWidth || 640;
@@ -350,7 +418,6 @@
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d');
-    // Un-mirror the captured canvas image for clean server processing
     ctx.drawImage(video, 0, 0, width, height);
 
     const base64Image = canvas.toDataURL('image/jpeg', 0.92);
@@ -370,32 +437,50 @@
       const data = await response.json();
 
       if (data.success) {
-        statusText.textContent = 'FACE REGISTRATION SUCCESSFUL';
+        statusText.textContent = 'FACE REGISTRATION SUCCESSFUL!';
         statusDot.style.background = '#10B981';
         faceFrame.classList.add('detected');
-        showAlert('<strong>FACE REGISTRATION SUCCESSFUL!</strong> Your biometric template has been securely enrolled.', 'success');
 
-        // Stop video
+        if (countdownPill) {
+          countdownPill.style.background = 'rgba(16, 185, 129, 0.95)';
+          countdownText.innerHTML = `<i data-lucide="check-circle" style="width: 14px; margin-right: 4px;"></i> Face Verified & Registered!`;
+          lucide.createIcons();
+        }
+
+        showAlert('<strong>FACE REGISTRATION SUCCESSFUL!</strong> Your biometric face template is securely enrolled.', 'success');
+
+        // Stop video stream
         if (localStream) {
           localStream.getTracks().forEach(t => t.stop());
         }
 
         setTimeout(() => {
           window.location.href = data.redirect_url || "{% url 'accounts:login' %}?registered=1";
-        }, 1200);
+        }, 1100);
       } else {
-        showAlert(data.message || 'Failed to enroll face. Please ensure good lighting and face the camera directly.');
+        isCapturing = false;
+        showAlert(data.message || 'Face detection check failed. Please ensure your face is inside the frame with good lighting.');
         captureBtn.disabled = false;
-        captureBtnText.textContent = 'Capture & Enroll Face';
-        statusText.textContent = 'Ready to re-capture';
-        statusDot.style.background = '#10B981';
+        captureBtnText.textContent = 'Capture Now (or wait for auto-capture)';
+        statusText.textContent = 'Adjust lighting and retrying...';
+        statusDot.style.background = '#EF4444';
+
+        // Automatically retry after 2.5s
+        autoCaptureTimer = setTimeout(() => {
+          startAutoCaptureCountdown();
+        }, 2500);
       }
     } catch (err) {
       console.error('Enroll error:', err);
-      showAlert('Network error while saving biometrics. Please try again.');
+      isCapturing = false;
+      showAlert('Network error while saving biometrics. Retrying...');
       captureBtn.disabled = false;
-      captureBtnText.textContent = 'Capture & Enroll Face';
+      captureBtnText.textContent = 'Capture Now (or wait for auto-capture)';
       statusText.textContent = 'Ready to re-capture';
+
+      autoCaptureTimer = setTimeout(() => {
+        startAutoCaptureCountdown();
+      }, 3000);
     }
   }
 
@@ -404,8 +489,9 @@
     initWebcam();
   });
 
-  // Clean up stream if user navigates away
+  // Clean up stream and timers if user navigates away
   window.addEventListener('beforeunload', () => {
+    clearTimeout(autoCaptureTimer);
     if (localStream) {
       localStream.getTracks().forEach(t => t.stop());
     }

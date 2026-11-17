@@ -226,11 +226,11 @@
       video.onloadedmetadata = () => {
         video.play();
         camPrompt.style.display = 'none';
-        statusMessage.textContent = 'Scanning face in real-time...';
-        // Trigger auto verification after 800ms stabilization
+        statusMessage.textContent = 'Face detected! Verifying biometrics...';
+        // Trigger auto verification after 500ms stabilization for instant detection
         autoScanTimer = setTimeout(() => {
           performScan(false);
-        }, 800);
+        }, 500);
       };
     } catch (err) {
       console.error('Camera access failed:', err);
