@@ -18,8 +18,10 @@ from apps.crm.models import Lead
 from apps.notifications.models import Notification
 from .services import DashboardService
 
-@login_required
 def dashboard_index(request):
+    if not request.user.is_authenticated:
+        return redirect('accounts:register')
+
     user = request.user
 
     # If the user is a gym member, redirect to member dashboard

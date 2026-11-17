@@ -27,8 +27,15 @@ class RoleBasedAccessControlTestCase(TestCase):
         self.admin = User.objects.create_user(username='admin_user', password='password123', organization=self.org, branch=self.branch, role=User.Role.GYM_ADMIN)
         self.member = User.objects.create_user(username='member_user', password='password123', organization=self.org, branch=self.branch, role=User.Role.MEMBER)
 
-    def test_unauthenticated_redirect_to_login(self):
+    def test_unauthenticated_root_redirects_to_register(self):
+        # Homepage '/' must automatically redirect new unauthenticated visitors to Registration Page
         response = self.client.get(reverse('dashboard:index'))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('accounts:register'))
+
+    def test_unauthenticated_protected_page_redirects_to_login(self):
+        # Internal role-protected page redirects to login
+        response = self.client.get(reverse('members:member_list'))
         self.assertEqual(response.status_code, 302)
         self.assertIn('/accounts/login/', response.url)
 
@@ -56,6 +63,7 @@ class RegistrationAndFaceAuthTestCase(TestCase):
             'username': 'marcus_vance',
             'email': 'marcus@fitnova.com',
             'phone': '+1234567890',
+            'role': 'MEMBER',
             'gender': 'MALE',
             'password': 'StrongPassword123!',
             'confirm_password': 'StrongPassword123!',
@@ -63,15 +71,23 @@ class RegistrationAndFaceAuthTestCase(TestCase):
         }
         response = self.client.post(reverse('accounts:register'), data=payload)
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse('accounts:face_enroll'))
+        self.assertEqual(response.url, reverse('accounts:login') + '?registered=1')
 
         # User is created
         user = User.objects.get(email='marcus@fitnova.com')
         self.assertEqual(user.username, 'marcus_vance')
         self.assertEqual(user.first_name, 'Marcus')
         self.assertEqual(user.last_name, 'Vance')
+        self.assertEqual(user.role, 'MEMBER')
         self.assertEqual(user.gender, 'MALE')
-        self.assertEqual(self.client.session.get('face_enroll_user_id'), user.id)
+
+        # Newly registered user can immediately log in
+        login_resp = self.client.post(reverse('accounts:login'), data={
+            'username': 'marcus@fitnova.com',
+            'password': 'StrongPassword123!'
+        })
+        self.assertEqual(login_resp.status_code, 302)
+        self.assertEqual(login_resp.url, reverse('dashboard:index'))
 
     def test_registration_duplicate_username_fails(self):
         User.objects.create_user(username='taken_user', email='first@fitnova.com', password='password123')

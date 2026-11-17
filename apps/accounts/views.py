@@ -28,6 +28,10 @@ def register_view(request):
         username_input = request.POST.get('username', '').strip()
         email = request.POST.get('email', '').strip().lower()
         phone = request.POST.get('phone', '').strip()
+        role = request.POST.get('role', User.Role.MEMBER).strip().upper()
+        valid_roles = [User.Role.MEMBER, User.Role.TRAINER, User.Role.STAFF, User.Role.GYM_ADMIN]
+        if role not in valid_roles:
+            role = User.Role.MEMBER
         gender = request.POST.get('gender', 'MALE').strip().upper()
         if gender not in [User.Gender.MALE, User.Gender.FEMALE, User.Gender.OTHER]:
             gender = User.Gender.MALE
@@ -86,6 +90,7 @@ def register_view(request):
                     'username': username_input,
                     'email': email,
                     'phone': phone,
+                    'role': role,
                     'gender': gender,
                 }
             })
@@ -110,7 +115,7 @@ def register_view(request):
         org = GymOrganization.objects.first()
         branch = org.branches.first() if org else None
 
-        # Create User
+        # Create User with hashed password
         user = User.objects.create_user(
             username=username,
             email=email,
@@ -119,31 +124,42 @@ def register_view(request):
             last_name=last_name,
             phone=phone,
             gender=gender,
-            role=User.Role.MEMBER,
+            role=role,
             organization=org,
             branch=branch,
             is_active=True
         )
 
-        # Create associated Member record
-        try:
-            from apps.members.models import Member
-            member_id = f"FN-{timezone.now().year}-{user.id:04d}"
-            Member.objects.create(
-                user=user,
-                organization=org,
-                branch=branch,
-                member_id=member_id,
-                status=Member.Status.ACTIVE,
-                qr_token=str(uuid.uuid4())
-            )
-        except Exception:
-            pass
+        # Create associated role profile
+        if role == User.Role.MEMBER:
+            try:
+                from apps.members.models import Member
+                member_id = f"FN-{timezone.now().year}-{user.id:04d}"
+                Member.objects.create(
+                    user=user,
+                    organization=org,
+                    branch=branch,
+                    member_id=member_id,
+                    status=Member.Status.ACTIVE,
+                    qr_token=str(uuid.uuid4())
+                )
+            except Exception:
+                pass
+        elif role == User.Role.TRAINER:
+            try:
+                from apps.trainers.models import Trainer
+                Trainer.objects.create(
+                    user=user,
+                    organization=org,
+                    specialization='General Fitness & Personal Training',
+                    status=Trainer.Status.ACTIVE
+                )
+            except Exception:
+                pass
 
-        # Set session for Step 2: Face Registration
-        request.session['face_enroll_user_id'] = user.id
-        messages.success(request, f'Account created for {first_name}! Now, let\'s register your face for biometric authentication.')
-        return redirect('accounts:face_enroll')
+        # Set session flag and redirect to Login Page with success notification
+        messages.success(request, f'Registration successful! Welcome to FitNova, {first_name}. You can now sign in with your credentials.')
+        return redirect(reverse('accounts:login') + '?registered=1')
 
     return render(request, 'accounts/register.html')
 
