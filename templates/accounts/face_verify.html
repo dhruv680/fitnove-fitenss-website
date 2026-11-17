@@ -1,0 +1,356 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Face Biometric Verification – FitNova</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="{% static 'css/fitnova.css' %}">
+  <style>
+    body {
+      background: linear-gradient(135deg, #172554 0%, #0F172A 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      font-family: 'Inter', sans-serif;
+    }
+    .fn-verify-card {
+      background: #FFFFFF;
+      border-radius: 24px;
+      padding: 36px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .webcam-viewport {
+      position: relative;
+      width: 100%;
+      height: 320px;
+      background: #0F172A;
+      border-radius: 20px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.7);
+    }
+    #verifyVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+    .face-scanner-frame {
+      position: absolute;
+      width: 210px;
+      height: 250px;
+      border-radius: 50%;
+      border: 2px dashed rgba(118, 87, 232, 0.75);
+      box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.6);
+      pointer-events: none;
+      transition: all 0.3s ease;
+    }
+    .face-scanner-frame.scanning {
+      border: 2px solid #7657E8;
+      box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.55), 0 0 30px rgba(118, 87, 232, 0.45);
+    }
+    .face-scanner-frame.verified {
+      border: 3px solid #10B981;
+      box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.5), 0 0 35px rgba(16, 185, 129, 0.6);
+    }
+    .face-scanner-frame.mismatch {
+      border: 3px solid #EF4444;
+      box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.5), 0 0 35px rgba(239, 68, 68, 0.6);
+    }
+    .laser-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #7657E8, #10B981, transparent);
+      box-shadow: 0 0 12px #7657E8;
+      top: 15%;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .is-scanning .laser-line {
+      opacity: 1;
+      animation: scanSweep 2.2s infinite ease-in-out;
+    }
+    @keyframes scanSweep {
+      0% { top: 15%; opacity: 0.3; }
+      50% { top: 85%; opacity: 1; }
+      100% { top: 15%; opacity: 0.3; }
+    }
+    .verified-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(16, 185, 129, 0.92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      z-index: 10;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+    .verified-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+<div class="fn-verify-card fn-animate-in">
+  <div class="text-center mb-3">
+    <div class="d-inline-flex align-items-center justify-content-center p-2 rounded-4 mb-2" style="background: rgba(118, 87, 232, 0.12); color: #7657E8; width: 50px; height: 50px;">
+      <i data-lucide="scan-face" style="width: 28px; height: 28px;"></i>
+    </div>
+    <h4 class="fw-bold text-dark mb-1">Face Recognition Verification</h4>
+    <p class="text-muted small mb-0">
+      Welcome back, <strong>{{ pending_user.first_name|default:pending_user.username }}</strong>! Look directly at the camera to authenticate.
+    </p>
+  </div>
+
+  <div id="verifyAlertContainer"></div>
+
+  <!-- Webcam Container -->
+  <div class="webcam-viewport mb-3 is-scanning" id="webcamBox">
+    <video id="verifyVideo" autoplay playsinline muted></video>
+    <canvas id="verifyCanvas" style="display: none;"></canvas>
+
+    <div class="face-scanner-frame scanning" id="scannerRing"></div>
+    <div class="laser-line" id="laserLine"></div>
+
+    <!-- Verified Success Overlay -->
+    <div class="verified-overlay" id="verifiedOverlay">
+      <div class="d-inline-flex p-3 rounded-circle bg-white text-success mb-3 shadow" style="transform: scale(1.15);">
+        <i data-lucide="check" style="width: 36px; height: 36px; stroke-width: 3;"></i>
+      </div>
+      <h5 class="fw-bold mb-1">Identity Verified!</h5>
+      <p class="small text-white-50 mb-0">Redirecting to your dashboard...</p>
+    </div>
+
+    <!-- Camera Loading / Permission Alert -->
+    <div id="camPrompt" class="position-absolute top-50 start-50 translate-middle text-center text-white p-3" style="width: 90%; z-index: 5;">
+      <div class="spinner-border text-primary mb-3" role="status" style="width: 2.2rem; height: 2.2rem;">
+        <span class="visually-hidden">Loading camera...</span>
+      </div>
+      <h6 class="fw-bold mb-1">Accessing Camera...</h6>
+      <p class="text-white-50 small mb-0">Please grant camera permission to scan your face.</p>
+    </div>
+  </div>
+
+  <!-- Live Status Bar -->
+  <div class="d-flex align-items-center justify-content-between p-2 px-3 rounded-3 mb-3" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
+    <div class="d-flex align-items-center gap-2 small">
+      <div class="spinner-grow text-primary spinner-grow-sm" role="status" id="statusSpinner"></div>
+      <span class="fw-medium text-dark" id="statusMessage">Starting facial scan...</span>
+    </div>
+    <span class="badge bg-secondary-subtle text-secondary small" id="attemptBadge">Attempt 1</span>
+  </div>
+
+  <!-- Manual Scan / Retry Controls -->
+  <div class="d-grid gap-2 mb-3">
+    <button type="button" class="btn fn-btn-primary py-2 fw-semibold d-flex align-items-center justify-content-center gap-2" id="scanNowBtn" onclick="performScan(true)">
+      <i data-lucide="scan" style="width: 17px;"></i>
+      <span id="scanBtnText">Scan Face Now</span>
+    </button>
+  </div>
+
+  <!-- Alternative Fallbacks -->
+  <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+    <a href="{% url 'accounts:face_fallback' %}" class="small text-primary text-decoration-none fw-medium d-flex align-items-center gap-1">
+      <i data-lucide="key" style="width: 14px;"></i> Verify with Password
+    </a>
+
+    <a href="{% url 'accounts:logout' %}" class="small text-muted text-decoration-none d-flex align-items-center gap-1">
+      <i data-lucide="log-out" style="width: 14px;"></i> Cancel & Sign Out
+    </a>
+  </div>
+</div>
+
+<script>
+  lucide.createIcons();
+
+  const video = document.getElementById('verifyVideo');
+  const canvas = document.getElementById('verifyCanvas');
+  const scannerRing = document.getElementById('scannerRing');
+  const verifiedOverlay = document.getElementById('verifiedOverlay');
+  const camPrompt = document.getElementById('camPrompt');
+  const statusMessage = document.getElementById('statusMessage');
+  const statusSpinner = document.getElementById('statusSpinner');
+  const attemptBadge = document.getElementById('attemptBadge');
+  const scanNowBtn = document.getElementById('scanNowBtn');
+  const scanBtnText = document.getElementById('scanBtnText');
+
+  let localStream = null;
+  let isScanning = false;
+  let hasVerified = false;
+  let attemptCount = 0;
+  let autoScanTimer = null;
+
+  async function startCamera() {
+    try {
+      statusMessage.textContent = 'Requesting camera access...';
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          facingMode: 'user'
+        },
+        audio: false
+      });
+      localStream = stream;
+      video.srcObject = stream;
+      video.onloadedmetadata = () => {
+        video.play();
+        camPrompt.style.display = 'none';
+        statusMessage.textContent = 'Scanning face in real-time...';
+        // Trigger auto verification after 800ms stabilization
+        autoScanTimer = setTimeout(() => {
+          performScan(false);
+        }, 800);
+      };
+    } catch (err) {
+      console.error('Camera access failed:', err);
+      camPrompt.innerHTML = `
+        <i data-lucide="camera-off" style="width: 38px; height: 38px; color: #EF4444; margin-bottom: 8px;"></i>
+        <h6 class="fw-bold text-danger mb-1">Camera Permission Blocked</h6>
+        <p class="text-white-50 small mb-2">Webcam access was denied or is not available on this device.</p>
+        <a href="{% url 'accounts:face_fallback' %}" class="btn btn-sm btn-light">Use Password Instead</a>
+      `;
+      lucide.createIcons();
+      statusMessage.textContent = 'Camera blocked';
+      statusSpinner.className = 'd-none';
+      scannerRing.className = 'face-scanner-frame mismatch';
+    }
+  }
+
+  function showVerifyAlert(msg, type = 'danger') {
+    const container = document.getElementById('verifyAlertContainer');
+    container.innerHTML = `
+      <div class="alert alert-${type} py-2 px-3 small rounded-3 mb-3 d-flex align-items-center gap-2" role="alert">
+        <i data-lucide="${type === 'success' ? 'check-circle' : 'alert-triangle'}" style="width: 17px; flex-shrink: 0;"></i>
+        <div>${msg}</div>
+      </div>
+    `;
+    lucide.createIcons();
+  }
+
+  async function performScan(isManual = false) {
+    if (isScanning || hasVerified || !localStream || !video.videoWidth) return;
+
+    isScanning = true;
+    attemptCount += 1;
+    attemptBadge.textContent = `Attempt ${attemptCount}`;
+    statusMessage.textContent = 'Matching biometric features...';
+    scanNowBtn.disabled = true;
+    scanBtnText.textContent = 'Verifying...';
+
+    // Capture frame to canvas
+    const width = video.videoWidth;
+    const height = video.videoHeight;
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, width, height);
+
+    const base64Image = canvas.toDataURL('image/jpeg', 0.90);
+
+    try {
+      const response = await fetch("{% url 'accounts:api_face_verify' %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: new URLSearchParams({
+          'image': base64Image
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        hasVerified = true;
+        clearTimeout(autoScanTimer);
+        scannerRing.className = 'face-scanner-frame verified';
+        statusMessage.textContent = data.message || 'Face Verified! Access Granted.';
+        statusSpinner.className = 'spinner-grow text-success spinner-grow-sm';
+        verifiedOverlay.classList.add('show');
+
+        // Stop camera tracks
+        if (localStream) {
+          localStream.getTracks().forEach(t => t.stop());
+        }
+
+        setTimeout(() => {
+          window.location.href = data.redirect_url || "{% url 'dashboard:index' %}";
+        }, 1100);
+      } else {
+        scannerRing.className = 'face-scanner-frame mismatch';
+        statusMessage.textContent = data.message || 'Face did not match registered biometric profile.';
+        statusSpinner.className = 'spinner-grow text-danger spinner-grow-sm';
+        showVerifyAlert(data.message || 'Face did not match. Please ensure direct lighting and face the camera.');
+
+        // Allow retry after 1.5 seconds if attempts < 4
+        setTimeout(() => {
+          scannerRing.className = 'face-scanner-frame scanning';
+          statusMessage.textContent = 'Align face with the circle to retry';
+          statusSpinner.className = 'spinner-grow text-primary spinner-grow-sm';
+          scanNowBtn.disabled = false;
+          scanBtnText.textContent = 'Retry Face Scan';
+          isScanning = false;
+
+          // Auto retry up to 3 times
+          if (!isManual && attemptCount < 3) {
+            autoScanTimer = setTimeout(() => {
+              performScan(false);
+            }, 1800);
+          }
+        }, 1600);
+      }
+    } catch (err) {
+      console.error('Face verify error:', err);
+      statusMessage.textContent = 'Connection error during biometric verification.';
+      scanNowBtn.disabled = false;
+      scanBtnText.textContent = 'Retry Face Scan';
+      isScanning = false;
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    startCamera();
+  });
+
+  window.addEventListener('beforeunload', () => {
+    clearTimeout(autoScanTimer);
+    if (localStream) {
+      localStream.getTracks().forEach(t => t.stop());
+    }
+  });
+</script>
+
+</body>
+</html>

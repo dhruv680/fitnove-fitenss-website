@@ -120,3 +120,28 @@ class User(AbstractUser):
     def is_member(self):
         return self.role == self.Role.MEMBER
 
+    @property
+    def has_face_enrolled(self):
+        return hasattr(self, 'face_auth_profile') and self.face_auth_profile.is_active and bool(self.face_auth_profile.feature_vector)
+
+
+class UserFaceProfile(models.Model):
+    user = models.OneToOneField(
+        'accounts.User',
+        on_delete=models.CASCADE,
+        related_name='face_auth_profile'
+    )
+    face_image = models.ImageField(upload_to='users/faces/', blank=True, null=True)
+    face_descriptor = models.TextField(blank=True, default='')  # JSON float array from client face-api
+    feature_vector = models.TextField(blank=True, default='')   # JSON 128-D float array of gradient features
+    enrolled_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = 'User Face Profile'
+        verbose_name_plural = 'User Face Profiles'
+
+    def __str__(self):
+        return f"Face Profile: {self.user.get_full_name() or self.user.username}"
+
+

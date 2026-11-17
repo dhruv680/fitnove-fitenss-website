@@ -1,0 +1,250 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Athlete Registration – FitNova Biometric Fitness Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="{% static 'css/fitnova.css' %}">
+  <style>
+    body {
+      background: linear-gradient(135deg, #172554 0%, #0F172A 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+      font-family: 'Inter', sans-serif;
+    }
+    .fn-register-card {
+      background: #FFFFFF;
+      border-radius: 24px;
+      padding: 40px;
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .fn-step-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .fn-step-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+    .fn-step-badge.active {
+      background: rgba(118, 87, 232, 0.15);
+      color: #7657E8;
+      border: 1px solid rgba(118, 87, 232, 0.3);
+    }
+    .fn-step-badge.upcoming {
+      background: #F1F5F9;
+      color: #94A3B8;
+      border: 1px solid #E2E8F0;
+    }
+    .fn-password-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      color: #64748B;
+      cursor: pointer;
+      padding: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="fn-register-card fn-animate-in">
+  <!-- Brand Header -->
+  <div class="text-center mb-3">
+    <div class="d-inline-flex align-items-center justify-content-center p-3 rounded-4 mb-2" style="background: linear-gradient(135deg, #7657E8 0%, #172554 100%); color: white; width: 58px; height: 58px; box-shadow: 0 10px 25px -5px rgba(118, 87, 232, 0.4);">
+      <i data-lucide="dumbbell" style="width: 28px; height: 28px;"></i>
+    </div>
+    <h3 class="fw-bold text-dark mb-1">Create Athlete Account</h3>
+    <p class="text-muted small mb-0">Join FitNova with Next-Gen Biometric Authentication</p>
+  </div>
+
+  <!-- Step Flow Indicator -->
+  <div class="fn-step-indicator">
+    <span class="fn-step-badge active">
+      <i data-lucide="user-check" style="width: 14px;"></i> Step 1: Account
+    </span>
+    <i data-lucide="chevron-right" style="width: 14px; color: #94A3B8;"></i>
+    <span class="fn-step-badge upcoming">
+      <i data-lucide="scan-face" style="width: 14px;"></i> Step 2: Face Biometrics
+    </span>
+  </div>
+
+  <!-- Messages / Alert Display -->
+  {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'danger' }} py-2 px-3 small rounded-3 mb-3 d-flex align-items-center gap-2 fn-animate-in" role="alert">
+      <i data-lucide="alert-circle" style="width: 16px; flex-shrink: 0;"></i>
+      <div>{{ message }}</div>
+    </div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="POST" action="{% url 'accounts:register' %}" id="registerForm" novalidate>
+    {% csrf_token %}
+
+    <!-- Full Name -->
+    <div class="mb-3">
+      <label class="fn-form-label" for="regFullName">Full Name <span class="text-danger">*</span></label>
+      <div class="position-relative">
+        <input type="text" name="full_name" id="regFullName" class="fn-input pe-5" placeholder="Jessica Taylor" value="{{ form_data.full_name|default:'' }}" required autofocus>
+        <span class="position-absolute end-0 top-50 translate-middle-y me-3 text-muted" style="pointer-events: none;">
+          <i data-lucide="user" style="width: 17px;"></i>
+        </span>
+      </div>
+    </div>
+
+    <!-- Email Address -->
+    <div class="mb-3">
+      <label class="fn-form-label" for="regEmail">Email Address <span class="text-danger">*</span></label>
+      <div class="position-relative">
+        <input type="email" name="email" id="regEmail" class="fn-input pe-5" placeholder="jessica.taylor@example.com" value="{{ form_data.email|default:'' }}" required>
+        <span class="position-absolute end-0 top-50 translate-middle-y me-3 text-muted" style="pointer-events: none;">
+          <i data-lucide="mail" style="width: 17px;"></i>
+        </span>
+      </div>
+      <div class="form-text small" style="font-size: 0.76rem;">You will use this email address to log in to FitNova.</div>
+    </div>
+
+    <!-- Mobile Number -->
+    <div class="mb-3">
+      <label class="fn-form-label" for="regPhone">Mobile Number <span class="text-danger">*</span></label>
+      <div class="position-relative">
+        <input type="tel" name="phone" id="regPhone" class="fn-input pe-5" placeholder="+1 (555) 749-2000" value="{{ form_data.phone|default:'' }}" required>
+        <span class="position-absolute end-0 top-50 translate-middle-y me-3 text-muted" style="pointer-events: none;">
+          <i data-lucide="phone" style="width: 17px;"></i>
+        </span>
+      </div>
+    </div>
+
+    <!-- Password -->
+    <div class="mb-3">
+      <label class="fn-form-label" for="regPassword">Password <span class="text-danger">*</span></label>
+      <div class="position-relative">
+        <input type="password" name="password" id="regPassword" class="fn-input pe-5" placeholder="Minimum 8 characters" required minlength="8">
+        <button type="button" class="fn-password-toggle" onclick="togglePasswordVisibility('regPassword', 'pwdEye1')" title="Toggle Password Visibility">
+          <i data-lucide="eye" id="pwdEye1" style="width: 18px;"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Confirm Password -->
+    <div class="mb-3">
+      <label class="fn-form-label" for="regConfirmPassword">Confirm Password <span class="text-danger">*</span></label>
+      <div class="position-relative">
+        <input type="password" name="confirm_password" id="regConfirmPassword" class="fn-input pe-5" placeholder="Re-enter password" required minlength="8">
+        <button type="button" class="fn-password-toggle" onclick="togglePasswordVisibility('regConfirmPassword', 'pwdEye2')" title="Toggle Password Visibility">
+          <i data-lucide="eye" id="pwdEye2" style="width: 18px;"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Terms and Conditions Checkbox -->
+    <div class="mb-4">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="terms" id="regTerms" required>
+        <label class="form-check-label small text-muted user-select-none" for="regTerms" style="font-size: 0.82rem;">
+          I agree to the <a href="javascript:void(0)" class="text-primary text-decoration-none fw-medium" onclick="showTermsModal()">Terms of Service</a> & <a href="javascript:void(0)" class="text-primary text-decoration-none fw-medium" onclick="showTermsModal()">Biometric Privacy Policy</a>.
+        </label>
+      </div>
+    </div>
+
+    <!-- Submit Button -->
+    <button type="submit" class="btn btn-fn-accent w-100 py-2 justify-content-center shadow-sm" id="submitBtn">
+      <i data-lucide="user-plus" style="width: 18px;"></i>
+      <span>Register & Continue to Face Setup</span>
+    </button>
+  </form>
+
+  <!-- Login Link -->
+  <div class="text-center mt-4 pt-3 border-top">
+    <span class="text-muted small">Already have an athlete account?</span>
+    <a href="{% url 'accounts:login' %}" class="fw-bold text-decoration-none text-primary small ms-1">
+      Sign In Here <i data-lucide="arrow-right" style="width: 13px; margin-top: -2px;"></i>
+    </a>
+  </div>
+</div>
+
+<!-- Terms Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4 p-3">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="fw-bold text-dark">FitNova Biometric & Privacy Terms</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body small text-muted">
+        <p>By registering on FitNova, you consent to biometric feature extraction for secure hands-free facility entry and account login. Raw video streams are never stored or transmitted; mathematical visual gradient descriptors are securely encrypted in our database.</p>
+        <p class="mb-0">You may update or remove your biometric facial profile at any time through your Profile Settings.</p>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-fn-primary btn-sm w-100" data-bs-dismiss="modal">I Understand</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'js/fitnova.js' %}"></script>
+<script>
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+  }
+
+  function togglePasswordVisibility(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    if (!input) return;
+    if (input.type === 'password') {
+      input.type = 'text';
+      if (icon) icon.setAttribute('data-lucide', 'eye-off');
+    } else {
+      input.type = 'password';
+      if (icon) icon.setAttribute('data-lucide', 'eye');
+    }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  function showTermsModal() {
+    const el = document.getElementById('termsModal');
+    if (el && typeof bootstrap !== 'undefined') {
+      const modal = new bootstrap.Modal(el);
+      modal.show();
+    }
+  }
+
+  // Client-side validation helper
+  document.getElementById('registerForm').addEventListener('submit', function (e) {
+    const p1 = document.getElementById('regPassword').value;
+    const p2 = document.getElementById('regConfirmPassword').value;
+    if (p1 !== p2) {
+      e.preventDefault();
+      alert('Passwords do not match. Please re-enter your password.');
+      document.getElementById('regConfirmPassword').focus();
+    }
+  });
+</script>
+</body>
+</html>

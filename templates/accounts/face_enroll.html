@@ -1,0 +1,391 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Face Biometric Enrollment – FitNova Fitness</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="{% static 'css/fitnova.css' %}">
+  <style>
+    body {
+      background: linear-gradient(135deg, #172554 0%, #0F172A 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      font-family: 'Inter', sans-serif;
+    }
+    .fn-enroll-card {
+      background: #FFFFFF;
+      border-radius: 24px;
+      padding: 36px;
+      width: 100%;
+      max-width: 540px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .fn-step-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .fn-step-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+    .fn-step-badge.done {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10B981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .fn-step-badge.active {
+      background: rgba(118, 87, 232, 0.15);
+      color: #7657E8;
+      border: 1px solid rgba(118, 87, 232, 0.3);
+    }
+    .webcam-viewport {
+      position: relative;
+      width: 100%;
+      height: 320px;
+      background: #0F172A;
+      border-radius: 18px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.7);
+    }
+    #enrollVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1); /* Mirror camera for natural feel */
+    }
+    .face-frame-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 200px;
+      height: 240px;
+      border-radius: 50%;
+      border: 2px dashed rgba(118, 87, 232, 0.85);
+      box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.55);
+      pointer-events: none;
+      transition: all 0.3s ease;
+    }
+    .face-frame-overlay.detected {
+      border-color: #10B981;
+      border-style: solid;
+      box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.45), 0 0 25px rgba(16, 185, 129, 0.4);
+    }
+    .corner-bracket {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border-color: #7657E8;
+      pointer-events: none;
+      transition: border-color 0.3s ease;
+    }
+    .corner-tl { top: 35px; left: 60px; border-top: 3px solid #7657E8; border-left: 3px solid #7657E8; border-top-left-radius: 6px; }
+    .corner-tr { top: 35px; right: 60px; border-top: 3px solid #7657E8; border-right: 3px solid #7657E8; border-top-right-radius: 6px; }
+    .corner-bl { bottom: 35px; left: 60px; border-bottom: 3px solid #7657E8; border-left: 3px solid #7657E8; border-bottom-left-radius: 6px; }
+    .corner-br { bottom: 35px; right: 60px; border-bottom: 3px solid #7657E8; border-right: 3px solid #7657E8; border-bottom-right-radius: 6px; }
+    .scan-laser {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #7657E8, #10B981, transparent);
+      box-shadow: 0 0 10px #7657E8;
+      top: 10%;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .scanning .scan-laser {
+      opacity: 1;
+      animation: scanLaser 2s infinite ease-in-out;
+    }
+    @keyframes scanLaser {
+      0% { top: 15%; }
+      50% { top: 85%; }
+      100% { top: 15%; }
+    }
+    .pulse-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10B981;
+      animation: pulseAnim 1.5s infinite;
+    }
+    @keyframes pulseAnim {
+      0% { transform: scale(0.9); opacity: 0.7; }
+      50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 8px #10B981; }
+      100% { transform: scale(0.9); opacity: 0.7; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="fn-enroll-card fn-animate-in">
+  <!-- Step Indicator -->
+  <div class="fn-step-indicator">
+    <span class="fn-step-badge done">
+      <i data-lucide="check" style="width: 14px;"></i> Step 1: Account Info
+    </span>
+    <span class="text-muted"><i data-lucide="chevron-right" style="width: 14px;"></i></span>
+    <span class="fn-step-badge active">
+      <i data-lucide="scan-face" style="width: 14px;"></i> Step 2: Face Registration
+    </span>
+  </div>
+
+  <div class="text-center mb-3">
+    <h4 class="fw-bold text-dark mb-1">Enroll Face Biometrics</h4>
+    <p class="text-muted small mb-0">
+      Position your face inside the guide frame to enable instant, zero-password login & gym kiosk access.
+    </p>
+  </div>
+
+  <!-- Messages -->
+  <div id="enrollAlertContainer">
+    {% if messages %}
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }} py-2 px-3 small rounded-3 mb-3" role="alert">
+        {{ message }}
+      </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  <!-- Webcam Viewport -->
+  <div class="webcam-viewport mb-3" id="webcamContainer">
+    <video id="enrollVideo" autoplay playsinline muted></video>
+    <canvas id="enrollCanvas" style="display: none;"></canvas>
+
+    <!-- Overlay Guidelines -->
+    <div class="face-frame-overlay" id="faceFrame"></div>
+    <div class="corner-bracket corner-tl"></div>
+    <div class="corner-bracket corner-tr"></div>
+    <div class="corner-bracket corner-bl"></div>
+    <div class="corner-bracket corner-br"></div>
+    <div class="scan-laser" id="scanLaser"></div>
+
+    <!-- Camera Error / Initializing Placeholder -->
+    <div id="camPlaceholder" class="position-absolute top-50 start-50 translate-middle text-center text-white p-3" style="width: 90%; z-index: 5;">
+      <div class="spinner-border text-primary mb-3" role="status" style="width: 2.5rem; height: 2.5rem;">
+        <span class="visually-hidden">Loading camera...</span>
+      </div>
+      <h6 class="fw-bold mb-1">Requesting Camera Access...</h6>
+      <p class="text-white-50 small mb-0">Please click <strong>Allow</strong> in your browser prompt.</p>
+    </div>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="d-flex align-items-center justify-content-between p-2 px-3 rounded-3 mb-3" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
+    <div class="d-flex align-items-center gap-2 small">
+      <span class="pulse-dot" id="statusDot" style="background: #7657E8;"></span>
+      <span class="fw-medium text-dark" id="statusText">Initializing sensor...</span>
+    </div>
+    <span class="badge bg-light text-muted border small" id="livenessBadge">2D Feature Guard</span>
+  </div>
+
+  <!-- Consent Notice -->
+  <div class="d-flex align-items-start gap-2 p-2 px-3 rounded-3 mb-3" style="background: rgba(118, 87, 232, 0.05); border: 1px solid rgba(118, 87, 232, 0.2);">
+    <i data-lucide="shield-check" style="width: 18px; color: #7657E8; flex-shrink: 0; margin-top: 2px;"></i>
+    <p class="mb-0 text-muted" style="font-size: 0.77rem; line-height: 1.4;">
+      <strong>Biometric Privacy:</strong> Raw video is never stored. Only encrypted mathematical spatial vectors are stored for verification against gym kiosks & web login.
+    </p>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="d-grid gap-2">
+    <button type="button" class="btn fn-btn-primary py-2 fw-semibold d-flex align-items-center justify-content-center gap-2" id="captureBtn" disabled onclick="captureAndEnroll()">
+      <i data-lucide="camera" style="width: 18px;"></i>
+      <span id="captureBtnText">Capture & Enroll Face</span>
+    </button>
+
+    <div class="d-flex justify-content-between align-items-center pt-2">
+      <form method="POST" action="{% url 'accounts:face_enroll' %}" class="d-inline">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="skip">
+        <button type="submit" class="btn btn-link text-muted text-decoration-none small p-0" title="Skip face registration for now">
+          <i data-lucide="corner-down-right" style="width: 14px;"></i> Skip & Use Password Only
+        </button>
+      </form>
+
+      <button type="button" class="btn btn-link text-primary text-decoration-none small p-0" onclick="restartCamera()">
+        <i data-lucide="refresh-cw" style="width: 14px;"></i> Retry Camera
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  lucide.createIcons();
+
+  let video = document.getElementById('enrollVideo');
+  let canvas = document.getElementById('enrollCanvas');
+  let captureBtn = document.getElementById('captureBtn');
+  let captureBtnText = document.getElementById('captureBtnText');
+  let statusText = document.getElementById('statusText');
+  let statusDot = document.getElementById('statusDot');
+  let camPlaceholder = document.getElementById('camPlaceholder');
+  let faceFrame = document.getElementById('faceFrame');
+  let webcamContainer = document.getElementById('webcamContainer');
+  let localStream = null;
+
+  async function initWebcam() {
+    try {
+      statusText.textContent = 'Requesting camera access...';
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          facingMode: 'user'
+        },
+        audio: false
+      });
+      localStream = stream;
+      video.srcObject = stream;
+      video.onloadedmetadata = () => {
+        video.play();
+        camPlaceholder.style.display = 'none';
+        webcamContainer.classList.add('scanning');
+        statusText.textContent = 'Face centered and camera ready';
+        statusDot.style.background = '#10B981';
+        faceFrame.classList.add('detected');
+        captureBtn.disabled = false;
+      };
+    } catch (err) {
+      console.error('Camera error:', err);
+      camPlaceholder.innerHTML = `
+        <i data-lucide="camera-off" style="width: 42px; height: 42px; color: #EF4444; margin-bottom: 12px;"></i>
+        <h6 class="fw-bold text-danger mb-1">Camera Permission Denied or Unavailable</h6>
+        <p class="text-white-50 small mb-2">Please enable webcam permissions in your browser or skip to password login.</p>
+        <button class="btn btn-sm btn-outline-light" onclick="restartCamera()">Try Again</button>
+      `;
+      lucide.createIcons();
+      statusText.textContent = 'Camera not available';
+      statusDot.style.background = '#EF4444';
+      captureBtn.disabled = true;
+    }
+  }
+
+  function restartCamera() {
+    if (localStream) {
+      localStream.getTracks().forEach(t => t.stop());
+    }
+    camPlaceholder.style.display = 'block';
+    camPlaceholder.innerHTML = `
+      <div class="spinner-border text-primary mb-3" role="status" style="width: 2.5rem; height: 2.5rem;">
+        <span class="visually-hidden">Loading camera...</span>
+      </div>
+      <h6 class="fw-bold mb-1">Requesting Camera Access...</h6>
+      <p class="text-white-50 small mb-0">Please click <strong>Allow</strong> in your browser prompt.</p>
+    `;
+    initWebcam();
+  }
+
+  function showAlert(message, type = 'danger') {
+    const container = document.getElementById('enrollAlertContainer');
+    container.innerHTML = `
+      <div class="alert alert-${type} py-2 px-3 small rounded-3 mb-3 d-flex align-items-center gap-2" role="alert">
+        <i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}" style="width: 18px; flex-shrink: 0;"></i>
+        <div>${message}</div>
+      </div>
+    `;
+    lucide.createIcons();
+  }
+
+  async function captureAndEnroll() {
+    if (!video || !localStream) return;
+
+    captureBtn.disabled = true;
+    captureBtnText.textContent = 'Enrolling Biometrics...';
+    statusText.textContent = 'Extracting facial feature vectors...';
+    statusDot.style.background = '#F59E0B';
+
+    // Draw frame to canvas
+    const width = video.videoWidth || 640;
+    const height = video.videoHeight || 480;
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    // Un-mirror the captured canvas image for clean server processing
+    ctx.drawImage(video, 0, 0, width, height);
+
+    const base64Image = canvas.toDataURL('image/jpeg', 0.92);
+
+    try {
+      const response = await fetch("{% url 'accounts:api_face_enroll' %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: new URLSearchParams({
+          'image': base64Image
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        statusText.textContent = 'Face Biometrics Enrolled Successfully!';
+        statusDot.style.background = '#10B981';
+        faceFrame.classList.add('detected');
+        showAlert(data.message || 'Face enrolled successfully! Redirecting...', 'success');
+
+        // Stop video
+        if (localStream) {
+          localStream.getTracks().forEach(t => t.stop());
+        }
+
+        setTimeout(() => {
+          window.location.href = data.redirect_url || "{% url 'accounts:login' %}?registered=1";
+        }, 1200);
+      } else {
+        showAlert(data.message || 'Failed to enroll face. Please ensure good lighting and face the camera directly.');
+        captureBtn.disabled = false;
+        captureBtnText.textContent = 'Capture & Enroll Face';
+        statusText.textContent = 'Ready to re-capture';
+        statusDot.style.background = '#10B981';
+      }
+    } catch (err) {
+      console.error('Enroll error:', err);
+      showAlert('Network error while saving biometrics. Please try again.');
+      captureBtn.disabled = false;
+      captureBtnText.textContent = 'Capture & Enroll Face';
+      statusText.textContent = 'Ready to re-capture';
+    }
+  }
+
+  // Initialize camera automatically on load
+  document.addEventListener('DOMContentLoaded', () => {
+    initWebcam();
+  });
+
+  // Clean up stream if user navigates away
+  window.addEventListener('beforeunload', () => {
+    if (localStream) {
+      localStream.getTracks().forEach(t => t.stop());
+    }
+  });
+</script>
+
+</body>
+</html>

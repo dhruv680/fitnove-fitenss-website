@@ -10,7 +10,13 @@ router.register(r'organizations', views.GymOrganizationViewSet, basename='api-or
 router.register(r'branches', views.GymBranchViewSet, basename='api-branches')
 
 urlpatterns = [
+    path('register/', views.register_view, name='register'),
+    path('face-enroll/', views.face_enroll_view, name='face_enroll'),
+    path('api/face-enroll/', views.api_face_enroll, name='api_face_enroll'),
     path('login/', views.login_view, name='login'),
+    path('face-verify/', views.face_verify_view, name='face_verify'),
+    path('api/face-verify/', views.api_face_verify, name='api_face_verify'),
+    path('face-fallback/', views.face_fallback_view, name='face_fallback'),
     path('logout/', views.logout_view, name='logout'),
     path('profile/', views.profile_view, name='profile'),
     path('profile/change-password/', views.change_password_view, name='change_password'),
