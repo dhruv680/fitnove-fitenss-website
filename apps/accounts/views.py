@@ -25,8 +25,12 @@ def register_view(request):
 
     if request.method == 'POST':
         full_name = request.POST.get('full_name', '').strip()
+        username_input = request.POST.get('username', '').strip()
         email = request.POST.get('email', '').strip().lower()
         phone = request.POST.get('phone', '').strip()
+        gender = request.POST.get('gender', 'MALE').strip().upper()
+        if gender not in [User.Gender.MALE, User.Gender.FEMALE, User.Gender.OTHER]:
+            gender = User.Gender.MALE
         password = request.POST.get('password', '')
         confirm_password = request.POST.get('confirm_password', '')
         terms = request.POST.get('terms')
@@ -44,6 +48,13 @@ def register_view(request):
             errors.append('Password is required.')
         if not terms:
             errors.append('You must accept the Terms & Conditions.')
+
+        # Username validation (if provided)
+        if username_input:
+            if not re.match(r'^[a-zA-Z0-9_.-]{3,30}$', username_input):
+                errors.append('Username must be 3-30 characters long and contain only letters, numbers, dots, dashes, or underscores.')
+            elif User.objects.filter(username__iexact=username_input).exists():
+                errors.append('This username is already taken. Please choose another.')
 
         # Email format validation
         email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
@@ -72,8 +83,10 @@ def register_view(request):
             return render(request, 'accounts/register.html', {
                 'form_data': {
                     'full_name': full_name,
+                    'username': username_input,
                     'email': email,
                     'phone': phone,
+                    'gender': gender,
                 }
             })
 
@@ -82,13 +95,16 @@ def register_view(request):
         first_name = name_parts[0]
         last_name = name_parts[1] if len(name_parts) > 1 else ''
 
-        # Base username generation
-        base_username = slugify(full_name.replace(' ', '_')) or email.split('@')[0]
-        username = base_username
-        suffix = 1
-        while User.objects.filter(username__iexact=username).exists():
-            username = f"{base_username}_{suffix}"
-            suffix += 1
+        # Final username
+        if username_input:
+            username = username_input
+        else:
+            base_username = slugify(full_name.replace(' ', '_')) or email.split('@')[0]
+            username = base_username
+            suffix = 1
+            while User.objects.filter(username__iexact=username).exists():
+                username = f"{base_username}_{suffix}"
+                suffix += 1
 
         # Associate default organization & branch
         org = GymOrganization.objects.first()
@@ -102,6 +118,7 @@ def register_view(request):
             first_name=first_name,
             last_name=last_name,
             phone=phone,
+            gender=gender,
             role=User.Role.MEMBER,
             organization=org,
             branch=branch,

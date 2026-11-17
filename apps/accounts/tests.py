@@ -53,8 +53,10 @@ class RegistrationAndFaceAuthTestCase(TestCase):
     def test_registration_success(self):
         payload = {
             'full_name': 'Marcus Vance',
+            'username': 'marcus_vance',
             'email': 'marcus@fitnova.com',
             'phone': '+1234567890',
+            'gender': 'MALE',
             'password': 'StrongPassword123!',
             'confirm_password': 'StrongPassword123!',
             'terms': 'on',
@@ -65,9 +67,26 @@ class RegistrationAndFaceAuthTestCase(TestCase):
 
         # User is created
         user = User.objects.get(email='marcus@fitnova.com')
+        self.assertEqual(user.username, 'marcus_vance')
         self.assertEqual(user.first_name, 'Marcus')
         self.assertEqual(user.last_name, 'Vance')
+        self.assertEqual(user.gender, 'MALE')
         self.assertEqual(self.client.session.get('face_enroll_user_id'), user.id)
+
+    def test_registration_duplicate_username_fails(self):
+        User.objects.create_user(username='taken_user', email='first@fitnova.com', password='password123')
+        payload = {
+            'full_name': 'New Athlete',
+            'username': 'taken_user',
+            'email': 'second@fitnova.com',
+            'phone': '1234567890',
+            'password': 'StrongPassword123!',
+            'confirm_password': 'StrongPassword123!',
+            'terms': 'on',
+        }
+        response = self.client.post(reverse('accounts:register'), data=payload)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'username is already taken')
 
     def test_registration_duplicate_email_fails(self):
         User.objects.create_user(username='existing', email='duplicate@fitnova.com', password='password123')

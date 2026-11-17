@@ -203,12 +203,20 @@
     <span class="badge bg-light text-muted border small" id="livenessBadge">2D Feature Guard</span>
   </div>
 
-  <!-- Consent Notice -->
-  <div class="d-flex align-items-start gap-2 p-2 px-3 rounded-3 mb-3" style="background: rgba(118, 87, 232, 0.05); border: 1px solid rgba(118, 87, 232, 0.2);">
-    <i data-lucide="shield-check" style="width: 18px; color: #7657E8; flex-shrink: 0; margin-top: 2px;"></i>
-    <p class="mb-0 text-muted" style="font-size: 0.77rem; line-height: 1.4;">
-      <strong>Biometric Privacy:</strong> Raw video is never stored. Only encrypted mathematical spatial vectors are stored for verification against gym kiosks & web login.
-    </p>
+  <!-- Consent Notice & Checkbox -->
+  <div class="p-2 px-3 rounded-3 mb-3" style="background: rgba(118, 87, 232, 0.05); border: 1px solid rgba(118, 87, 232, 0.2);">
+    <div class="d-flex align-items-start gap-2 mb-2">
+      <i data-lucide="shield-check" style="width: 18px; color: #7657E8; flex-shrink: 0; margin-top: 2px;"></i>
+      <p class="mb-0 text-muted" style="font-size: 0.77rem; line-height: 1.4;">
+        <strong>Biometric Privacy:</strong> Raw video is never stored. Only encrypted mathematical spatial vectors are stored for verification against gym kiosks & web login.
+      </p>
+    </div>
+    <div class="form-check ps-4 pt-1 border-top" style="border-color: rgba(118, 87, 232, 0.15) !important;">
+      <input class="form-check-input" type="checkbox" id="enrollConsentCheck" checked onchange="toggleConsent()">
+      <label class="form-check-label small fw-semibold text-dark user-select-none" for="enrollConsentCheck" style="font-size: 0.79rem;">
+        I consent to enrolling my face biometric template for authentication.
+      </label>
+    </div>
   </div>
 
   <!-- Action Buttons -->
@@ -311,7 +319,24 @@
     lucide.createIcons();
   }
 
+  function toggleConsent() {
+    const consent = document.getElementById('enrollConsentCheck');
+    if (!consent.checked) {
+      captureBtn.disabled = true;
+      statusText.textContent = 'Consent required to enroll face biometrics';
+    } else if (localStream && video.videoWidth) {
+      captureBtn.disabled = false;
+      statusText.textContent = 'Face centered and camera ready';
+    }
+  }
+
   async function captureAndEnroll() {
+    const consent = document.getElementById('enrollConsentCheck');
+    if (!consent || !consent.checked) {
+      showAlert('Please check the biometric consent box to enroll your face.');
+      return;
+    }
+
     if (!video || !localStream) return;
 
     captureBtn.disabled = true;
@@ -345,10 +370,10 @@
       const data = await response.json();
 
       if (data.success) {
-        statusText.textContent = 'Face Biometrics Enrolled Successfully!';
+        statusText.textContent = 'FACE REGISTRATION SUCCESSFUL';
         statusDot.style.background = '#10B981';
         faceFrame.classList.add('detected');
-        showAlert(data.message || 'Face enrolled successfully! Redirecting...', 'success');
+        showAlert('<strong>FACE REGISTRATION SUCCESSFUL!</strong> Your biometric template has been securely enrolled.', 'success');
 
         // Stop video
         if (localStream) {

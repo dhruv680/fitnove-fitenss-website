@@ -145,9 +145,9 @@
     <!-- Verified Success Overlay -->
     <div class="verified-overlay" id="verifiedOverlay">
       <div class="d-inline-flex p-3 rounded-circle bg-white text-success mb-3 shadow" style="transform: scale(1.15);">
-        <i data-lucide="check" style="width: 36px; height: 36px; stroke-width: 3;"></i>
+        <i data-lucide="check" style="width: 42px; height: 42px; stroke-width: 3;"></i>
       </div>
-      <h5 class="fw-bold mb-1">Identity Verified!</h5>
+      <h4 class="fw-bold mb-1 text-white tracking-wider">FACE VERIFIED</h4>
       <p class="small text-white-50 mb-0">Redirecting to your dashboard...</p>
     </div>
 
@@ -323,8 +323,8 @@
           scanBtnText.textContent = 'Retry Face Scan';
           isScanning = false;
 
-          // Auto retry up to 3 times
-          if (!isManual && attemptCount < 3) {
+          // Continue automatic background scan up to 10 attempts without requiring manual click
+          if (!isManual && attemptCount < 10) {
             autoScanTimer = setTimeout(() => {
               performScan(false);
             }, 1800);
