@@ -386,11 +386,11 @@ class Command(BaseCommand):
         # Also add historical monthly payments so past 6 months revenue chart shows upward SaaS growth
         for month_offset in [1, 2, 3, 4, 5]:
             d = timezone.now() - datetime.timedelta(days=month_offset * 30)
-            for j in range(random.randint(3, 6)):
-                m_choice = random.choice(created_members)
-                p_plan = random.choice(created_plans)
+            for j in range(4):
+                m_choice = created_members[j % len(created_members)]
+                p_plan = created_plans[j % len(created_plans)]
                 p_amt = p_plan.price
-                hist_txn = f"TXN-HIST-{month_offset}-{j}-{random.randint(1000, 9999)}"
+                hist_txn = f"TXN-HIST-{month_offset}-{j:04d}"
                 hp, _ = Payment.objects.get_or_create(
                     transaction_id=hist_txn,
                     defaults={
@@ -399,16 +399,17 @@ class Command(BaseCommand):
                         'member': m_choice,
                         'amount': p_amt,
                         'total_amount': p_amt,
-                        'payment_method': random.choice(methods),
+                        'payment_method': methods[j % len(methods)],
                         'status': Payment.Status.COMPLETED,
                         'payment_date': d,
                         'recorded_by': admin_user
                     }
                 )
+                inv_code = f"INV-HIST-{month_offset}-{j:04d}"
                 Invoice.objects.get_or_create(
-                    payment=hp,
+                    invoice_number=inv_code,
                     defaults={
-                        'invoice_number': f"INV-HIST-{month_offset}-{j:04d}",
+                        'payment': hp,
                         'issue_date': d.date(),
                         'due_date': d.date(),
                         'subtotal': p_amt,
