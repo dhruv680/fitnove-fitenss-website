@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+
+{% block title %}About Us – FitNova Elite Fitness{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-5">
+  <!-- Hero Section -->
+  <div class="col-12">
+    <div class="fn-card p-5" style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 60%, #312E81 100%); color: #FFFFFF; position: relative; overflow: hidden;">
+      <div style="position: absolute; right: -40px; bottom: -40px; opacity: 0.08; pointer-events: none;">
+        <i data-lucide="dumbbell" style="width: 320px; height: 320px;"></i>
+      </div>
+      <div class="row align-items-center position-relative" style="z-index: 2;">
+        <div class="col-lg-8">
+          <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3" style="background: rgba(118, 87, 232, 0.25); border: 1px solid rgba(118, 87, 232, 0.4); color: #C4B5FD; font-size: 0.82rem; font-weight: 600;">
+            <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
+            <span>FITNOVA ELITE ATHLETIC PERFORMANCE</span>
+          </div>
+          <h1 class="display-5 fw-bold mb-3 text-white">Empowering Every Athlete to Reach Peak Potential</h1>
+          <p class="lead mb-4 text-white-50" style="max-width: 680px; font-size: 1.08rem;">
+            FitNova is an industry-leading athletic center and fitness software ecosystem combining scientific training principles, cutting-edge biometric performance tracking, and elite personal coaching.
+          </p>
+          <div class="d-flex flex-wrap gap-3">
+            <a href="{% url 'dashboard:apply' %}" class="btn btn-fn-accent px-4 py-2">
+              <i data-lucide="award" style="width: 18px;"></i>
+              <span>Join FitNova Today</span>
+            </a>
+            <a href="{% url 'dashboard:services' %}" class="btn btn-outline-light px-4 py-2" style="border-radius: var(--fn-radius-md);">
+              <i data-lucide="layers" style="width: 18px;"></i>
+              <span>Explore Programs & Facilities</span>
+            </a>
+          </div>
+        </div>
+        <div class="col-lg-4 d-none d-lg-block text-end">
+          <div class="p-4 rounded-4" style="background: rgba(255, 255, 255, 0.06); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.12);">
+            <div class="d-flex align-items-center gap-3 mb-3 text-start">
+              <div class="fn-stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.2); color: #10B981;">
+                <i data-lucide="check-circle" style="width: 22px;"></i>
+              </div>
+              <div>
+                <div class="fs-4 fw-bold text-white">{{ members_count }}+</div>
+                <small class="text-white-50">Active Athletes</small>
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-3 mb-3 text-start">
+              <div class="fn-stat-icon-wrapper" style="background: rgba(118, 87, 232, 0.2); color: #C4B5FD;">
+                <i data-lucide="flame" style="width: 22px;"></i>
+              </div>
+              <div>
+                <div class="fs-4 fw-bold text-white">{{ classes_count }} Weekly</div>
+                <small class="text-white-50">High-Energy Sessions</small>
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-3 text-start">
+              <div class="fn-stat-icon-wrapper" style="background: rgba(245, 158, 11, 0.2); color: #FCD34D;">
+                <i data-lucide="shield-check" style="width: 22px;"></i>
+              </div>
+              <div>
+                <div class="fs-4 fw-bold text-white">100% Biometric</div>
+                <small class="text-white-50">Seamless Automated Check-In</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mission & Vision Cards -->
+  <div class="col-lg-6">
+    <div class="fn-card h-100 p-4">
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <div class="fn-stat-icon-wrapper" style="background: rgba(118, 87, 232, 0.12); color: #7657E8;">
+          <i data-lucide="target" style="width: 24px;"></i>
+        </div>
+        <h4 class="fw-bold text-dark mb-0">Our Mission</h4>
+      </div>
+      <p class="text-muted" style="line-height: 1.7;">
+        To democratize athletic excellence through precision coaching, advanced movement mechanics, and high-performance technology. We bridge the gap between world-class fitness science and everyday athletes to foster sustained vitality, strength, and confidence.
+      </p>
+      <ul class="list-unstyled text-muted small mt-3 mb-0">
+        <li class="d-flex align-items-center gap-2 mb-2"><i data-lucide="check" class="text-success" style="width: 16px;"></i> Science-backed progressive overload and hypertrophy programming</li>
+        <li class="d-flex align-items-center gap-2 mb-2"><i data-lucide="check" class="text-success" style="width: 16px;"></i> Certified trainers specializing in biomechanics & injury prevention</li>
+        <li class="d-flex align-items-center gap-2"><i data-lucide="check" class="text-success" style="width: 16px;"></i> Intelligent AI-assisted diet and macro distribution architecture</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="fn-card h-100 p-4">
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <div class="fn-stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.12); color: #10B981;">
+          <i data-lucide="eye" style="width: 24px;"></i>
+        </div>
+        <h4 class="fw-bold text-dark mb-0">Our Vision</h4>
+      </div>
+      <p class="text-muted" style="line-height: 1.7;">
+        To become the premier global standard in athletic conditioning and holistic wellness communities. Where every fitness center operates friction-free with smart digital passes, instant face recognition, and real-time biometric progress dashboards.
+      </p>
+      <ul class="list-unstyled text-muted small mt-3 mb-0">
+        <li class="d-flex align-items-center gap-2 mb-2"><i data-lucide="check" class="text-success" style="width: 16px;"></i> Frictionless attendance tracking via live face recognition & QR passes</li>
+        <li class="d-flex align-items-center gap-2 mb-2"><i data-lucide="check" class="text-success" style="width: 16px;"></i> Transparent memberships with automated GST invoices & member portals</li>
+        <li class="d-flex align-items-center gap-2"><i data-lucide="check" class="text-success" style="width: 16px;"></i> Uncompromising studio hygiene, equipment maintenance, and athlete support</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- State-of-the-Art Facilities Grid -->
+  <div class="col-12 mt-4">
+    <div class="text-center mb-4">
+      <h3 class="fw-bold text-dark mb-1">State-of-the-Art Training Facilities</h3>
+      <p class="text-muted small">Meticulously curated zones designed for Olympic power, high-output conditioning, and deep recovery.</p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="fn-card h-100 p-4 text-center">
+          <div class="fn-empty-icon mb-3" style="background: rgba(118, 87, 232, 0.1); color: #7657E8;">
+            <i data-lucide="dumbbell"></i>
+          </div>
+          <h5 class="fw-bold text-dark mb-2">Olympic Free-Weight Zone</h5>
+          <p class="text-muted small mb-0">Custom Eleiko competition barbells, calibrated steel bumper plates, rubberized power racks, and dumbbells from 5 to 150 lbs.</p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="fn-card h-100 p-4 text-center">
+          <div class="fn-empty-icon mb-3" style="background: rgba(239, 68, 68, 0.1); color: #EF4444;">
+            <i data-lucide="activity"></i>
+          </div>
+          <h5 class="fw-bold text-dark mb-2">Cardio Theater & HIIT Lab</h5>
+          <p class="text-muted small mb-0">Woodway curve treadmills, Concept2 rowers and SkiErgs, assault air bikes, and live heart rate monitor connectivity.</p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="fn-card h-100 p-4 text-center">
+          <div class="fn-empty-icon mb-3" style="background: rgba(16, 185, 129, 0.1); color: #10B981;">
+            <i data-lucide="compass"></i>
+          </div>
+          <h5 class="fw-bold text-dark mb-2">Functional Sprint Turf</h5>
+          <p class="text-muted small mb-0">40-meter indoor astroturf lane, sled pushes, plyometric boxes, kettlebell arrays, and agility ladder sprint tracks.</p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="fn-card h-100 p-4 text-center">
+          <div class="fn-empty-icon mb-3" style="background: rgba(59, 130, 246, 0.1); color: #3B82F6;">
+            <i data-lucide="scan-face"></i>
+          </div>
+          <h5 class="fw-bold text-dark mb-2">Smart Biometric Access</h5>
+          <p class="text-muted small mb-0">Frictionless 0.5-second live face recognition check-in turnstiles and offline digital QR attendance passes.</p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="fn-card h-100 p-4 text-center">
+          <div class="fn-empty-icon mb-3" style="background: rgba(245, 158, 11, 0.1); color: #F59E0B;">
+            <i data-lucide="heart-pulse"></i>
+          </div>
+          <h5 class="fw-bold text-dark mb-2">Recovery & Cryo Spa</h5>
+          <p class="text-muted small mb-0">Infrared cedar saunas, cold plunge immersion pools, Normatec pneumatic compression boots, and Theragun stations.</p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="fn-card h-100 p-4 text-center">
+          <div class="fn-empty-icon mb-3" style="background: rgba(139, 92, 246, 0.1); color: #8B5CF6;">
+            <i data-lucide="coffee"></i>
+          </div>
+          <h5 class="fw-bold text-dark mb-2">Athlete Fuel Bar & Lounge</h5>
+          <p class="text-muted small mb-0">High-speed gigabit Wi-Fi workstations, private showers with Malin+Goetz toiletries, and organic protein smoothie bar.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Coaching Team Preview -->
+  {% if trainers %}
+  <div class="col-12 mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h4 class="fw-bold text-dark mb-1">Meet Our Master Coaches</h4>
+        <p class="text-muted small mb-0">Industry-certified specialists dedicated to your transformation.</p>
+      </div>
+      <a href="{% url 'trainers:trainer_list' %}" class="btn btn-sm btn-fn-outline">All Coaches &rarr;</a>
+    </div>
+
+    <div class="row g-4">
+      {% for t in trainers %}
+      <div class="col-lg-3 col-md-6">
+        <div class="fn-card text-center p-3 h-100 d-flex flex-column">
+          <div class="fn-avatar mx-auto mb-2" style="width: 56px; height: 56px; font-size: 1.25rem;">
+            {{ t.user.first_name|default:t.user.username|make_list|first|upper }}
+          </div>
+          <h6 class="fw-bold text-dark mb-1">{{ t.full_name }}</h6>
+          <span class="fn-badge fn-badge-accent mb-2">{{ t.specialization }}</span>
+          <div class="text-warning small fw-bold mb-2">★ {{ t.rating }} ({{ t.experience_years }} yrs exp)</div>
+          <p class="text-muted small flex-grow-1 mb-3">{{ t.bio|default:"Dedicated fitness trainer committed to athlete results."|truncatechars:90 }}</p>
+          <a href="{% url 'dashboard:apply' %}" class="btn btn-sm btn-fn-outline mt-auto">Train With Coach</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Bottom CTA Banner -->
+  <div class="col-12 mt-4">
+    <div class="fn-card p-4 text-center" style="background: linear-gradient(135deg, rgba(118, 87, 232, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%); border: 1px solid rgba(118, 87, 232, 0.2);">
+      <h4 class="fw-bold text-dark mb-2">Ready to Start Your Athletic Journey?</h4>
+      <p class="text-muted small mb-3">Join hundreds of dedicated members training inside our world-class facilities today.</p>
+      <div class="d-flex justify-content-center gap-2">
+        <a href="{% url 'dashboard:apply' %}" class="btn btn-fn-accent px-4">Apply for Membership</a>
+        <a href="{% url 'dashboard:contact' %}" class="btn btn-fn-outline px-4">Contact Our Team</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

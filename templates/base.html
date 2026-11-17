@@ -39,6 +39,28 @@
     </a>
 
     <div class="fn-sidebar-nav">
+      <div class="fn-nav-header-title">Portal Navigation</div>
+      <a href="{% url 'dashboard:index' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'dashboard' and request.resolver_match.url_name == 'index' %}active{% endif %}">
+        <i data-lucide="home"></i>
+        <span class="fn-nav-text">Home</span>
+      </a>
+      <a href="{% url 'dashboard:about' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'dashboard' and request.resolver_match.url_name == 'about' %}active{% endif %}">
+        <i data-lucide="info"></i>
+        <span class="fn-nav-text">About Us</span>
+      </a>
+      <a href="{% url 'dashboard:services' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'dashboard' and request.resolver_match.url_name == 'services' %}active{% endif %}">
+        <i data-lucide="dumbbell"></i>
+        <span class="fn-nav-text">Services</span>
+      </a>
+      <a href="{% url 'dashboard:contact' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'dashboard' and request.resolver_match.url_name == 'contact' %}active{% endif %}">
+        <i data-lucide="mail"></i>
+        <span class="fn-nav-text">Contact Us</span>
+      </a>
+      <a href="{% url 'dashboard:apply' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'dashboard' and request.resolver_match.url_name == 'apply' %}active{% endif %}" style="color: #A78BFA;">
+        <i data-lucide="award" style="color: #A78BFA;"></i>
+        <span class="fn-nav-text">Apply Now</span>
+      </a>
+
       <div class="fn-nav-header-title">Core Management</div>
       
       <!-- 1. Dashboard -->
@@ -186,7 +208,47 @@
         </form>
       </div>
 
+      <!-- Professional Navigation Options -->
+      <nav class="fn-topbar-nav d-none d-xl-flex align-items-center">
+        <a href="{% url 'dashboard:index' %}" class="fn-topbar-link {% if request.resolver_match.app_name == 'dashboard' and request.resolver_match.url_name == 'index' %}active{% endif %}">
+          <i data-lucide="home"></i>
+          <span>Home</span>
+        </a>
+        <a href="{% url 'dashboard:about' %}" class="fn-topbar-link {% if request.resolver_match.app_name == 'dashboard' and request.resolver_match.url_name == 'about' %}active{% endif %}">
+          <i data-lucide="info"></i>
+          <span>About Us</span>
+        </a>
+        <a href="{% url 'dashboard:services' %}" class="fn-topbar-link {% if request.resolver_match.app_name == 'dashboard' and request.resolver_match.url_name == 'services' %}active{% endif %}">
+          <i data-lucide="dumbbell"></i>
+          <span>Services</span>
+        </a>
+        <a href="{% url 'dashboard:contact' %}" class="fn-topbar-link {% if request.resolver_match.app_name == 'dashboard' and request.resolver_match.url_name == 'contact' %}active{% endif %}">
+          <i data-lucide="mail"></i>
+          <span>Contact Us</span>
+        </a>
+        <a href="{% url 'dashboard:apply' %}" class="fn-topbar-link fn-topbar-btn-apply {% if request.resolver_match.app_name == 'dashboard' and request.resolver_match.url_name == 'apply' %}active{% endif %}">
+          <i data-lucide="award"></i>
+          <span>Apply Now</span>
+        </a>
+      </nav>
+
       <div class="fn-topbar-right">
+        <!-- Responsive Mobile Navigation (< xl) -->
+        <div class="dropdown d-xl-none">
+          <button class="fn-icon-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Explore Navigation">
+            <i data-lucide="compass"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 py-2" style="border-radius: 14px; min-width: 210px;">
+            <li><h6 class="dropdown-header text-uppercase small fw-bold text-muted" style="letter-spacing: 0.05em;">Portal Navigation</h6></li>
+            <li><a class="dropdown-item py-2 d-flex align-items-center gap-2 {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'dashboard:index' %}"><i data-lucide="home" style="width: 16px;"></i> Home</a></li>
+            <li><a class="dropdown-item py-2 d-flex align-items-center gap-2 {% if request.resolver_match.url_name == 'about' %}active{% endif %}" href="{% url 'dashboard:about' %}"><i data-lucide="info" style="width: 16px;"></i> About Us</a></li>
+            <li><a class="dropdown-item py-2 d-flex align-items-center gap-2 {% if request.resolver_match.url_name == 'services' %}active{% endif %}" href="{% url 'dashboard:services' %}"><i data-lucide="dumbbell" style="width: 16px;"></i> Services</a></li>
+            <li><a class="dropdown-item py-2 d-flex align-items-center gap-2 {% if request.resolver_match.url_name == 'contact' %}active{% endif %}" href="{% url 'dashboard:contact' %}"><i data-lucide="mail" style="width: 16px;"></i> Contact Us</a></li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <li><a class="dropdown-item py-2 d-flex align-items-center gap-2 fw-bold text-primary {% if request.resolver_match.url_name == 'apply' %}active{% endif %}" href="{% url 'dashboard:apply' %}"><i data-lucide="award" style="width: 16px;"></i> Apply Now</a></li>
+          </ul>
+        </div>
+
         <!-- Quick Action Button -->
         {% if not user.is_member %}
         <div class="dropdown">

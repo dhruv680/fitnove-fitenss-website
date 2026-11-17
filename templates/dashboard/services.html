@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+
+{% block title %}Services & Membership Plans – FitNova Elite Fitness{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-5">
+  <!-- Hero Banner -->
+  <div class="col-12">
+    <div class="fn-card p-5" style="background: linear-gradient(135deg, #1E1B4B 0%, #312E81 50%, #0F172A 100%); color: #FFFFFF; position: relative; overflow: hidden;">
+      <div style="position: absolute; right: -20px; bottom: -30px; opacity: 0.08; pointer-events: none;">
+        <i data-lucide="sparkles" style="width: 280px; height: 280px;"></i>
+      </div>
+      <div class="position-relative" style="z-index: 2; max-width: 760px;">
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3" style="background: rgba(118, 87, 232, 0.3); border: 1px solid rgba(118, 87, 232, 0.5); color: #C4B5FD; font-size: 0.82rem; font-weight: 600;">
+          <i data-lucide="award" style="width: 14px; height: 14px;"></i>
+          <span>COMPREHENSIVE ATHLETIC ARCHITECTURE</span>
+        </div>
+        <h1 class="display-5 fw-bold mb-3 text-white">Elite Gym Services & Transparent Membership Plans</h1>
+        <p class="lead mb-4 text-white-50" style="font-size: 1.05rem;">
+          From one-on-one biometric personal training to high-intensity studio conditioning and customized metabolic nutrition, discover programs engineered for visible, lasting results.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+          <a href="#plansSection" class="btn btn-fn-accent px-4 py-2">
+            <i data-lucide="credit-card" style="width: 18px;"></i>
+            <span>View Membership Plans</span>
+          </a>
+          <a href="{% url 'dashboard:apply' %}" class="btn btn-outline-light px-4 py-2" style="border-radius: var(--fn-radius-md);">
+            <i data-lucide="user-plus" style="width: 18px;"></i>
+            <span>Submit Application</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6 Core Services Cards -->
+  <div class="col-12">
+    <div class="text-center mb-4">
+      <h3 class="fw-bold text-dark mb-1">Our Premium Training Offerings</h3>
+      <p class="text-muted small">Every program is personalized around your bio-mechanical profile and fitness targets.</p>
+    </div>
+
+    <div class="row g-4">
+      <!-- Service 1 -->
+      <div class="col-lg-4 col-md-6">
+        <div class="fn-card h-100 p-4">
+          <div class="fn-stat-icon-wrapper mb-3" style="background: rgba(118, 87, 232, 0.12); color: #7657E8;">
+            <i data-lucide="user-check" style="width: 24px;"></i>
+          </div>
+          <h5 class="fw-bold text-dark mb-2">1-on-1 Personal Coaching</h5>
+          <p class="text-muted small mb-3">Custom periodized strength programs, form analysis, milestone tracking, and undivided coach accountability on the gym floor.</p>
+          <ul class="list-unstyled small text-muted mb-0">
+            <li class="mb-1"><i data-lucide="check" class="text-success me-1" style="width: 14px;"></i> Movement screen & mobility baseline</li>
+            <li class="mb-1"><i data-lucide="check" class="text-success me-1" style="width: 14px;"></i> Weekly progressive volume adjustments</li>
+            <li><i data-lucide="check" class="text-success me-1" style="width: 14px;"></i> Direct in-app coach messaging</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Service 2 -->
+      <div class="col-lg-4 col-md-6">
+        <div class="fn-card h-100 p-4">
+          <div class="fn-stat-icon-wrapper mb-3" style="background: rgba(239, 68, 68, 0.12); color: #EF4444;">
+            <i data-lucide="flame" style="width: 24px;"></i>
+          </div>
+          <h5 class="fw-bold text-dark mb-2">Group Studio Classes</h5>
+          <p class="text-muted small mb-3">High-energy boutique studio sessions including HIIT conditioning, Power Vinyasa Yoga, Spinning, and Pilates.</p>
+          <ul class="list-unstyled small text-muted mb-0">
+            <li class="mb-1"><i data-lucide="check" class="text-success me-1" style="width: 14px;"></i> Heart rate tracking & caloric monitors</li>
+            <li class="mb-1"><i data-lucide="check" class="text-success me-1" style="width: 14px;"></i> Limited seat capacity for optimal coaching</li>
+            <li><i data-lucide="check" class="text-success me-1" style="width: 14px;"></i> Easy online seat reservation system</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Service 3 -->
+      <div class="col-lg-4 col-md-6">
+        <div class="fn-card h-100 p-4">
+          <div class="fn-stat-icon-wrapper mb-3" style="background: rgba(16, 185, 129, 0.12); color: #10B981;">
+            <i data-lucide="utensils" style="width: 24px;"></i>
+          </div>
+          <h5 class="fw-bold text-dark mb-2">Nutritional & Dietetics Strategy</h5>
+          <p class="text-muted small mb-3">Tailored macronutrient allocation, meal plans, hydration protocols, and dietary habit coaching that aligns with your training schedule.</p>
+          <ul class="list-unstyled small text-muted mb-0">
+            <li class="mb-1"><i data-lucide="check" class="text-success me-1" style="width: 14px;"></i> Custom daily calorie & macro targets</li>
+            <li class="mb-1"><i data-lucide="check" class="text-success me-1" style="width: 14px;"></i> Weekly body composition re-assessments</li>
+            <li><i data-lucide="check" class="text-success me-1" style="width: 14px;"></i> Supplement guidance & meal prep tips</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Service 4 -->
+      <div class="col-lg-4 col-md-6">
+        <div class="fn-card h-100 p-4">
+          <div class="fn-stat-icon-wrapper mb-3" style="background: rgba(59, 130, 246, 0.12); color: #3B82F6;">
+            <i data-lucide="scan" style="width: 24px;"></i>
+          </div>
+          <h5 class="fw-bold text-dark mb-2">Biometric Smart Pass System</h5>
+          <p class="text-muted small mb-3">Experience instant 0.5-second turnstile check-in with high-accuracy facial recognition or digital offline QR passes.</p>
+          <ul class="list-unstyled small text-muted mb-0">
+            <li class="mb-1"><i data-lucide="check" class="text-success me-1" style="width: 14px;"></i> Frictionless automatic check-in</li>
+            <li class="mb-1"><i data-lucide="check" class="text-success me-1" style="width: 14px;"></i> Attendance streaks & visit history</li>
+            <li><i data-lucide="check" class="text-success me-1" style="width: 14px;"></i> Voice confirmation greeting</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Service 5 -->
+      <div class="col-lg-4 col-md-6">
+        <div class="fn-card h-100 p-4">
+          <div class="fn-stat-icon-wrapper mb-3" style="background: rgba(245, 158, 11, 0.12); color: #F59E0B;">
+            <i data-lucide="heart" style="width: 24px;"></i>
+          </div>
+          <h5 class="fw-bold text-dark mb-2">Athletic Recovery & Hydrotherapy</h5>
+          <p class="text-muted small mb-3">Accelerate muscular repair and reduce central nervous system fatigue with cutting-edge recovery technology.</p>
+          <ul class="list-unstyled small text-muted mb-0">
+            <li class="mb-1"><i data-lucide="check" class="text-success me-1" style="width: 14px;"></i> Cold water immersion cryo therapy</li>
+            <li class="mb-1"><i data-lucide="check" class="text-success me-1" style="width: 14px;"></i> Infrared cedar sauna detox suites</li>
+            <li><i data-lucide="check" class="text-success me-1" style="width: 14px;"></i> Percussive therapy massage guns</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Service 6 -->
+      <div class="col-lg-4 col-md-6">
+        <div class="fn-card h-100 p-4">
+          <div class="fn-stat-icon-wrapper mb-3" style="background: rgba(139, 92, 246, 0.12); color: #8B5CF6;">
+            <i data-lucide="activity" style="width: 24px;"></i>
+          </div>
+          <h5 class="fw-bold text-dark mb-2">Body Composition Analytics</h5>
+          <p class="text-muted small mb-3">Multi-frequency bioelectrical impedance testing delivering actionable data on skeletal muscle mass, visceral fat, and BMR.</p>
+          <ul class="list-unstyled small text-muted mb-0">
+            <li class="mb-1"><i data-lucide="check" class="text-success me-1" style="width: 14px;"></i> Detailed segmented muscle analysis</li>
+            <li class="mb-1"><i data-lucide="check" class="text-success me-1" style="width: 14px;"></i> Basal metabolic rate measurement</li>
+            <li><i data-lucide="check" class="text-success me-1" style="width: 14px;"></i> Historical trend charts in member app</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Membership Plans Pricing Section -->
+  <div class="col-12 mt-5" id="plansSection">
+    <div class="text-center mb-4">
+      <div class="fn-badge fn-badge-accent mb-2">TRANSPARENT VALUE</div>
+      <h3 class="fw-bold text-dark mb-1">Official Gym Membership Plans</h3>
+      <p class="text-muted small">Choose the tier that fits your athletic lifestyle. All plans include automated GST invoices and smart access.</p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+      {% for p in plans %}
+      <div class="col-lg-4 col-md-6">
+        <div class="fn-card h-100 p-4 d-flex flex-column text-center position-relative {% if forloop.counter == 2 %}border border-2 border-primary shadow{% endif %}">
+          {% if forloop.counter == 2 %}
+          <div class="position-absolute top-0 start-50 translate-middle">
+            <span class="badge bg-primary text-white rounded-pill px-3 py-1 font-monospace" style="font-size: 0.72rem; letter-spacing: 0.05em;">MOST POPULAR</span>
+          </div>
+          {% endif %}
+
+          <div class="mb-2 mt-2">
+            <h4 class="fw-bold text-dark mb-1">{{ p.name }}</h4>
+            <span class="fn-badge fn-badge-muted">{{ p.get_duration_type_display }} ({{ p.duration_days }} Days)</span>
+          </div>
+
+          <div class="my-4">
+            <div class="display-5 fw-bold text-dark">
+              <span class="fs-4 text-muted">{{ org.currency|default:'$' }}</span>{{ p.price }}
+            </div>
+            <small class="text-muted">Single upfront billing &bull; Instant activation</small>
+          </div>
+
+          <p class="text-muted small mb-4">{{ p.description|default:"Unlimited access to all gym workout zones, biometric turnstiles, and locker suites." }}</p>
+
+          <div class="text-start small p-3 bg-light rounded-3 mb-4">
+            <div class="py-1 text-dark"><i data-lucide="check-circle" class="text-success me-2" style="width: 16px;"></i> Full floor & free weights access</div>
+            <div class="py-1 text-dark"><i data-lucide="check-circle" class="text-success me-2" style="width: 16px;"></i> Biometric Face & QR Attendance Pass</div>
+            <div class="py-1 text-dark"><i data-lucide="check-circle" class="text-success me-2" style="width: 16px;"></i> Official Tax / GST invoice receipt</div>
+            <div class="py-1 text-dark"><i data-lucide="check-circle" class="text-success me-2" style="width: 16px;"></i> Complimentary locker & towel service</div>
+          </div>
+
+          <div class="mt-auto">
+            <a href="{% url 'dashboard:apply' %}?plan={{ p.id }}" class="btn {% if forloop.counter == 2 %}btn-fn-accent{% else %}btn-fn-primary{% endif %} w-100 py-2">
+              <span>Apply for {{ p.name }}</span> &rarr;
+            </a>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12">
+        <div class="fn-card text-center py-5">
+          <div class="fn-empty-icon"><i data-lucide="credit-card"></i></div>
+          <h5 class="fw-bold">Membership Plans Updating</h5>
+          <p class="text-muted small">Please contact front desk for current seasonal promotions.</p>
+          <a href="{% url 'dashboard:contact' %}" class="btn btn-fn-primary">Contact Us</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Weekly Fitness Class Schedule Preview -->
+  {% if classes %}
+  <div class="col-12 mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h4 class="fw-bold text-dark mb-1">Featured Group Class Schedule</h4>
+        <p class="text-muted small mb-0">High-energy fitness classes led by certified master trainers.</p>
+      </div>
+      <a href="{% url 'classes:class_list' %}" class="btn btn-sm btn-fn-outline">All Class Schedules &rarr;</a>
+    </div>
+
+    <div class="row g-4">
+      {% for cls in classes %}
+      <div class="col-lg-4 col-md-6">
+        <div class="fn-card p-3 h-100 d-flex flex-column">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="fn-badge fn-badge-accent">{{ cls.room }}</span>
+            <span class="badge bg-light text-dark font-monospace">{{ cls.capacity }} Seats</span>
+          </div>
+          <h5 class="fw-bold text-dark mb-1">{{ cls.name }}</h5>
+          <div class="text-muted small mb-3">
+            <i data-lucide="clock" style="width: 14px;"></i> {{ cls.schedule_time|time:"h:i A" }} ({{ cls.duration_minutes }}m) &bull; {{ cls.days_of_week }}
+          </div>
+          <p class="text-muted small flex-grow-1">{{ cls.description|default:"Functional cardio and strength conditioning."|truncatechars:100 }}</p>
+          <div class="pt-2 border-top mt-auto d-flex justify-content-between align-items-center">
+            <small class="text-muted">Coach: <strong>{{ cls.trainer.full_name|default:"Head Trainer" }}</strong></small>
+            <a href="{% url 'classes:class_detail' cls.id %}" class="btn btn-sm btn-fn-outline">Roster</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

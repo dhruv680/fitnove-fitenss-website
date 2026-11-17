@@ -7,13 +7,15 @@ from django.contrib import messages
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from apps.accounts.permissions import admin_only, staff_or_admin
-from apps.accounts.models import GymOrganization, GymBranch
+from apps.accounts.models import GymOrganization, GymBranch, User
 from apps.members.models import Member
 from apps.memberships.models import Membership, MembershipPlan
 from apps.attendance.models import Attendance
 from apps.payments.models import Payment, Invoice, Expense
 from apps.trainers.models import Trainer
+from apps.classes.models import FitnessClass
 from apps.crm.models import Lead
+from apps.notifications.models import Notification
 from .services import DashboardService
 
 @login_required
@@ -230,4 +232,191 @@ def settings_view(request):
     return render(request, 'dashboard/settings.html', {
         'org': org,
         'branch': branch
+    })
+
+
+def about_view(request):
+    org = getattr(request.user, 'organization', None) if request.user.is_authenticated else None
+    if not org:
+        org = GymOrganization.objects.first()
+
+    trainers = Trainer.objects.filter(status='ACTIVE')
+    if org:
+        trainers = trainers.filter(organization=org)
+
+    classes_count = FitnessClass.objects.filter(is_active=True).count()
+    members_count = Member.objects.filter(status='ACTIVE').count()
+
+    return render(request, 'dashboard/about.html', {
+        'org': org,
+        'trainers': trainers[:4],
+        'classes_count': classes_count or 12,
+        'members_count': members_count or 250,
+    })
+
+
+def services_view(request):
+    org = getattr(request.user, 'organization', None) if request.user.is_authenticated else None
+    if not org:
+        org = GymOrganization.objects.first()
+
+    plans = MembershipPlan.objects.filter(is_active=True)
+    if org:
+        plans = plans.filter(organization=org)
+
+    classes = FitnessClass.objects.filter(is_active=True).select_related('trainer')
+    if org:
+        classes = classes.filter(organization=org)
+
+    return render(request, 'dashboard/services.html', {
+        'org': org,
+        'plans': plans,
+        'classes': classes[:6],
+    })
+
+
+def contact_view(request):
+    org = getattr(request.user, 'organization', None) if request.user.is_authenticated else None
+    if not org:
+        org = GymOrganization.objects.first()
+    branch = getattr(request.user, 'branch', None) if request.user.is_authenticated else None
+    if not branch and org:
+        branch = org.branches.first()
+
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        email = request.POST.get('email', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        subject = request.POST.get('subject', 'General Inquiry').strip()
+        message = request.POST.get('message', '').strip()
+
+        if not name or not email or not message:
+            messages.error(request, "Please fill in your name, email address, and message.")
+            return render(request, 'dashboard/contact.html', {
+                'org': org,
+                'branch': branch,
+                'form_data': request.POST
+            })
+
+        try:
+            lead = Lead.objects.create(
+                organization=org,
+                branch=branch,
+                full_name=name,
+                email=email,
+                phone=phone or 'N/A',
+                source=Lead.Source.WEBSITE,
+                interest=subject or 'General Inquiry',
+                status=Lead.Status.NEW,
+                notes=f"[Website Contact Form]\nSubject: {subject}\nMessage: {message}"
+            )
+
+            admin_users = User.objects.filter(role__in=[User.Role.SUPER_ADMIN, User.Role.GYM_ADMIN])
+            if org:
+                admin_users = admin_users.filter(organization=org)
+            for admin_u in admin_users:
+                Notification.objects.create(
+                    recipient=admin_u,
+                    title=f"New Contact Inquiry: {name}",
+                    message=f"{name} ({email}) asked about '{subject}'. Check CRM pipeline.",
+                    notification_type=Notification.NotificationType.INFO,
+                    action_url='/crm/'
+                )
+
+            messages.success(request, f"Thank you, {name}! Your message has been sent successfully. Our team will contact you shortly.")
+            return redirect('dashboard:contact')
+        except Exception as e:
+            messages.error(request, f"Could not submit inquiry: {str(e)}")
+
+    return render(request, 'dashboard/contact.html', {
+        'org': org,
+        'branch': branch
+    })
+
+
+def apply_view(request):
+    org = getattr(request.user, 'organization', None) if request.user.is_authenticated else None
+    if not org:
+        org = GymOrganization.objects.first()
+    branch = getattr(request.user, 'branch', None) if request.user.is_authenticated else None
+    if not branch and org:
+        branch = org.branches.first()
+
+    plans = MembershipPlan.objects.filter(is_active=True)
+    if org:
+        plans = plans.filter(organization=org)
+
+    preselected_plan_id = request.GET.get('plan')
+
+    if request.method == 'POST':
+        full_name = request.POST.get('full_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        gender = request.POST.get('gender', 'OTHER')
+        dob = request.POST.get('date_of_birth') or None
+        plan_id = request.POST.get('plan_id')
+        fitness_goals = request.POST.get('fitness_goals', '').strip()
+        emergency_name = request.POST.get('emergency_name', '').strip()
+        emergency_phone = request.POST.get('emergency_phone', '').strip()
+        medical_history = request.POST.get('medical_history', '').strip()
+
+        if not full_name or not email or not phone:
+            messages.error(request, "Full name, email address, and phone number are required to submit an application.")
+            return render(request, 'dashboard/apply.html', {
+                'org': org,
+                'plans': plans,
+                'preselected_plan_id': plan_id or preselected_plan_id,
+                'form_data': request.POST
+            })
+
+        chosen_plan = plans.filter(id=plan_id).first() if plan_id else None
+        plan_name = chosen_plan.name if chosen_plan else "General Membership"
+
+        try:
+            lead = Lead.objects.create(
+                organization=org,
+                branch=branch,
+                full_name=full_name,
+                email=email,
+                phone=phone,
+                source=Lead.Source.WEBSITE,
+                interest=f"Membership: {plan_name}",
+                status=Lead.Status.NEW,
+                notes=(
+                    f"[Official Membership Application]\n"
+                    f"Selected Plan: {plan_name}\n"
+                    f"Gender: {gender} | DOB: {dob}\n"
+                    f"Fitness Goals: {fitness_goals}\n"
+                    f"Emergency: {emergency_name} ({emergency_phone})\n"
+                    f"Medical: {medical_history or 'None reported'}"
+                )
+            )
+
+            admin_users = User.objects.filter(role__in=[User.Role.SUPER_ADMIN, User.Role.GYM_ADMIN])
+            if org:
+                admin_users = admin_users.filter(organization=org)
+            for admin_u in admin_users:
+                Notification.objects.create(
+                    recipient=admin_u,
+                    title=f"Membership Application: {full_name}",
+                    message=f"{full_name} submitted a membership application for {plan_name}. Phone: {phone}",
+                    notification_type=Notification.NotificationType.SUCCESS,
+                    action_url='/crm/'
+                )
+
+            return render(request, 'dashboard/apply.html', {
+                'org': org,
+                'plans': plans,
+                'success': True,
+                'applicant_name': full_name,
+                'plan_name': plan_name,
+                'application_id': f"APP-{lead.id:05d}"
+            })
+        except Exception as e:
+            messages.error(request, f"Error submitting membership application: {str(e)}")
+
+    return render(request, 'dashboard/apply.html', {
+        'org': org,
+        'plans': plans,
+        'preselected_plan_id': preselected_plan_id
     })

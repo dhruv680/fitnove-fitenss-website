@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+
+{% block title %}Apply for Membership – FitNova Elite Fitness{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-5 justify-content-center">
+  <div class="col-lg-9">
+    {% if success %}
+    <!-- Success Confirmation View -->
+    <div class="fn-card p-5 text-center fn-animate-in">
+      <div class="fn-stat-icon-wrapper mx-auto mb-3" style="width: 72px; height: 72px; background: rgba(16, 185, 129, 0.15); color: #10B981;">
+        <i data-lucide="check-circle" style="width: 36px; height: 36px;"></i>
+      </div>
+      <span class="badge bg-success rounded-pill px-3 py-1 mb-2">APPLICATION RECEIVED</span>
+      <h2 class="fw-bold text-dark mb-1">Welcome to the FitNova Community, {{ applicant_name }}!</h2>
+      <p class="text-muted small mb-4">Your official gym membership application has been submitted and logged into our athlete database.</p>
+
+      <div class="p-4 bg-light rounded-4 text-start mb-4 mx-auto" style="max-width: 520px; border: 1px solid #E2E8F0;">
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted small">Application Reference:</span>
+          <span class="fw-bold font-monospace text-primary">{{ application_id }}</span>
+        </div>
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted small">Applicant Name:</span>
+          <span class="fw-semibold text-dark">{{ applicant_name }}</span>
+        </div>
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted small">Selected Program:</span>
+          <span class="fw-bold text-dark">{{ plan_name }}</span>
+        </div>
+        <div class="d-flex justify-content-between py-2">
+          <span class="text-muted small">Status:</span>
+          <span class="fn-badge fn-badge-success">Under Review / Pre-Approved</span>
+        </div>
+      </div>
+
+      <div class="alert alert-info border-0 mx-auto text-start small mb-4" style="max-width: 520px; border-radius: 12px;">
+        <div class="fw-bold mb-1"><i data-lucide="info" class="me-1" style="width: 14px;"></i> Next Steps for Activation:</div>
+        <div>1. A membership coordinator has received your application and will review your file.</div>
+        <div>2. Visit the front desk for biometric facial capture and digital pass activation.</div>
+        <div>3. Your first session orientation and trainer assessment will be scheduled.</div>
+      </div>
+
+      <div class="d-flex justify-content-center gap-2">
+        <a href="{% url 'dashboard:index' %}" class="btn btn-fn-primary px-4">Go to Dashboard</a>
+        <a href="{% url 'dashboard:services' %}" class="btn btn-fn-outline px-4">Browse Services</a>
+      </div>
+    </div>
+
+    {% else %}
+
+    <!-- Application Form View -->
+    <div class="text-center mb-4">
+      <div class="fn-badge fn-badge-accent mb-2">OFFICIAL ENROLLMENT</div>
+      <h2 class="display-6 fw-bold text-dark mb-1">FitNova Athlete Membership Application</h2>
+      <p class="text-muted small mx-auto" style="max-width: 620px;">
+        Complete your membership application to begin training at our elite athletic facilities. Fast, secure, and instant enrollment review.
+      </p>
+    </div>
+
+    <div class="fn-card p-4 p-md-5">
+      <form method="POST" action="{% url 'dashboard:apply' %}">
+        {% csrf_token %}
+
+        <!-- Section 1: Personal Details -->
+        <h5 class="fw-bold text-dark mb-3 pb-2 border-bottom d-flex align-items-center gap-2">
+          <i data-lucide="user" class="text-primary" style="width: 20px;"></i>
+          <span>1. Personal & Contact Demographics</span>
+        </h5>
+
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label class="fn-form-label">Full Name <span class="text-danger">*</span></label>
+            <input type="text" name="full_name" class="fn-input" value="{{ form_data.full_name|default:'' }}" required placeholder="e.g. Alex Mercer">
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Email Address <span class="text-danger">*</span></label>
+            <input type="email" name="email" class="fn-input" value="{{ form_data.email|default:'' }}" required placeholder="alex@fitnova.com">
+          </div>
+          <div class="col-md-4">
+            <label class="fn-form-label">Phone Number <span class="text-danger">*</span></label>
+            <input type="tel" name="phone" class="fn-input" value="{{ form_data.phone|default:'' }}" required placeholder="+1 555-0198">
+          </div>
+          <div class="col-md-4">
+            <label class="fn-form-label">Gender</label>
+            <select name="gender" class="fn-select">
+              <option value="MALE" {% if form_data.gender == 'MALE' %}selected{% endif %}>Male</option>
+              <option value="FEMALE" {% if form_data.gender == 'FEMALE' %}selected{% endif %}>Female</option>
+              <option value="OTHER" {% if form_data.gender == 'OTHER' %}selected{% endif %}>Other / Prefer not to say</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="fn-form-label">Date of Birth</label>
+            <input type="date" name="date_of_birth" class="fn-input" value="{{ form_data.date_of_birth|default:'' }}">
+          </div>
+        </div>
+
+        <!-- Section 2: Membership & Training Objectives -->
+        <h5 class="fw-bold text-dark mb-3 pb-2 border-bottom d-flex align-items-center gap-2">
+          <i data-lucide="credit-card" class="text-primary" style="width: 20px;"></i>
+          <span>2. Membership Tier & Fitness Goals</span>
+        </h5>
+
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label class="fn-form-label">Desired Membership Plan <span class="text-danger">*</span></label>
+            <select name="plan_id" class="fn-select" required>
+              <option value="">-- Choose Subscription Tier --</option>
+              {% for p in plans %}
+              <option value="{{ p.id }}" {% if preselected_plan_id|stringformat:"s" == p.id|stringformat:"s" or form_data.plan_id|stringformat:"s" == p.id|stringformat:"s" %}selected{% endif %}>
+                {{ p.name }} – {{ org.currency|default:'$' }}{{ p.price }} ({{ p.get_duration_type_display }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Primary Fitness Goal</label>
+            <select name="fitness_goals" class="fn-select">
+              <option value="Strength & Power Lifting">Strength & Power Lifting</option>
+              <option value="Muscle Hypertrophy & Bodybuilding">Muscle Hypertrophy & Bodybuilding</option>
+              <option value="Fat Loss & Caloric Conditioning">Fat Loss & Caloric Conditioning</option>
+              <option value="Cardiovascular Endurance & Stamina">Cardiovascular Endurance & Stamina</option>
+              <option value="Mobility, Flexibility & General Health">Mobility, Flexibility & General Health</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Section 3: Emergency & Health -->
+        <h5 class="fw-bold text-dark mb-3 pb-2 border-bottom d-flex align-items-center gap-2">
+          <i data-lucide="heart-pulse" class="text-primary" style="width: 20px;"></i>
+          <span>3. Emergency Contact & Medical History</span>
+        </h5>
+
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label class="fn-form-label">Emergency Contact Name</label>
+            <input type="text" name="emergency_name" class="fn-input" value="{{ form_data.emergency_name|default:'' }}" placeholder="e.g. Sarah Mercer (Spouse / Parent)">
+          </div>
+          <div class="col-md-6">
+            <label class="fn-form-label">Emergency Contact Phone</label>
+            <input type="tel" name="emergency_phone" class="fn-input" value="{{ form_data.emergency_phone|default:'' }}" placeholder="+1 555-0177">
+          </div>
+          <div class="col-12">
+            <label class="fn-form-label">Medical History / Physical Injuries (Optional)</label>
+            <textarea name="medical_history" class="fn-textarea" rows="2" placeholder="List any past surgeries, cardiovascular conditions, joint concerns, or current medications...">{{ form_data.medical_history|default:'' }}</textarea>
+            <small class="text-muted">Kept strictly confidential by our coaching and medical evaluation staff.</small>
+          </div>
+        </div>
+
+        <div class="p-3 bg-light rounded-3 small mb-4">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="termsCheck" required checked>
+            <label class="form-check-label text-muted" for="termsCheck">
+              I agree to the FitNova Terms of Service, Gym Etiquette, and Liability Waiver. I understand that biometric facial recognition is optional for contactless check-in.
+            </label>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center">
+          <a href="{% url 'dashboard:services' %}" class="btn btn-fn-outline">
+            <i data-lucide="arrow-left" style="width: 16px;"></i>
+            <span>Back to Plans</span>
+          </a>
+          <button type="submit" class="btn btn-fn-accent px-4 py-2">
+            <i data-lucide="award" style="width: 18px;"></i>
+            <span>Submit Membership Application</span>
+          </button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

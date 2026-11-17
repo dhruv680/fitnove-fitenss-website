@@ -563,6 +563,77 @@ body.sidebar-collapsed .fn-nav-link i {
   pointer-events: none;
 }
 
+/* Topbar Navigation Links (Home, About Us, Services, Contact Us, Apply Now) */
+.fn-topbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 14px;
+}
+
+.fn-topbar-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: var(--fn-radius-full);
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--fn-text-muted);
+  text-decoration: none;
+  transition: all 0.22s var(--fn-ease-spring);
+  white-space: nowrap;
+}
+
+.fn-topbar-link i,
+.fn-topbar-link svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.22s var(--fn-ease-spring);
+}
+
+.fn-topbar-link:hover {
+  color: var(--fn-accent);
+  background-color: rgba(118, 87, 232, 0.08);
+  transform: translateY(-2px);
+}
+
+.fn-topbar-link:hover i,
+.fn-topbar-link:hover svg {
+  transform: scale(1.18);
+}
+
+.fn-topbar-link.active {
+  color: #FFFFFF !important;
+  background-color: var(--fn-primary);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.16);
+}
+
+.fn-topbar-link.active i,
+.fn-topbar-link.active svg {
+  color: #FFFFFF !important;
+}
+
+.fn-topbar-btn-apply {
+  background: linear-gradient(135deg, var(--fn-accent) 0%, #9061F9 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 12px rgba(118, 87, 232, 0.28);
+  padding: 8px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.fn-topbar-btn-apply:hover {
+  background: linear-gradient(135deg, #6242D0 0%, #7E4AE8 100%) !important;
+  color: #FFFFFF !important;
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 6px 18px rgba(118, 87, 232, 0.4);
+}
+
+.fn-topbar-btn-apply.active {
+  background: linear-gradient(135deg, #4F46E5 0%, #7657E8 100%) !important;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
+}
+
 /* Topbar Right Controls */
 .fn-topbar-right {
   display: flex;
