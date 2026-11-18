@@ -212,3 +212,36 @@ class RegistrationAndFaceAuthTestCase(TestCase):
         ok_resp = self.client.post(reverse('accounts:face_fallback'), data={'password': 'myfallbackpass'})
         self.assertEqual(ok_resp.status_code, 302)
         self.assertEqual(ok_resp.url, reverse('dashboard:index'))
+
+    def test_direct_face_login_api_success(self):
+        # Create user and enroll face
+        user = User.objects.create_user(username='direct_face_user', email='direct@fitnova.com', password='secretpassword')
+        img_b64 = generate_test_face_image_base64()
+
+        session = self.client.session
+        session['face_enroll_user_id'] = user.id
+        session.save()
+        self.client.post(reverse('accounts:api_face_enroll'), data={'image': img_b64})
+        self.client.logout()
+
+        # Direct Face Auth API Call without username/password
+        response = self.client.post(reverse('accounts:api_direct_face_login'), data={'image': img_b64})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertEqual(data['username'], 'direct_face_user')
+        self.assertEqual(data['redirect_url'], reverse('dashboard:index'))
+
+        # Verify session is now authenticated
+        dash_resp = self.client.get(reverse('dashboard:index'))
+        self.assertEqual(dash_resp.status_code, 200)
+
+    def test_login_page_renders_direct_face_auth_first_and_removes_badge(self):
+        response = self.client.get(reverse('accounts:login'))
+        self.assertEqual(response.status_code, 200)
+        # Direct Face Auth option is prominent and rendered first
+        self.assertContains(response, 'Direct Face Auth')
+        self.assertContains(response, 'paneFaceAuth')
+        self.assertContains(response, '/accounts/api/direct-face-login/')
+        # Secondary static badge on Remember Me line is removed
+        self.assertNotContains(response, 'bg-success-subtle text-success border border-success-subtle px-2 py-1 small fw-semibold')

@@ -266,3 +266,128 @@ class FaceAuthService:
             return True, final_conf_pct, f"Face Verified Successfully ({final_conf_pct}% match)!"
         else:
             return False, final_conf_pct, f"Face did not match registered profile ({final_conf_pct}% similarity). Please align your face and try again."
+
+    @classmethod
+    def identify_user_face(cls, image_data, descriptor=None):
+        """
+        1-to-N Biometric Identification: Matches a live captured camera frame
+        against all enrolled user and member biometric profiles in the database.
+        Returns: (matched_user: User or None, confidence: float, message: str)
+        """
+        pil_img = cls.decode_base64_image(image_data)
+        if not pil_img:
+            return None, 0.0, "Invalid or missing face image data."
+
+        is_valid, quality_reason = cls.check_liveness_and_quality(pil_img)
+        if not is_valid:
+            return None, 0.0, quality_reason
+
+        query_visual_vec = cls.compute_visual_features(pil_img)
+        if not query_visual_vec:
+            return None, 0.0, "Could not extract facial features from camera frame."
+
+        best_user = None
+        best_confidence = 0.0
+        best_matched = False
+
+        # Prepare normalized query descriptor if provided
+        q_desc_norm = None
+        if descriptor and isinstance(descriptor, (list, tuple)) and len(descriptor) >= 64:
+            try:
+                raw = [float(x) for x in descriptor]
+                norm = math.sqrt(sum(x * x for x in raw))
+                if norm > 1e-6:
+                    q_desc_norm = [x / norm for x in raw]
+            except Exception:
+                q_desc_norm = None
+
+        # 1. Search UserFaceProfile records
+        user_profiles = UserFaceProfile.objects.filter(is_active=True).select_related('user')
+        for prof in user_profiles:
+            if not prof.user or not prof.user.is_active:
+                continue
+
+            cand_conf = 0.0
+            cand_matched = False
+
+            # Check descriptor distance
+            if q_desc_norm and prof.face_descriptor:
+                try:
+                    p_raw = [float(x) for x in json.loads(prof.face_descriptor)]
+                    p_norm = math.sqrt(sum(x * x for x in p_raw))
+                    if p_norm > 1e-6:
+                        p_desc = [x / p_norm for x in p_raw]
+                        dist = math.sqrt(sum((a - b) ** 2 for a, b in zip(q_desc_norm, p_desc)))
+                        if dist <= cls.DESCRIPTOR_EUCLIDEAN_THRESHOLD:
+                            cand_matched = True
+                            cand_conf = max(cand_conf, 1.0 - (dist / 1.0))
+                except Exception:
+                    pass
+
+            # Check visual gradient cosine similarity
+            if prof.feature_vector:
+                try:
+                    prof_visual = [float(x) for x in json.loads(prof.feature_vector)]
+                    sim = float(sum(a * b for a, b in zip(query_visual_vec, prof_visual)))
+                    if sim >= cls.VISUAL_COSINE_SIMILARITY_THRESHOLD:
+                        cand_matched = True
+                        cand_conf = max(cand_conf, sim)
+                    elif sim > cand_conf:
+                        cand_conf = sim
+                except Exception:
+                    pass
+
+            if cand_matched and cand_conf > best_confidence:
+                best_confidence = cand_conf
+                best_user = prof.user
+                best_matched = True
+
+        # 2. If not matched in UserFaceProfile, check MemberFaceProfile records that link to active users
+        if not best_matched:
+            try:
+                from apps.attendance.models import MemberFaceProfile
+                mem_profiles = MemberFaceProfile.objects.filter(is_active=True).select_related('member__user')
+                for mprof in mem_profiles:
+                    if not mprof.member or not mprof.member.user or not mprof.member.user.is_active:
+                        continue
+
+                    cand_conf = 0.0
+                    cand_matched = False
+
+                    if q_desc_norm and mprof.face_descriptor:
+                        try:
+                            p_raw = [float(x) for x in json.loads(mprof.face_descriptor)]
+                            p_norm = math.sqrt(sum(x * x for x in p_raw))
+                            if p_norm > 1e-6:
+                                p_desc = [x / p_norm for x in p_raw]
+                                dist = math.sqrt(sum((a - b) ** 2 for a, b in zip(q_desc_norm, p_desc)))
+                                if dist <= cls.DESCRIPTOR_EUCLIDEAN_THRESHOLD:
+                                    cand_matched = True
+                                    cand_conf = max(cand_conf, 1.0 - (dist / 1.0))
+                        except Exception:
+                            pass
+
+                    if mprof.feature_vector:
+                        try:
+                            prof_visual = [float(x) for x in json.loads(mprof.feature_vector)]
+                            sim = float(sum(a * b for a, b in zip(query_visual_vec, prof_visual)))
+                            if sim >= cls.VISUAL_COSINE_SIMILARITY_THRESHOLD:
+                                cand_matched = True
+                                cand_conf = max(cand_conf, sim)
+                            elif sim > cand_conf:
+                                cand_conf = sim
+                        except Exception:
+                            pass
+
+                    if cand_matched and cand_conf > best_confidence:
+                        best_confidence = cand_conf
+                        best_user = mprof.member.user
+                        best_matched = True
+            except Exception:
+                pass
+
+        final_conf_pct = round(max(best_confidence, 0.0) * 100, 1)
+        if best_matched and best_user:
+            return best_user, final_conf_pct, f"Face Verified ({final_conf_pct}% match)! Welcome, {best_user.get_full_name() or best_user.username}."
+        else:
+            return None, final_conf_pct, f"Face did not match any registered account ({final_conf_pct}% similarity). Please face the camera directly or sign in with your password."

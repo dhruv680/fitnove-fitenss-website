@@ -15,6 +15,7 @@ urlpatterns = [
     path('face-enroll/', views.face_enroll_view, name='face_enroll'),
     path('api/face-enroll/', views.api_face_enroll, name='api_face_enroll'),
     path('login/', views.login_view, name='login'),
+    path('api/direct-face-login/', views.api_direct_face_login, name='api_direct_face_login'),
     path('face-verify/', views.face_verify_view, name='face_verify'),
     path('api/face-verify/', views.api_face_verify, name='api_face_verify'),
     path('face-fallback/', views.face_fallback_view, name='face_fallback'),

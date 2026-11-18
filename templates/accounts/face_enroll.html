@@ -211,42 +211,21 @@
     <span class="badge bg-light text-muted border small" id="livenessBadge">2D Feature Guard</span>
   </div>
 
-  <!-- Consent Notice & Checkbox -->
-  <div class="p-2 px-3 rounded-3 mb-3" style="background: rgba(118, 87, 232, 0.05); border: 1px solid rgba(118, 87, 232, 0.2);">
-    <div class="d-flex align-items-start gap-2 mb-2">
-      <i data-lucide="shield-check" style="width: 18px; color: #7657E8; flex-shrink: 0; margin-top: 2px;"></i>
-      <p class="mb-0 text-muted" style="font-size: 0.77rem; line-height: 1.4;">
-        <strong>Biometric Privacy:</strong> Raw video is never stored. Only encrypted mathematical spatial vectors are stored for verification against gym kiosks & web login.
-      </p>
-    </div>
-    <div class="form-check ps-4 pt-1 border-top" style="border-color: rgba(118, 87, 232, 0.15) !important;">
-      <input class="form-check-input" type="checkbox" id="enrollConsentCheck" checked onchange="toggleConsent()">
-      <label class="form-check-label small fw-semibold text-dark user-select-none" for="enrollConsentCheck" style="font-size: 0.79rem;">
-        I consent to enrolling my face biometric template for authentication.
-      </label>
-    </div>
-  </div>
-
   <!-- Action Buttons -->
-  <div class="d-grid gap-2">
+  <div class="d-grid gap-2 mb-2">
     <button type="button" class="btn fn-btn-primary py-2 fw-semibold d-flex align-items-center justify-content-center gap-2" id="captureBtn" disabled onclick="captureAndEnroll()">
       <i data-lucide="camera" style="width: 18px;"></i>
       <span id="captureBtnText">Capture & Enroll Face</span>
     </button>
+  </div>
 
-    <div class="d-flex justify-content-between align-items-center pt-2">
-      <form method="POST" action="{% url 'accounts:face_enroll' %}" class="d-inline">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="skip">
-        <button type="submit" class="btn btn-link text-muted text-decoration-none small p-0" title="Skip face registration for now">
-          <i data-lucide="corner-down-right" style="width: 14px;"></i> Skip & Use Password Only
-        </button>
-      </form>
-
-      <button type="button" class="btn btn-link text-primary text-decoration-none small p-0" onclick="restartCamera()">
-        <i data-lucide="refresh-cw" style="width: 14px;"></i> Retry Camera
-      </button>
-    </div>
+  <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+    <span class="small text-muted" style="font-size: 0.76rem;">
+      <i data-lucide="shield-check" style="width: 13px; margin-top: -2px; color: #10B981;"></i> 256-bit Encrypted Spatial Vectors
+    </span>
+    <button type="button" class="btn btn-link text-primary text-decoration-none small p-0" onclick="restartCamera()">
+      <i data-lucide="refresh-cw" style="width: 14px;"></i> Retry Camera
+    </button>
   </div>
 </div>
 
@@ -369,28 +348,8 @@
     lucide.createIcons();
   }
 
-  function toggleConsent() {
-    const consent = document.getElementById('enrollConsentCheck');
-    if (!consent.checked) {
-      clearTimeout(autoCaptureTimer);
-      if (countdownPill) countdownPill.classList.add('d-none');
-      captureBtn.disabled = true;
-      statusText.textContent = 'Consent required to enroll face biometrics';
-    } else if (localStream && video.videoWidth) {
-      captureBtn.disabled = false;
-      startAutoCaptureCountdown();
-    }
-  }
-
   async function captureAndEnroll() {
     if (isCapturing) return;
-
-    const consent = document.getElementById('enrollConsentCheck');
-    if (!consent || !consent.checked) {
-      showAlert('Please check the biometric consent box to enroll your face.');
-      return;
-    }
-
     if (!video || !localStream || !video.videoWidth) return;
 
     clearTimeout(autoCaptureTimer);

@@ -324,6 +324,66 @@ def login_view(request):
     return render(request, 'accounts/login.html', {'registered_flag': registered_flag})
 
 
+def api_direct_face_login(request):
+    """
+    Direct Face Authentication API (Option 1):
+    Instant 1-to-N face recognition login without requiring manual password entry.
+    Takes live camera image and matches against registered biometric profiles.
+    Logs the user into Django session and returns redirect URL.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid HTTP method.'}, status=405)
+
+    image_data = request.POST.get('image', '').strip()
+    raw_desc = request.POST.get('descriptor', None)
+
+    if not image_data:
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            image_data = data.get('image', '')
+            raw_desc = data.get('descriptor', None)
+        except Exception:
+            raw_desc = None
+
+    if not image_data:
+        return JsonResponse({'success': False, 'message': 'No face image captured.'}, status=400)
+
+    if raw_desc and isinstance(raw_desc, str):
+        try:
+            raw_desc = json.loads(raw_desc)
+        except Exception:
+            raw_desc = None
+
+    matched_user, confidence, message = FaceAuthService.identify_user_face(image_data, descriptor=raw_desc)
+
+    if matched_user:
+        login(request, matched_user, backend='django.contrib.auth.backends.ModelBackend')
+        request.session.set_expiry(1209600)  # 2 weeks session persistence
+        request.session['face_authenticated'] = True
+
+        # Clear any pending states
+        request.session.pop('face_auth_pending_user_id', None)
+
+        next_url = request.POST.get('next') or request.GET.get('next') or reverse('dashboard:index')
+        user_name = matched_user.get_full_name() or matched_user.username
+
+        return JsonResponse({
+            'success': True,
+            'message': f"Face Authenticated! Welcome, {user_name}!",
+            'user': user_name,
+            'username': matched_user.username,
+            'role': matched_user.get_role_display(),
+            'confidence': confidence,
+            'redirect_url': next_url
+        })
+    else:
+        return JsonResponse({
+            'success': False,
+            'message': message,
+            'confidence': confidence
+        }, status=401)
+
+
 def face_verify_view(request):
     """
     Step 2 of Login: Automatic Biometric Face Verification page.
