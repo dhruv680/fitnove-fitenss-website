@@ -9,6 +9,11 @@ def health_check(request):
     return HttpResponse('ok', content_type='text/plain')
 
 
+# Django Admin Branding
+admin.site.site_header = "FitNova SaaS Administration"
+admin.site.site_title = "FitNova Admin Portal"
+admin.site.index_title = "FitNova Gym Management Database & Backend"
+
 urlpatterns = [
     path('healthz/', health_check, name='healthz'),
     path('admin/', admin.site.urls),

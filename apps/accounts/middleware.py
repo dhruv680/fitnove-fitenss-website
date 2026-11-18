@@ -8,6 +8,7 @@ class FaceAuthProtectionMiddleware:
     """
 
     ALLOWED_PATH_PREFIXES = [
+        '/admin/',
         '/accounts/face-verify/',
         '/accounts/api/face-verify/',
         '/accounts/face-fallback/',
