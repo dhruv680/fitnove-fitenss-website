@@ -19,13 +19,14 @@ def generate_test_face_image_base64(color=(120, 100, 90)):
     return 'data:image/jpeg;base64,' + base64.b64encode(buf.getvalue()).decode('utf-8')
 
 def generate_different_face_image_base64():
-    img = Image.new('RGB', (160, 160), color=(200, 160, 130))
+    img = Image.new('RGB', (160, 160), color=(140, 180, 200))
     draw = ImageDraw.Draw(img)
-    # Distinct facial geometry (wider apart, different vertical ratios)
-    draw.ellipse((15, 30, 45, 60), fill=(10, 10, 10))
-    draw.ellipse((115, 30, 145, 60), fill=(10, 10, 10))
-    draw.polygon([(80, 50), (60, 80), (100, 80)], fill=(60, 40, 35))
-    draw.ellipse((60, 120, 100, 145), fill=(130, 30, 30))
+    # Distinct facial geometry (different positioning and contours)
+    draw.rectangle((50, 20, 110, 60), fill=(20, 40, 80))
+    draw.ellipse((40, 75, 60, 95), fill=(10, 10, 10))
+    draw.ellipse((100, 75, 120, 95), fill=(10, 10, 10))
+    draw.line([(80, 80), (80, 130)], fill=(30, 30, 30), width=4)
+    draw.polygon([(40, 135), (80, 155), (120, 135)], fill=(120, 40, 40))
     buf = BytesIO()
     img.save(buf, format='JPEG')
     return 'data:image/jpeg;base64,' + base64.b64encode(buf.getvalue()).decode('utf-8')
@@ -322,7 +323,7 @@ class RegistrationAndFaceAuthTestCase(TestCase):
         test_ip = "192.168.1.99"
         FaceAuthService.reset_failed_attempts(test_ip, "biometric_live")
 
-        for _ in range(5):
+        for _ in range(10):
             FaceAuthService.record_failed_attempt(test_ip, "biometric_live")
 
         is_locked, lock_msg = FaceAuthService.check_rate_limit(test_ip, "biometric_live")

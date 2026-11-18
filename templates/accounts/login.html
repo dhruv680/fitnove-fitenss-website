@@ -644,25 +644,17 @@
           return;
         }
 
-        if (isManual) {
-          showFaceAlert(data.message || 'Face not recognized. Please face camera directly or switch to password login.');
-        }
+        showFaceAlert(data.message || 'Face not recognized. Please face camera directly or switch to password login.');
 
-        // Retry automatically up to 8 attempts
+        // Reset UI so user can click to scan without automated runaway retries
         setTimeout(() => {
           scannerRing.className = 'face-scanner-frame scanning';
-          faceStatusMsg.textContent = 'Align face inside frame to authenticate...';
+          faceStatusMsg.textContent = 'Align face inside oval frame and click below...';
           faceSpinner.className = 'spinner-grow text-primary spinner-grow-sm';
           btnScanFace.disabled = false;
-          btnScanText.textContent = 'Scan Face Now';
+          btnScanText.textContent = 'Scan & Authenticate Now';
           isScanning = false;
-
-          if (!isManual && attemptCount < 8) {
-            autoScanTimer = setTimeout(() => {
-              performDirectFaceScan(false);
-            }, 1400);
-          }
-        }, 1400);
+        }, 1000);
       }
     } catch (err) {
       console.error('Direct face login error:', err);

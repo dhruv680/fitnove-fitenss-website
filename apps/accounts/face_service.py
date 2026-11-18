@@ -35,7 +35,7 @@ class FaceAuthService:
     """
 
     DESCRIPTOR_EUCLIDEAN_THRESHOLD = 0.58       # Max distance for client neural face descriptor
-    VISUAL_COSINE_SIMILARITY_THRESHOLD = 0.78   # High-security cosine similarity threshold
+    VISUAL_COSINE_SIMILARITY_THRESHOLD = 0.68   # Reliable high-security cosine similarity threshold
     DUPLICATE_SIMILARITY_THRESHOLD = 0.85       # Threshold to trigger duplicate face rejection
     MIN_LAPLACIAN_VARIANCE = 20.0               # Minimum sharpness to reject blurry / paper printouts
     MAX_GLARE_RATIO = 0.20                      # Max percentage of overexposed pixels (reject screen replays)
@@ -531,6 +531,7 @@ class FaceAuthService:
         best_user = None
         best_confidence = 0.0
         best_matched = False
+        highest_similarity = 0.0
 
         # 5. Search UserFaceProfile records
         user_profiles = UserFaceProfile.objects.filter(is_active=True).select_related('user')
@@ -590,12 +591,15 @@ class FaceAuthService:
                 except Exception:
                     pass
 
+            if cand_conf > highest_similarity:
+                highest_similarity = cand_conf
+
             if cand_matched and cand_conf > best_confidence:
                 best_confidence = cand_conf
                 best_user = prof.user
                 best_matched = True
 
-        final_conf_pct = round(max(best_confidence, 0.0) * 100, 1)
+        final_conf_pct = round(max(best_confidence if best_matched else highest_similarity, 0.0) * 100, 1)
 
         # 6. Success Branch
         if best_matched and best_user:
