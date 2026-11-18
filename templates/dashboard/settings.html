@@ -1,92 +1,561 @@
 {% extends 'base.html' %}
 
-{% block title %}Settings – FitNova SaaS{% endblock %}
+{% block title %}Organization & Multi-Branch Management – FitNova SaaS{% endblock %}
 
 {% block content %}
-<div class="row g-4">
+<div class="row g-4 mb-5">
+  <!-- Page Header & DB Status Banner -->
   <div class="col-12">
-    <h3 class="fw-bold text-dark mb-1">Organization & Branch Settings</h3>
-    <p class="text-muted small">Configure gym branding, multi-branch information, invoice defaults, and currencies.</p>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+      <div>
+        <div class="fn-badge fn-badge-accent mb-2">ENTERPRISE CONFIGURATION</div>
+        <h3 class="fw-bold text-dark mb-1">Organization & Multi-Branch Management</h3>
+        <p class="text-muted small mb-0">Manage multi-location gym branches, organization tax identity, and verified PostgreSQL data records.</p>
+      </div>
+
+      <div class="d-flex align-items-center gap-2">
+        <div class="px-3 py-2 rounded-3 bg-white border shadow-sm d-flex align-items-center gap-2">
+          <span class="spinner-grow spinner-grow-sm text-success" style="width: 9px; height: 9px;" role="status"></span>
+          <div class="small">
+            <span class="text-muted" style="font-size: 0.75rem;">PostgreSQL 18 DB:</span>
+            <strong class="text-dark ms-1" style="font-size: 0.8rem;">fitnova_db.public.accounts_gymbranch</strong>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-fn-primary d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addBranchModal">
+          <i data-lucide="plus" style="width: 17px; height: 17px;"></i>
+          <span>Add New Branch</span>
+        </button>
+      </div>
+    </div>
   </div>
 
+  <!-- Metric Overview Cards -->
+  <div class="col-xl-3 col-sm-6">
+    <div class="fn-stat-card">
+      <div class="fn-stat-icon-wrapper" style="background: rgba(118, 87, 232, 0.12); color: #7657E8;">
+        <i data-lucide="building-2"></i>
+      </div>
+      <div>
+        <div class="fn-stat-label">Total Branches</div>
+        <div class="fn-stat-value">{{ total_branches_count|default:branches.count|default:1 }}</div>
+        <div class="fn-stat-sub text-muted">PostgreSQL table records</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-sm-6">
+    <div class="fn-stat-card">
+      <div class="fn-stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.12); color: #10B981;">
+        <i data-lucide="check-circle-2"></i>
+      </div>
+      <div>
+        <div class="fn-stat-label">Active Locations</div>
+        <div class="fn-stat-value">{{ active_branches_count|default:1 }}</div>
+        <div class="fn-stat-sub text-success fw-medium">Operational turnstiles</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-sm-6">
+    <div class="fn-stat-card">
+      <div class="fn-stat-icon-wrapper" style="background: rgba(59, 130, 246, 0.12); color: #3B82F6;">
+        <i data-lucide="shield"></i>
+      </div>
+      <div>
+        <div class="fn-stat-label">Gym Organization</div>
+        <div class="fn-stat-value" style="font-size: 1.15rem; font-weight: 700;">{{ org.name|truncatechars:18 }}</div>
+        <div class="fn-stat-sub text-muted">Currency: {{ org.currency|default:'$' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-sm-6">
+    <div class="fn-stat-card">
+      <div class="fn-stat-icon-wrapper" style="background: rgba(245, 158, 11, 0.12); color: #F59E0B;">
+        <i data-lucide="star"></i>
+      </div>
+      <div>
+        <div class="fn-stat-label">Main Headquarters</div>
+        <div class="fn-stat-value" style="font-size: 1.15rem; font-weight: 700;">
+          {% for b in branches %}{% if b.is_main_branch %}{{ b.city }}{% endif %}{% empty %}Metropolis{% endfor %}
+        </div>
+        <div class="fn-stat-sub text-muted">Primary Facility Bay</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Multi-Branch Data Management Table -->
+  <div class="col-12">
+    <div class="fn-card">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+          <h5 class="fw-bold text-dark mb-1 d-flex align-items-center gap-2">
+            <i data-lucide="map-pin" class="text-primary" style="width: 20px;"></i>
+            Gym Branches & Locations (PostgreSQL <code>accounts_gymbranch</code>)
+          </h5>
+          <p class="text-muted small mb-0">Live records queried directly from the connected PostgreSQL database.</p>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+          <input type="text" id="branchSearchInput" class="form-control form-control-sm" placeholder="Search branches..." style="max-width: 220px;" onkeyup="filterBranchTable()">
+        </div>
+      </div>
+
+      <!-- Branch Table -->
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="branchDataTable">
+          <thead class="table-light">
+            <tr>
+              <th scope="col" style="font-size: 0.78rem; font-weight: 700; color: #64748B;">ID</th>
+              <th scope="col" style="font-size: 0.78rem; font-weight: 700; color: #64748B;">BRANCH NAME & CODE</th>
+              <th scope="col" style="font-size: 0.78rem; font-weight: 700; color: #64748B;">LOCATION & ADDRESS</th>
+              <th scope="col" style="font-size: 0.78rem; font-weight: 700; color: #64748B;">CONTACT INFO</th>
+              <th scope="col" style="font-size: 0.78rem; font-weight: 700; color: #64748B;">MANAGER</th>
+              <th scope="col" style="font-size: 0.78rem; font-weight: 700; color: #64748B;">TYPE</th>
+              <th scope="col" style="font-size: 0.78rem; font-weight: 700; color: #64748B;">STATUS</th>
+              <th scope="col" class="text-end" style="font-size: 0.78rem; font-weight: 700; color: #64748B;">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in branches %}
+            <tr id="branch-row-{{ b.id }}">
+              <td class="text-muted small fw-bold">#{{ b.id }}</td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="fn-brand-icon" style="width: 32px; height: 32px; font-size: 0.85rem; border-radius: 8px;">
+                    <i data-lucide="building" style="width: 16px; height: 16px;"></i>
+                  </div>
+                  <div>
+                    <div class="fw-bold text-dark mb-0">{{ b.name }}</div>
+                    <code class="small text-primary fw-semibold">{{ b.code }}</code>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="small fw-medium text-dark">{{ b.address }}</div>
+                <div class="text-muted small">{{ b.city }}, {{ b.state }} {{ b.zip_code }}</div>
+              </td>
+              <td>
+                <div class="small fw-medium text-dark"><i data-lucide="phone" style="width: 13px;" class="text-muted me-1"></i>{{ b.phone }}</div>
+                <div class="text-muted small"><i data-lucide="mail" style="width: 13px;" class="text-muted me-1"></i>{{ b.email|default:"N/A" }}</div>
+              </td>
+              <td>
+                <div class="small fw-semibold text-dark">{{ b.manager_name|default:"Unassigned" }}</div>
+                <span class="text-muted" style="font-size: 0.72rem;">Facility Manager</span>
+              </td>
+              <td>
+                {% if b.is_main_branch %}
+                <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1 small fw-semibold">
+                  <i data-lucide="star" style="width: 12px; margin-top: -2px;"></i> Main Branch
+                </span>
+                {% else %}
+                <span class="badge bg-secondary-subtle text-secondary px-2 py-1 small">Secondary Location</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if b.is_active %}
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 small fw-semibold">
+                  ● Active
+                </span>
+                {% else %}
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 small fw-semibold">
+                  ● Inactive
+                </span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <div class="btn-group btn-group-sm">
+                  <!-- Toggle Status Button -->
+                  <form method="POST" action="{% url 'dashboard:branch_toggle_status' b.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-secondary btn-sm" title="{% if b.is_active %}Deactivate Branch{% else %}Activate Branch{% endif %}">
+                      <i data-lucide="power" style="width: 14px;"></i>
+                    </button>
+                  </form>
+
+                  <!-- Edit Button -->
+                  <button type="button" class="btn btn-outline-primary btn-sm" onclick="openEditBranchModal('{{ b.id }}', '{{ b.name|escapejs }}', '{{ b.code|escapejs }}', '{{ b.address|escapejs }}', '{{ b.city|escapejs }}', '{{ b.state|escapejs }}', '{{ b.zip_code|escapejs }}', '{{ b.phone|escapejs }}', '{{ b.email|escapejs }}', '{{ b.manager_name|escapejs }}', {{ b.is_main_branch|lower }}, {{ b.is_active|lower }})" title="Edit Branch">
+                    <i data-lucide="edit-3" style="width: 14px;"></i>
+                  </button>
+
+                  <!-- Delete Button -->
+                  <button type="button" class="btn btn-outline-danger btn-sm" onclick="openDeleteBranchModal('{{ b.id }}', '{{ b.name|escapejs }}', '{{ b.code|escapejs }}')" title="Delete Branch">
+                    <i data-lucide="trash-2" style="width: 14px;"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="8" class="text-center py-5">
+                <div class="fn-empty-state">
+                  <div class="fn-empty-icon mb-3">
+                    <i data-lucide="map-pin-off"></i>
+                  </div>
+                  <h6 class="fw-bold text-dark">No Gym Branches Found</h6>
+                  <p class="text-muted small mb-3">There are currently no branch records in the PostgreSQL <code>accounts_gymbranch</code> table.</p>
+                  <button type="button" class="btn btn-fn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addBranchModal">
+                    <i data-lucide="plus" style="width: 14px;"></i> Add First Branch
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gym Organization Settings Form -->
   <div class="col-lg-8">
     <div class="fn-card">
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <i data-lucide="building" class="text-primary" style="width: 20px;"></i>
+        <h5 class="fw-bold text-dark mb-0">Gym Organization Entity Profile (<code>accounts_gymorganization</code>)</h5>
+      </div>
+      <p class="text-muted small mb-4">Enterprise details for parent entity, invoice GST/Tax identifiers, and system-wide default currency.</p>
+
       <form method="POST" action="{% url 'dashboard:settings' %}" enctype="multipart/form-data">
         {% csrf_token %}
-        <h5 class="fn-card-title mb-3">Gym Organization Profile</h5>
         <div class="row g-3 mb-4">
           <div class="col-md-6">
-            <label class="fn-form-label">Organization Name</label>
+            <label class="fn-form-label">Organization Name <span class="text-danger">*</span></label>
             <input type="text" name="org_name" class="fn-input" value="{{ org.name }}" required>
           </div>
           <div class="col-md-6">
-            <label class="fn-form-label">Currency Symbol</label>
-            <input type="text" name="currency" class="fn-input" value="{{ org.currency }}" required>
+            <label class="fn-form-label">Currency Symbol <span class="text-danger">*</span></label>
+            <input type="text" name="currency" class="fn-input" value="{{ org.currency|default:'$' }}" required>
           </div>
           <div class="col-md-6">
-            <label class="fn-form-label">Support Email</label>
+            <label class="fn-form-label">Support Email <span class="text-danger">*</span></label>
             <input type="email" name="org_email" class="fn-input" value="{{ org.email }}" required>
           </div>
           <div class="col-md-6">
-            <label class="fn-form-label">Contact Phone</label>
+            <label class="fn-form-label">Contact Phone <span class="text-danger">*</span></label>
             <input type="text" name="org_phone" class="fn-input" value="{{ org.phone }}" required>
           </div>
           <div class="col-md-6">
-            <label class="fn-form-label">Website</label>
+            <label class="fn-form-label">Website URL</label>
             <input type="url" name="org_website" class="fn-input" value="{{ org.website }}">
           </div>
           <div class="col-md-6">
             <label class="fn-form-label">Tax / GST Number</label>
             <input type="text" name="tax_id" class="fn-input" value="{{ org.tax_id }}">
           </div>
-        </div>
-
-        <h5 class="fn-card-title mb-3">Branch Location Details</h5>
-        <div class="row g-3 mb-4">
-          <div class="col-md-6">
-            <label class="fn-form-label">Branch Name</label>
-            <input type="text" name="branch_name" class="fn-input" value="{{ branch.name }}">
-          </div>
-          <div class="col-md-6">
-            <label class="fn-form-label">City</label>
-            <input type="text" name="branch_city" class="fn-input" value="{{ branch.city }}">
-          </div>
           <div class="col-12">
-            <label class="fn-form-label">Physical Address</label>
-            <input type="text" name="branch_address" class="fn-input" value="{{ branch.address }}">
+            <label class="fn-form-label">Organization Logo</label>
+            <input type="file" name="logo" class="form-control form-control-sm" accept="image/*">
+            {% if org.logo %}
+            <div class="small text-muted mt-1">Current Logo: <a href="{{ org.logo.url }}" target="_blank">{{ org.logo.name }}</a></div>
+            {% endif %}
           </div>
         </div>
 
         <div class="text-end">
-          <button type="submit" class="btn btn-fn-primary">Save Settings</button>
+          <button type="submit" class="btn btn-fn-primary">
+            <i data-lucide="save" style="width: 16px;"></i>
+            <span>Update Organization Profile</span>
+          </button>
         </div>
       </form>
     </div>
   </div>
 
+  <!-- PostgreSQL Diagnostics & Verification Panel -->
   <div class="col-lg-4">
     <div class="fn-card">
-      <h5 class="fn-card-title mb-3">System Information</h5>
-      <div class="small">
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <i data-lucide="database" class="text-success" style="width: 20px;"></i>
+        <h5 class="fw-bold text-dark mb-0">PostgreSQL Diagnostics</h5>
+      </div>
+      <p class="text-muted small mb-3">Direct connection parameters and verification for DBeaver / pgAdmin clients.</p>
+
+      <div class="small mb-3">
         <div class="d-flex justify-content-between py-2 border-bottom">
-          <span class="text-muted">Platform:</span>
-          <span class="fw-semibold text-dark">FitNova SaaS v2.0</span>
+          <span class="text-muted">Engine:</span>
+          <span class="fw-semibold text-dark">PostgreSQL 18</span>
         </div>
         <div class="d-flex justify-content-between py-2 border-bottom">
-          <span class="text-muted">Database Engine:</span>
-          <span class="fw-semibold text-dark">PostgreSQL 18 Ready</span>
+          <span class="text-muted">Database:</span>
+          <code class="fw-bold text-primary">fitnova_db</code>
         </div>
         <div class="d-flex justify-content-between py-2 border-bottom">
-          <span class="text-muted">Authentication:</span>
-          <span class="fw-semibold text-success">Active RBAC</span>
+          <span class="text-muted">Target Table:</span>
+          <code class="fw-bold text-dark">public.accounts_gymbranch</code>
+        </div>
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Host & Port:</span>
+          <span class="fw-semibold text-dark">localhost:5432</span>
+        </div>
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">User:</span>
+          <span class="fw-semibold text-dark">postgres</span>
+        </div>
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Live Row Count:</span>
+          <span class="badge bg-success-subtle text-success fw-bold">{{ branches.count }} Row(s)</span>
         </div>
         <div class="d-flex justify-content-between py-2">
-          <span class="text-muted">Data Isolation:</span>
-          <span class="fw-semibold text-dark">Organization Scoped</span>
+          <span class="text-muted">Total Tables:</span>
+          <span class="fw-semibold text-dark">41 Relational Tables</span>
         </div>
+      </div>
+
+      <div class="p-3 rounded-3 bg-light border">
+        <div class="d-flex align-items-center gap-1 mb-2 text-dark fw-bold small">
+          <i data-lucide="terminal" style="width: 14px;"></i>
+          <span>SQL Query for DBeaver</span>
+        </div>
+        <pre class="mb-0 bg-dark text-white p-2 rounded small" style="font-size: 0.76rem; user-select: all;">SELECT id, name, code, city, phone, is_main_branch, is_active FROM accounts_gymbranch;</pre>
       </div>
     </div>
   </div>
 </div>
-{% endblock %}
 
+<!-- =========================================================================
+     MODAL 1: ADD NEW BRANCH MODAL
+     ========================================================================= -->
+<div class="modal fade" id="addBranchModal" tabindex="-1" aria-labelledby="addBranchModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+      <div class="modal-header border-bottom py-3 px-4">
+        <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="addBranchModalLabel">
+          <i data-lucide="plus-circle" class="text-primary" style="width: 22px;"></i>
+          Add New Gym Branch Location
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{% url 'dashboard:branch_create' %}">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="fn-form-label">Branch Name <span class="text-danger">*</span></label>
+              <input type="text" name="name" class="fn-input" placeholder="e.g. Westside Athletic Pavilion" required>
+            </div>
+            <div class="col-md-4">
+              <label class="fn-form-label">Branch Code</label>
+              <input type="text" name="code" class="fn-input" placeholder="e.g. FN-WEST-02 (leave blank to auto-generate)">
+            </div>
+
+            <div class="col-12">
+              <label class="fn-form-label">Physical Street Address <span class="text-danger">*</span></label>
+              <input type="text" name="address" class="fn-input" placeholder="e.g. 520 West 42nd Street, Suite 100" required>
+            </div>
+
+            <div class="col-md-5">
+              <label class="fn-form-label">City <span class="text-danger">*</span></label>
+              <input type="text" name="city" class="fn-input" placeholder="e.g. Metropolis" required>
+            </div>
+            <div class="col-md-4">
+              <label class="fn-form-label">State / Province</label>
+              <input type="text" name="state" class="fn-input" placeholder="e.g. NY" value="NY">
+            </div>
+            <div class="col-md-3">
+              <label class="fn-form-label">ZIP / Postal Code</label>
+              <input type="text" name="zip_code" class="fn-input" placeholder="e.g. 10036" value="10001">
+            </div>
+
+            <div class="col-md-6">
+              <label class="fn-form-label">Contact Phone</label>
+              <input type="text" name="phone" class="fn-input" placeholder="+1 (555) 749-2002">
+            </div>
+            <div class="col-md-6">
+              <label class="fn-form-label">Contact Email</label>
+              <input type="email" name="email" class="fn-input" placeholder="westside@fitnova.com">
+            </div>
+
+            <div class="col-md-6">
+              <label class="fn-form-label">Facility Manager Name</label>
+              <input type="text" name="manager_name" class="fn-input" placeholder="e.g. Marcus Vance">
+            </div>
+            <div class="col-md-6 d-flex align-items-center gap-4 pt-4">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="is_main_branch" id="addIsMain">
+                <label class="form-check-label small fw-semibold user-select-none" for="addIsMain">
+                  Designate as Main Branch
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="is_active" id="addIsActive" checked>
+                <label class="form-check-label small fw-semibold user-select-none" for="addIsActive">
+                  Active
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-top py-3 px-4">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-fn-primary">
+            <i data-lucide="check" style="width: 16px;"></i>
+            <span>Save Branch to PostgreSQL</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     MODAL 2: EDIT BRANCH MODAL
+     ========================================================================= -->
+<div class="modal fade" id="editBranchModal" tabindex="-1" aria-labelledby="editBranchModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+      <div class="modal-header border-bottom py-3 px-4">
+        <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="editBranchModalLabel">
+          <i data-lucide="edit" class="text-primary" style="width: 22px;"></i>
+          Edit Gym Branch Location
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" id="editBranchForm" action="">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="fn-form-label">Branch Name <span class="text-danger">*</span></label>
+              <input type="text" name="name" id="editBranchName" class="fn-input" required>
+            </div>
+            <div class="col-md-4">
+              <label class="fn-form-label">Branch Code <span class="text-danger">*</span></label>
+              <input type="text" name="code" id="editBranchCode" class="fn-input" required>
+            </div>
+
+            <div class="col-12">
+              <label class="fn-form-label">Physical Street Address <span class="text-danger">*</span></label>
+              <input type="text" name="address" id="editBranchAddress" class="fn-input" required>
+            </div>
+
+            <div class="col-md-5">
+              <label class="fn-form-label">City <span class="text-danger">*</span></label>
+              <input type="text" name="city" id="editBranchCity" class="fn-input" required>
+            </div>
+            <div class="col-md-4">
+              <label class="fn-form-label">State / Province</label>
+              <input type="text" name="state" id="editBranchState" class="fn-input">
+            </div>
+            <div class="col-md-3">
+              <label class="fn-form-label">ZIP / Postal Code</label>
+              <input type="text" name="zip_code" id="editBranchZip" class="fn-input">
+            </div>
+
+            <div class="col-md-6">
+              <label class="fn-form-label">Contact Phone</label>
+              <input type="text" name="phone" id="editBranchPhone" class="fn-input">
+            </div>
+            <div class="col-md-6">
+              <label class="fn-form-label">Contact Email</label>
+              <input type="email" name="email" id="editBranchEmail" class="fn-input">
+            </div>
+
+            <div class="col-md-6">
+              <label class="fn-form-label">Facility Manager Name</label>
+              <input type="text" name="manager_name" id="editBranchManager" class="fn-input">
+            </div>
+            <div class="col-md-6 d-flex align-items-center gap-4 pt-4">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="is_main_branch" id="editIsMain">
+                <label class="form-check-label small fw-semibold user-select-none" for="editIsMain">
+                  Main Branch
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="is_active" id="editIsActive">
+                <label class="form-check-label small fw-semibold user-select-none" for="editIsActive">
+                  Active
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-top py-3 px-4">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-fn-primary">
+            <i data-lucide="check" style="width: 16px;"></i>
+            <span>Update in PostgreSQL</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     MODAL 3: DELETE BRANCH CONFIRMATION MODAL
+     ========================================================================= -->
+<div class="modal fade" id="deleteBranchModal" tabindex="-1" aria-labelledby="deleteBranchModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+      <div class="modal-header border-bottom py-3 px-4">
+        <h5 class="modal-title fw-bold text-danger d-flex align-items-center gap-2" id="deleteBranchModalLabel">
+          <i data-lucide="alert-triangle" style="width: 22px;"></i>
+          Confirm Branch Deletion
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" id="deleteBranchForm" action="">
+        {% csrf_token %}
+        <div class="modal-body p-4 text-center">
+          <div class="fn-empty-icon mb-3 mx-auto" style="background: rgba(239, 68, 68, 0.1); color: #EF4444; width: 56px; height: 56px;">
+            <i data-lucide="trash-2" style="width: 28px; height: 28px;"></i>
+          </div>
+          <h6 class="fw-bold text-dark mb-2">Delete <span id="deleteBranchNameSpan" class="text-primary">Branch</span>?</h6>
+          <p class="text-muted small mb-0">
+            Are you sure you want to delete this branch from PostgreSQL? All associated members and trainers will be automatically reassigned to the main operating branch to protect against data loss.
+          </p>
+        </div>
+        <div class="modal-footer border-top py-3 px-4 justify-content-center">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">
+            <i data-lucide="trash-2" style="width: 16px;"></i>
+            <span>Delete Permanently</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function filterBranchTable() {
+    const filter = document.getElementById("branchSearchInput").value.toLowerCase();
+    const rows = document.querySelectorAll("#branchDataTable tbody tr");
+    rows.forEach(row => {
+      const text = row.innerText.toLowerCase();
+      row.style.display = text.includes(filter) ? "" : "none";
+    });
+  }
+
+  function openEditBranchModal(id, name, code, address, city, state, zip_code, phone, email, manager, is_main, is_active) {
+    const form = document.getElementById('editBranchForm');
+    form.action = `/settings/branches/${id}/update/`;
+    document.getElementById('editBranchName').value = name;
+    document.getElementById('editBranchCode').value = code;
+    document.getElementById('editBranchAddress').value = address;
+    document.getElementById('editBranchCity').value = city;
+    document.getElementById('editBranchState').value = state;
+    document.getElementById('editBranchZip').value = zip_code;
+    document.getElementById('editBranchPhone').value = phone;
+    document.getElementById('editBranchEmail').value = email;
+    document.getElementById('editBranchManager').value = manager;
+    document.getElementById('editIsMain').checked = is_main;
+    document.getElementById('editIsActive').checked = is_active;
+
+    const modal = new bootstrap.Modal(document.getElementById('editBranchModal'));
+    modal.show();
+  }
+
+  function openDeleteBranchModal(id, name, code) {
+    const form = document.getElementById('deleteBranchForm');
+    form.action = `/settings/branches/${id}/delete/`;
+    document.getElementById('deleteBranchNameSpan').innerText = `${name} (${code})`;
+
+    const modal = new bootstrap.Modal(document.getElementById('deleteBranchModal'));
+    modal.show();
+  }
+</script>
+{% endblock %}

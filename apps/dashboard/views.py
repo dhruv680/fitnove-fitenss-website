@@ -6,6 +6,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
+from django.utils.text import slugify
+from django.http import JsonResponse
 from apps.accounts.permissions import admin_only, staff_or_admin
 from apps.accounts.models import GymOrganization, GymBranch, User
 from apps.members.models import Member
@@ -206,35 +208,222 @@ def reports_analytics(request):
 @login_required
 @admin_only
 def settings_view(request):
-    org = request.user.organization
-    branch = request.user.branch
+    org = getattr(request.user, 'organization', None)
+    if not org:
+        org = GymOrganization.objects.first()
+        if not org:
+            org = GymOrganization.objects.create(
+                name='FitNova Elite Fitness',
+                slug='fitnova-metro',
+                email='contact@fitnova.com',
+                phone='+1 (555) 749-2000',
+                website='https://fitnova.fitness',
+                tax_id='GST-US-99824',
+                currency='$',
+                is_active=True
+            )
+        if request.user.organization != org:
+            request.user.organization = org
+            request.user.save(update_fields=['organization'])
+
+    branch = getattr(request.user, 'branch', None)
+    if not branch and org:
+        branch = org.branches.filter(is_main_branch=True).first() or org.branches.first()
+        if branch and request.user.branch != branch:
+            request.user.branch = branch
+            request.user.save(update_fields=['branch'])
 
     if request.method == 'POST':
-        if org:
-            org.name = request.POST.get('org_name', org.name).strip()
-            org.email = request.POST.get('org_email', org.email).strip()
-            org.phone = request.POST.get('org_phone', org.phone).strip()
-            org.website = request.POST.get('org_website', org.website).strip()
-            org.tax_id = request.POST.get('tax_id', org.tax_id).strip()
-            org.currency = request.POST.get('currency', org.currency).strip()
-            if 'logo' in request.FILES:
-                org.logo = request.FILES['logo']
-            org.save()
-
-        if branch:
-            branch.name = request.POST.get('branch_name', branch.name).strip()
-            branch.address = request.POST.get('branch_address', branch.address).strip()
-            branch.city = request.POST.get('branch_city', branch.city).strip()
-            branch.phone = request.POST.get('branch_phone', branch.phone).strip()
-            branch.save()
-
-        messages.success(request, "Organization and Gym Branch settings updated successfully!")
+        # Update Organization settings
+        org.name = request.POST.get('org_name', org.name).strip()
+        org.email = request.POST.get('org_email', org.email).strip()
+        org.phone = request.POST.get('org_phone', org.phone).strip()
+        org.website = request.POST.get('org_website', org.website).strip()
+        org.tax_id = request.POST.get('tax_id', org.tax_id).strip()
+        org.currency = request.POST.get('currency', org.currency).strip()
+        if 'logo' in request.FILES:
+            org.logo = request.FILES['logo']
+        org.save()
+        messages.success(request, "Organization profile updated successfully in PostgreSQL database!")
         return redirect('dashboard:settings')
 
+    branches = org.branches.all().order_by('-is_main_branch', 'name')
     return render(request, 'dashboard/settings.html', {
         'org': org,
-        'branch': branch
+        'branch': branch,
+        'branches': branches,
+        'total_branches_count': branches.count(),
+        'active_branches_count': branches.filter(is_active=True).count(),
     })
+
+
+@login_required
+@admin_only
+def branch_create_view(request):
+    if request.method != 'POST':
+        return redirect('dashboard:settings')
+
+    org = getattr(request.user, 'organization', None) or GymOrganization.objects.first()
+    if not org:
+        messages.error(request, "Gym Organization record not found. Please save organization profile first.")
+        return redirect('dashboard:settings')
+
+    name = request.POST.get('name', '').strip()
+    code = request.POST.get('code', '').strip().upper()
+    address = request.POST.get('address', '').strip()
+    city = request.POST.get('city', '').strip()
+    state = request.POST.get('state', '').strip()
+    zip_code = request.POST.get('zip_code', '').strip()
+    phone = request.POST.get('phone', '').strip()
+    email = request.POST.get('email', '').strip()
+    manager_name = request.POST.get('manager_name', '').strip()
+    is_main_branch = request.POST.get('is_main_branch') in ('on', 'true', '1')
+    is_active = request.POST.get('is_active', 'on') in ('on', 'true', '1')
+
+    if not name or not address or not city:
+        messages.error(request, "Branch Name, Address, and City are required fields.")
+        return redirect('dashboard:settings')
+
+    # Auto-generate unique branch code if blank
+    if not code:
+        city_slug = slugify(city[:3]).upper() if city else 'BR'
+        code = f"FN-{city_slug}-{org.branches.count() + 1:02d}"
+
+    orig_code = code
+    counter = 1
+    while GymBranch.objects.filter(code=code).exists():
+        code = f"{orig_code}-{counter}"
+        counter += 1
+
+    # If new branch is designated as main branch, unmark existing main branches
+    if is_main_branch:
+        org.branches.filter(is_main_branch=True).update(is_main_branch=False)
+
+    branch = GymBranch.objects.create(
+        organization=org,
+        name=name,
+        code=code,
+        address=address,
+        city=city,
+        state=state or 'NY',
+        zip_code=zip_code or '10001',
+        phone=phone or org.phone or '+1 (555) 000-0000',
+        email=email or org.email or 'branch@fitnova.com',
+        manager_name=manager_name,
+        is_main_branch=is_main_branch or (org.branches.count() == 0),
+        is_active=is_active
+    )
+
+    if not request.user.branch:
+        request.user.branch = branch
+        request.user.save(update_fields=['branch'])
+
+    messages.success(request, f"New Gym Branch '{branch.name}' ({branch.code}) successfully created in PostgreSQL database!")
+    return redirect('dashboard:settings')
+
+
+@login_required
+@admin_only
+def branch_update_view(request, branch_id):
+    if request.method != 'POST':
+        return redirect('dashboard:settings')
+
+    org = getattr(request.user, 'organization', None) or GymOrganization.objects.first()
+    branch = get_object_or_404(GymBranch, id=branch_id, organization=org)
+
+    name = request.POST.get('name', branch.name).strip()
+    code = request.POST.get('code', branch.code).strip().upper()
+    address = request.POST.get('address', branch.address).strip()
+    city = request.POST.get('city', branch.city).strip()
+    state = request.POST.get('state', branch.state).strip()
+    zip_code = request.POST.get('zip_code', branch.zip_code).strip()
+    phone = request.POST.get('phone', branch.phone).strip()
+    email = request.POST.get('email', branch.email).strip()
+    manager_name = request.POST.get('manager_name', branch.manager_name).strip()
+    is_main_branch = request.POST.get('is_main_branch') in ('on', 'true', '1')
+    is_active = request.POST.get('is_active') in ('on', 'true', '1')
+
+    if not name or not address or not city:
+        messages.error(request, "Branch Name, Address, and City are required fields.")
+        return redirect('dashboard:settings')
+
+    # Code uniqueness verification excluding self
+    if code != branch.code and GymBranch.objects.filter(code=code).exclude(id=branch.id).exists():
+        messages.error(request, f"Branch Code '{code}' is already assigned to another location.")
+        return redirect('dashboard:settings')
+
+    if is_main_branch and not branch.is_main_branch:
+        org.branches.filter(is_main_branch=True).exclude(id=branch.id).update(is_main_branch=False)
+
+    branch.name = name
+    branch.code = code
+    branch.address = address
+    branch.city = city
+    branch.state = state
+    branch.zip_code = zip_code
+    branch.phone = phone
+    branch.email = email
+    branch.manager_name = manager_name
+    branch.is_main_branch = is_main_branch
+    branch.is_active = is_active
+    branch.save()
+
+    messages.success(request, f"Branch '{branch.name}' ({branch.code}) updated successfully in PostgreSQL database!")
+    return redirect('dashboard:settings')
+
+
+@login_required
+@admin_only
+def branch_delete_view(request, branch_id):
+    if request.method != 'POST':
+        return redirect('dashboard:settings')
+
+    org = getattr(request.user, 'organization', None) or GymOrganization.objects.first()
+    branch = get_object_or_404(GymBranch, id=branch_id, organization=org)
+
+    # Protect against deleting the only remaining branch
+    if org.branches.count() <= 1:
+        messages.error(request, "Cannot delete the sole operating branch. Add another location first.")
+        return redirect('dashboard:settings')
+
+    branch_name = branch.name
+    branch_code = branch.code
+    was_main = branch.is_main_branch
+
+    # Reassign users and members to a fallback branch to prevent data loss
+    fallback_branch = org.branches.exclude(id=branch.id).first()
+    if request.user.branch_id == branch.id:
+        request.user.branch = fallback_branch
+        request.user.save(update_fields=['branch'])
+
+    branch.members.all().update(branch=fallback_branch)
+    branch.branch_users.all().update(branch=fallback_branch)
+
+    branch.delete()
+
+    if was_main and fallback_branch:
+        fallback_branch.is_main_branch = True
+        fallback_branch.save(update_fields=['is_main_branch'])
+
+    messages.success(request, f"Gym Branch '{branch_name}' ({branch_code}) safely removed from PostgreSQL database.")
+    return redirect('dashboard:settings')
+
+
+@login_required
+@admin_only
+def branch_toggle_status_view(request, branch_id):
+    if request.method != 'POST':
+        return redirect('dashboard:settings')
+
+    org = getattr(request.user, 'organization', None) or GymOrganization.objects.first()
+    branch = get_object_or_404(GymBranch, id=branch_id, organization=org)
+    branch.is_active = not branch.is_active
+    branch.save(update_fields=['is_active'])
+
+    status_str = "activated" if branch.is_active else "deactivated"
+    messages.success(request, f"Gym Branch '{branch.name}' has been {status_str} in PostgreSQL database.")
+    return redirect('dashboard:settings')
+
 
 
 def about_view(request):

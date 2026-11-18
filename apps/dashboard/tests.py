@@ -172,3 +172,123 @@ class NavbarNavigationTests(TestCase):
         self.assertIn("fn-social-btn instagram", content)
         self.assertIn("fn-social-btn whatsapp", content)
 
+
+class BranchManagementCRUDTests(TestCase):
+    def setUp(self):
+        self.org = GymOrganization.objects.create(
+            name="FitNova HQ",
+            slug="fitnova-hq",
+            currency="$",
+            phone="+1 555-0100",
+            email="info@fitnova.com"
+        )
+        self.branch1 = GymBranch.objects.create(
+            organization=self.org,
+            name="Downtown Center",
+            code="FN-DT-01",
+            address="100 Main St",
+            city="Metropolis",
+            state="NY",
+            zip_code="10001",
+            phone="+1 555-1111",
+            email="dt@fitnova.com",
+            manager_name="Alex Cross",
+            is_main_branch=True,
+            is_active=True
+        )
+        self.admin = User.objects.create_user(
+            username="branch_admin",
+            email="admin@fitnova.com",
+            password="pass",
+            role=User.Role.GYM_ADMIN,
+            organization=self.org,
+            branch=self.branch1
+        )
+        self.client = Client()
+        self.client.force_login(self.admin)
+
+    def test_settings_page_lists_all_branches(self):
+        url = reverse('dashboard:settings')
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("Downtown Center", resp.content.decode('utf-8'))
+        self.assertIn("FN-DT-01", resp.content.decode('utf-8'))
+        self.assertIn("accounts_gymbranch", resp.content.decode('utf-8'))
+
+    def test_branch_create_view_inserts_row(self):
+        url = reverse('dashboard:branch_create')
+        data = {
+            'name': 'Uptown Performance Hub',
+            'code': 'FN-UP-02',
+            'address': '250 Park Avenue',
+            'city': 'Metropolis',
+            'state': 'NY',
+            'zip_code': '10022',
+            'phone': '+1 555-2222',
+            'email': 'uptown@fitnova.com',
+            'manager_name': 'Eleanor Vance',
+            'is_main_branch': 'off',
+            'is_active': 'on'
+        }
+        resp = self.client.post(url, data, follow=True)
+        self.assertEqual(resp.status_code, 200)
+        
+        # Verify row exists in DB
+        branch = GymBranch.objects.filter(code='FN-UP-02').first()
+        self.assertIsNotNone(branch)
+        self.assertEqual(branch.name, 'Uptown Performance Hub')
+        self.assertEqual(branch.city, 'Metropolis')
+        self.assertEqual(branch.organization, self.org)
+        self.assertTrue(branch.is_active)
+        self.assertFalse(branch.is_main_branch)
+
+    def test_branch_update_view_modifies_row(self):
+        url = reverse('dashboard:branch_update', args=[self.branch1.id])
+        data = {
+            'name': 'Downtown Flagship Center',
+            'code': 'FN-DT-01',
+            'address': '100 Main St Suite 500',
+            'city': 'Metropolis',
+            'state': 'NY',
+            'zip_code': '10001',
+            'phone': '+1 555-9999',
+            'email': 'dt_flagship@fitnova.com',
+            'manager_name': 'Alexander Cross',
+            'is_main_branch': 'on',
+            'is_active': 'on'
+        }
+        resp = self.client.post(url, data, follow=True)
+        self.assertEqual(resp.status_code, 200)
+
+        self.branch1.refresh_from_db()
+        self.assertEqual(self.branch1.name, 'Downtown Flagship Center')
+        self.assertEqual(self.branch1.phone, '+1 555-9999')
+        self.assertEqual(self.branch1.address, '100 Main St Suite 500')
+
+    def test_branch_toggle_status(self):
+        url = reverse('dashboard:branch_toggle_status', args=[self.branch1.id])
+        resp = self.client.post(url, follow=True)
+        self.assertEqual(resp.status_code, 200)
+
+        self.branch1.refresh_from_db()
+        self.assertFalse(self.branch1.is_active)
+
+    def test_branch_delete_with_fallback(self):
+        # Create second branch so first can be deleted
+        branch2 = GymBranch.objects.create(
+            organization=self.org,
+            name="Northside Center",
+            code="FN-NO-03",
+            address="400 North Blvd",
+            city="Metropolis",
+            is_active=True
+        )
+        url = reverse('dashboard:branch_delete', args=[self.branch1.id])
+        resp = self.client.post(url, follow=True)
+        self.assertEqual(resp.status_code, 200)
+
+        self.assertFalse(GymBranch.objects.filter(id=self.branch1.id).exists())
+        branch2.refresh_from_db()
+        self.assertTrue(branch2.is_main_branch)
+
+

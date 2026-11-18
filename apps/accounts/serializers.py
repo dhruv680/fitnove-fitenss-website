@@ -10,7 +10,10 @@ class GymOrganizationSerializer(serializers.ModelSerializer):
 class GymBranchSerializer(serializers.ModelSerializer):
     class Meta:
         model = GymBranch
-        fields = ['id', 'organization', 'name', 'code', 'address', 'city', 'state', 'zip_code', 'phone', 'email', 'manager_name', 'is_main_branch', 'is_active']
+        fields = ['id', 'organization', 'name', 'code', 'address', 'city', 'state', 'zip_code', 'phone', 'email', 'manager_name', 'is_main_branch', 'is_active', 'created_at']
+        extra_kwargs = {
+            'organization': {'required': False}
+        }
 
 
 class UserSerializer(serializers.ModelSerializer):

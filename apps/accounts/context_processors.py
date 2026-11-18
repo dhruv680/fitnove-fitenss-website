@@ -24,6 +24,12 @@ def global_fitnova_context(request):
         except Exception:
             current_org = None
 
+    if not current_branch and current_org:
+        try:
+            current_branch = current_org.branches.filter(is_main_branch=True).first() or current_org.branches.first()
+        except Exception:
+            current_branch = None
+
     # Resolve phone for direct WhatsApp chat (format wa.me/<digits>)
     wa_number = "15557492000"
     if current_org and current_org.phone:

@@ -15,5 +15,9 @@ urlpatterns = [
     path('search/', views.global_search, name='search'),
     path('reports/', views.reports_analytics, name='reports'),
     path('settings/', views.settings_view, name='settings'),
+    path('settings/branches/create/', views.branch_create_view, name='branch_create'),
+    path('settings/branches/<int:branch_id>/update/', views.branch_update_view, name='branch_update'),
+    path('settings/branches/<int:branch_id>/delete/', views.branch_delete_view, name='branch_delete'),
+    path('settings/branches/<int:branch_id>/toggle-status/', views.branch_toggle_status_view, name='branch_toggle_status'),
 ]
 

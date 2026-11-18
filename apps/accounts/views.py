@@ -514,7 +514,19 @@ class GymBranchViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        if not user.is_authenticated:
+            return GymBranch.objects.none()
         if user.is_super_admin:
             return GymBranch.objects.all()
-        return GymBranch.objects.filter(organization=user.organization)
+        if user.organization:
+            return GymBranch.objects.filter(organization=user.organization)
+        org = GymOrganization.objects.first()
+        if org:
+            return GymBranch.objects.filter(organization=org)
+        return GymBranch.objects.none()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        org = getattr(user, 'organization', None) or GymOrganization.objects.first()
+        serializer.save(organization=org)
 
