@@ -9,11 +9,23 @@ from apps.accounts.models import User, GymOrganization, GymBranch, UserFaceProfi
 def generate_test_face_image_base64(color=(120, 100, 90)):
     img = Image.new('RGB', (160, 160), color=color)
     draw = ImageDraw.Draw(img)
-    # Draw simple facial feature shapes
+    # Draw standard facial feature shapes
     draw.ellipse((35, 45, 65, 70), fill=(40, 30, 25))   # Left eye
     draw.ellipse((95, 45, 125, 70), fill=(40, 30, 25))  # Right eye
     draw.polygon([(80, 70), (70, 100), (90, 100)], fill=(70, 50, 45)) # Nose
     draw.rectangle((55, 115, 105, 130), fill=(180, 60, 60)) # Mouth
+    buf = BytesIO()
+    img.save(buf, format='JPEG')
+    return 'data:image/jpeg;base64,' + base64.b64encode(buf.getvalue()).decode('utf-8')
+
+def generate_different_face_image_base64():
+    img = Image.new('RGB', (160, 160), color=(200, 160, 130))
+    draw = ImageDraw.Draw(img)
+    # Distinct facial geometry (wider apart, different vertical ratios)
+    draw.ellipse((15, 30, 45, 60), fill=(10, 10, 10))
+    draw.ellipse((115, 30, 145, 60), fill=(10, 10, 10))
+    draw.polygon([(80, 50), (60, 80), (100, 80)], fill=(60, 40, 35))
+    draw.ellipse((60, 120, 100, 145), fill=(130, 30, 30))
     buf = BytesIO()
     img.save(buf, format='JPEG')
     return 'data:image/jpeg;base64,' + base64.b64encode(buf.getvalue()).decode('utf-8')
@@ -245,3 +257,93 @@ class RegistrationAndFaceAuthTestCase(TestCase):
         self.assertContains(response, '/accounts/api/direct-face-login/')
         # Secondary static badge on Remember Me line is removed
         self.assertNotContains(response, 'bg-success-subtle text-success border border-success-subtle px-2 py-1 small fw-semibold')
+
+    def test_unknown_face_rejected_with_message_and_options(self):
+        # Scenario 2 & 3: Unknown Person Detection
+        # Enrolls user A
+        user = User.objects.create_user(username='enrolled_athlete', email='athlete@fitnova.com', password='password123')
+        img_a = generate_test_face_image_base64(color=(130, 110, 100))
+        session = self.client.session
+        session['face_enroll_user_id'] = user.id
+        session.save()
+        self.client.post(reverse('accounts:api_face_enroll'), data={'image': img_a})
+        self.client.logout()
+
+        # Try to log in with a completely different person's face
+        img_unknown = generate_different_face_image_base64()
+        response = self.client.post(reverse('accounts:api_direct_face_login'), data={'image': img_unknown})
+        self.assertEqual(response.status_code, 401)
+        data = response.json()
+        self.assertFalse(data['success'])
+        self.assertTrue(data['unknown_user'])
+        self.assertEqual(data['message'], "Face Not Recognized. Your account is not registered.")
+        self.assertIn('login_url', data)
+        self.assertIn('register_url', data)
+
+    def test_anti_spoofing_rejects_dark_image(self):
+        # Scenario 4: Extreme darkness / invalid contrast
+        dark_img = Image.new('RGB', (160, 160), color=(5, 5, 5))
+        buf = BytesIO()
+        dark_img.save(buf, format='JPEG')
+        b64_dark = 'data:image/jpeg;base64,' + base64.b64encode(buf.getvalue()).decode('utf-8')
+
+        response = self.client.post(reverse('accounts:api_direct_face_login'), data={'image': b64_dark})
+        self.assertEqual(response.status_code, 401)
+        data = response.json()
+        self.assertFalse(data['success'])
+
+    def test_duplicate_face_registration_blocked(self):
+        # Scenario 6: Duplicate Face Registration Prevention
+        user1 = User.objects.create_user(username='user_one', email='user1@fitnova.com', password='password123')
+        img_b64 = generate_test_face_image_base64(color=(125, 105, 95))
+
+        # User 1 enrolls face
+        session1 = self.client.session
+        session1['face_enroll_user_id'] = user1.id
+        session1.save()
+        resp1 = self.client.post(reverse('accounts:api_face_enroll'), data={'image': img_b64})
+        self.assertEqual(resp1.status_code, 200)
+
+        # Log out user1 before user2 attempts enrollment
+        self.client.logout()
+
+        # User 2 tries to register using the exact same face
+        user2 = User.objects.create_user(username='user_two', email='user2@fitnova.com', password='password123')
+        session2 = self.client.session
+        session2['face_enroll_user_id'] = user2.id
+        session2.save()
+        resp2 = self.client.post(reverse('accounts:api_face_enroll'), data={'image': img_b64})
+        self.assertEqual(resp2.status_code, 400)
+        self.assertIn('Duplicate face registration is prohibited', resp2.json()['message'])
+
+    def test_rate_limiting_lockout_after_repeated_failures(self):
+        # Scenario 7: Rate Limiting & Account Lockout
+        from apps.accounts.face_service import FaceAuthService
+        test_ip = "192.168.1.99"
+        FaceAuthService.reset_failed_attempts(test_ip, "biometric_live")
+
+        for _ in range(5):
+            FaceAuthService.record_failed_attempt(test_ip, "biometric_live")
+
+        is_locked, lock_msg = FaceAuthService.check_rate_limit(test_ip, "biometric_live")
+        self.assertTrue(is_locked)
+        self.assertIn("locked", lock_msg)
+
+    def test_postgresql_encrypted_template_persistence(self):
+        # Scenario 9: PostgreSQL persistence & AES-256 Fernet encryption
+        from apps.accounts.face_service import FaceAuthService
+        user = User.objects.create_user(username='crypto_user', email='crypto@fitnova.com', password='password123')
+        img_b64 = generate_test_face_image_base64()
+
+        session = self.client.session
+        session['face_enroll_user_id'] = user.id
+        session.save()
+        self.client.post(reverse('accounts:api_face_enroll'), data={'image': img_b64})
+
+        prof = UserFaceProfile.objects.get(user=user)
+        self.assertTrue(prof.encrypted_template)
+        # Template should be encrypted (starts with Fernet gAAAAA prefix)
+        self.assertTrue(prof.encrypted_template.startswith('gAAAAA'))
+        decrypted = FaceAuthService.decrypt_biometric_data(prof.encrypted_template)
+        self.assertEqual(decrypted['user_id'], user.id)
+        self.assertEqual(len(decrypted['features']), 128)

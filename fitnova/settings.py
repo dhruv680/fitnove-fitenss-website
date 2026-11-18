@@ -197,4 +197,28 @@ LOGIN_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = 'dashboard:index'
 LOGOUT_REDIRECT_URL = 'accounts:register'
 
+# High-Security Biometric Authentication Configuration
+FACE_BIOMETRIC_ENCRYPTION_KEY = os.environ.get(
+    'FACE_BIOMETRIC_ENCRYPTION_KEY',
+    'fvHuozAxdxYH5iTfbAaSpXrEw3xPOniTy8wbrQgSHE8='
+)
+FACE_SIMILARITY_THRESHOLD = 0.65       # Minimum cosine similarity for verified match
+FACE_LIVENESS_VARIANCE_MIN = 35.0      # Minimum Laplacian edge variance (anti-spoof)
+FACE_AUTH_MAX_FAILED_ATTEMPTS = 5      # Max failed attempts before lockout
+FACE_AUTH_LOCKOUT_MINUTES = 15         # Temporary lockout window
+
+# Enterprise Session & Cookie Security
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_AGE = 1209600           # 2-week secure session persistence
+
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

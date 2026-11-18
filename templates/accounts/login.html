@@ -306,73 +306,16 @@
     {% endfor %}
   {% endif %}
 
-  <!-- Authentication Mode Switcher -->
-  <div class="fn-auth-tabs">
-    <button type="button" class="fn-auth-tab-btn active" id="tabPwdBtn" onclick="switchAuthMode('password')">
-      <i data-lucide="key-round" style="width: 16px;"></i> Password Sign In
-    </button>
-    <button type="button" class="fn-auth-tab-btn" id="tabFaceBtn" onclick="switchAuthMode('face')">
-      <i data-lucide="scan-face" style="width: 17px;"></i> Direct Face Auth
-    </button>
+  <!-- Primary Mode: Direct Face Authentication -->
+  <div class="d-flex align-items-center justify-content-center gap-2 py-2 px-3 rounded-pill bg-success-subtle text-success fw-bold small mb-3 border border-success-subtle" id="faceAuthHeaderBadge">
+    <i data-lucide="scan-face" style="width: 17px;"></i>
+    <span>Direct Face Authentication</span>
   </div>
 
   <!-- ========================================== -->
-  <!-- OPTION 1: PASSWORD SIGN IN (DEFAULT)       -->
+  <!-- OPTION 1: DIRECT FACE AUTHENTICATION (DEFAULT) -->
   <!-- ========================================== -->
-  <div id="panePasswordAuth" style="display: block;">
-    <form method="POST" action="{% url 'accounts:login' %}" id="loginForm">
-      {% csrf_token %}
-
-      <!-- Username or Email -->
-      <div class="fn-input-wrapper">
-        <label class="fn-label" for="authUsername">Username or Email</label>
-        <div class="position-relative">
-          <input type="text" name="username" id="authUsername" class="fn-input-custom" placeholder="admin" required autofocus>
-          <span class="fn-input-icon">
-            <i data-lucide="mail" style="width: 18px;"></i>
-          </span>
-        </div>
-      </div>
-
-      <!-- Password -->
-      <div class="fn-input-wrapper">
-        <div class="d-flex justify-content-between align-items-center mb-1">
-          <label class="fn-label mb-0" for="authPassword">Password</label>
-          <a href="javascript:void(0)" onclick="forgotPasswordAlert()" class="small fn-subtext-link" style="font-size: 0.8rem;">Forgot Password?</a>
-        </div>
-        <div class="position-relative">
-          <input type="password" name="password" id="authPassword" class="fn-input-custom" placeholder="••••••••••••" required>
-          <button type="button" class="fn-btn-toggle-pwd" onclick="togglePasswordVisibility('authPassword', 'pwdEyeIcon')" title="Show / Hide Password">
-            <i data-lucide="eye" id="pwdEyeIcon" style="width: 18px;"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- Remember Me (Clean, removed confusing secondary badge) -->
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <div class="form-check">
-          <input class="form-check-input" type="checkbox" name="remember_me" id="rememberMe" checked style="cursor: pointer;">
-          <label class="form-check-label small text-muted user-select-none" for="rememberMe" style="font-size: 0.82rem; cursor: pointer;">
-            Remember Me
-          </label>
-        </div>
-        <span class="small text-muted" style="font-size: 0.78rem;">
-          <i data-lucide="shield-check" style="width: 13px; margin-top: -2px; color: #10B981;"></i> Secure SSL
-        </span>
-      </div>
-
-      <!-- Sign In Button -->
-      <button type="submit" class="fn-btn-primary">
-        <i data-lucide="log-in" style="width: 18px;"></i>
-        <span>Sign In to Dashboard</span>
-      </button>
-    </form>
-  </div>
-
-  <!-- ========================================== -->
-  <!-- OPTION 2: DIRECT FACE AUTHENTICATION       -->
-  <!-- ========================================== -->
-  <div id="paneFaceAuth" style="display: none;">
+  <div id="paneFaceAuth" style="display: block;">
     <div id="faceAlertContainer"></div>
 
     <!-- Webcam Container -->
@@ -412,10 +355,77 @@
     </div>
 
     <!-- Direct Trigger Button -->
-    <button type="button" class="fn-btn-primary mb-3" id="btnScanFace" onclick="performDirectFaceScan(true)">
+    <button type="button" class="fn-btn-primary mb-2" id="btnScanFace" onclick="performDirectFaceScan(true)">
       <i data-lucide="scan-face" style="width: 18px;"></i>
       <span id="btnScanText">Scan & Authenticate Now</span>
     </button>
+
+    <!-- Alternative Sign In Option -->
+    <div class="text-center mt-3 pt-1">
+      <button type="button" class="btn btn-link text-decoration-none small text-muted p-0" onclick="switchAuthMode('password')">
+        <i data-lucide="key-round" style="width: 14px; margin-right: 4px;"></i> Sign in with Username & Password instead
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- OPTION 2: PASSWORD SIGN IN (FALLBACK)      -->
+  <!-- ========================================== -->
+  <div id="panePasswordAuth" style="display: none;">
+    <form method="POST" action="{% url 'accounts:login' %}" id="loginForm">
+      {% csrf_token %}
+
+      <!-- Username or Email -->
+      <div class="fn-input-wrapper">
+        <label class="fn-label" for="authUsername">Username or Email</label>
+        <div class="position-relative">
+          <input type="text" name="username" id="authUsername" class="fn-input-custom" placeholder="admin" required>
+          <span class="fn-input-icon">
+            <i data-lucide="mail" style="width: 18px;"></i>
+          </span>
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="fn-input-wrapper">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <label class="fn-label mb-0" for="authPassword">Password</label>
+          <a href="javascript:void(0)" onclick="forgotPasswordAlert()" class="small fn-subtext-link" style="font-size: 0.8rem;">Forgot Password?</a>
+        </div>
+        <div class="position-relative">
+          <input type="password" name="password" id="authPassword" class="fn-input-custom" placeholder="••••••••••••" required>
+          <button type="button" class="fn-btn-toggle-pwd" onclick="togglePasswordVisibility('authPassword', 'pwdEyeIcon')" title="Show / Hide Password">
+            <i data-lucide="eye" id="pwdEyeIcon" style="width: 18px;"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Remember Me -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="remember_me" id="rememberMe" checked style="cursor: pointer;">
+          <label class="form-check-label small text-muted user-select-none" for="rememberMe" style="font-size: 0.82rem; cursor: pointer;">
+            Remember Me
+          </label>
+        </div>
+        <span class="small text-muted" style="font-size: 0.78rem;">
+          <i data-lucide="shield-check" style="width: 13px; margin-top: -2px; color: #10B981;"></i> Secure SSL
+        </span>
+      </div>
+
+      <!-- Sign In Button -->
+      <button type="submit" class="fn-btn-primary mb-2">
+        <i data-lucide="log-in" style="width: 18px;"></i>
+        <span>Sign In to Dashboard</span>
+      </button>
+
+      <!-- Return to Direct Face Auth Link -->
+      <div class="text-center mt-3 pt-1">
+        <button type="button" class="btn btn-link text-decoration-none small text-primary p-0" onclick="switchAuthMode('face')">
+          <i data-lucide="scan-face" style="width: 14px; margin-right: 4px;"></i> Switch back to Direct Face Auth
+        </button>
+      </div>
+    </form>
   </div>
 
   <!-- Registration Option -->
@@ -457,23 +467,23 @@
   let autoScanTimer = null;
   let cameraActive = false;
 
+  const faceAuthHeaderBadge = document.getElementById('faceAuthHeaderBadge');
+
   function switchAuthMode(mode) {
-    if (mode === 'face') {
-      paneFaceAuth.style.display = 'block';
-      panePasswordAuth.style.display = 'none';
-      tabFaceBtn.classList.add('active');
-      tabPwdBtn.classList.remove('active');
-      if (!cameraActive) {
-        startCamera();
-      }
-    } else {
+    if (mode === 'password') {
       paneFaceAuth.style.display = 'none';
       panePasswordAuth.style.display = 'block';
-      tabFaceBtn.classList.remove('active');
-      tabPwdBtn.classList.add('active');
+      if (faceAuthHeaderBadge) faceAuthHeaderBadge.style.display = 'none';
       stopCamera();
       const pwdInput = document.getElementById('authUsername');
       if (pwdInput) pwdInput.focus();
+    } else {
+      paneFaceAuth.style.display = 'block';
+      panePasswordAuth.style.display = 'none';
+      if (faceAuthHeaderBadge) faceAuthHeaderBadge.style.display = 'flex';
+      if (!cameraActive) {
+        startCamera();
+      }
     }
     if (typeof lucide !== 'undefined') lucide.createIcons();
   }
@@ -495,11 +505,11 @@
       video.onloadedmetadata = () => {
         video.play();
         camPrompt.style.display = 'none';
-        faceStatusMsg.textContent = 'Face detected! Authenticating...';
-        // Auto trigger detection after 600ms stabilization
+        faceStatusMsg.textContent = 'Face centered! Authenticating...';
+        // Auto trigger detection immediately after 350ms stabilization
         autoScanTimer = setTimeout(() => {
           performDirectFaceScan(false);
-        }, 600);
+        }, 350);
       };
     } catch (err) {
       console.warn('Camera access unavailable:', err);
@@ -531,6 +541,30 @@
       <div class="alert alert-${type} py-2 px-3 small rounded-3 mb-3 d-flex align-items-center gap-2" role="alert">
         <i data-lucide="${type === 'success' ? 'check-circle' : 'alert-triangle'}" style="width: 17px; flex-shrink: 0;"></i>
         <div>${msg}</div>
+      </div>
+    `;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  function showUnknownPersonModal(msg) {
+    const container = document.getElementById('faceAlertContainer');
+    container.innerHTML = `
+      <div class="card border-danger shadow-sm rounded-4 p-3 mb-3 text-center" style="background: #FEF2F2;">
+        <div class="d-inline-flex align-items-center justify-content-center p-2 rounded-circle bg-danger-subtle text-danger mx-auto mb-2" style="width: 44px; height: 44px;">
+          <i data-lucide="shield-x" style="width: 24px; height: 24px;"></i>
+        </div>
+        <h6 class="fw-bold text-danger mb-1">Face Not Recognized</h6>
+        <p class="text-danger small mb-3" style="font-size: 0.84rem;">
+          Your account is not registered.
+        </p>
+        <div class="d-grid gap-2">
+          <button type="button" class="btn btn-dark btn-sm rounded-3 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2" onclick="switchAuthMode('password')">
+            <i data-lucide="key-round" style="width: 15px;"></i> Login with Email and Password
+          </button>
+          <a href="{% url 'accounts:register' %}" class="btn btn-outline-danger btn-sm rounded-3 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2 text-decoration-none">
+            <i data-lucide="user-plus" style="width: 15px;"></i> Create New Account
+          </a>
+        </div>
       </div>
     `;
     if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -592,6 +626,24 @@
         faceStatusMsg.textContent = data.message || 'Face did not match registered account.';
         faceSpinner.className = 'spinner-grow text-danger spinner-grow-sm';
 
+        if (data.unknown_user) {
+          clearTimeout(autoScanTimer);
+          showUnknownPersonModal(data.message);
+          btnScanFace.disabled = false;
+          btnScanText.textContent = 'Retry Face Scan';
+          isScanning = false;
+          return;
+        }
+
+        if (data.locked) {
+          clearTimeout(autoScanTimer);
+          showFaceAlert(data.message, 'warning');
+          btnScanFace.disabled = true;
+          btnScanText.textContent = 'Locked Out';
+          isScanning = false;
+          return;
+        }
+
         if (isManual) {
           showFaceAlert(data.message || 'Face not recognized. Please face camera directly or switch to password login.');
         }
@@ -639,10 +691,12 @@
     alert("For password reset assistance, please contact your FitNova gym administrator or reception front desk (+1 555-749-2000).");
   }
 
-  // Default to password sign in so webcam does not activate without user clicking Direct Face Auth
+  // Direct Face Auth is PRIMARY option 1: starts automatically on load
   document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('mode') === 'face') {
+    if (urlParams.get('mode') === 'password') {
+      switchAuthMode('password');
+    } else {
       switchAuthMode('face');
     }
   });
