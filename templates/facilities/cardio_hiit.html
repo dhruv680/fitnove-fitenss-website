@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cardio Theater & HIIT Lab – FitNova Facilities{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-5">
+  <!-- Hero Section -->
+  <div class="col-12">
+    <div class="fn-card p-4 p-md-5" style="background: linear-gradient(135deg, #7F1D1D 0%, #1E1B4B 60%, #0F172A 100%); color: #FFFFFF; position: relative; overflow: hidden; border: 1px solid rgba(239, 68, 68, 0.3);">
+      <div style="position: absolute; right: -20px; bottom: -30px; opacity: 0.08; pointer-events: none;">
+        <i data-lucide="activity" style="width: 280px; height: 280px;"></i>
+      </div>
+      <div class="position-relative" style="z-index: 2; max-width: 820px;">
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3" style="background: rgba(239, 68, 68, 0.25); border: 1px solid rgba(239, 68, 68, 0.5); color: #FCA5A5; font-size: 0.82rem; font-weight: 700;">
+          <i data-lucide="flame" style="width: 14px; height: 14px;"></i>
+          <span>HIGH-OUTPUT CONDITIONING & METABOLIC CIRCUITS</span>
+        </div>
+        <h1 class="display-6 fw-bold mb-3 text-white">Cardio Theater & HIIT Lab</h1>
+        <p class="lead mb-4 text-white-50" style="font-size: 1.05rem;">
+          Woodway curve treadmills, Concept2 rowers and SkiErgs, assault air bikes, and live heart rate monitor connectivity designed for maximum aerobic output and anaerobic threshold conditioning.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+          <a href="#machinesSection" class="btn btn-fn-accent px-4 py-2">
+            <i data-lucide="zap" style="width: 18px;"></i> View Machines & Decks
+          </a>
+          <a href="#programsSection" class="btn btn-outline-light px-4 py-2" style="border-radius: var(--fn-radius-md);">
+            <i data-lucide="calendar" style="width: 18px;"></i> Scheduled HIIT Programs
+          </a>
+          {% if is_staff %}
+          <button type="button" class="btn btn-sm btn-outline-light px-3 py-2" data-bs-toggle="modal" data-bs-target="#addProgramModal" style="border-radius: var(--fn-radius-md);">
+            <i data-lucide="plus-circle" style="width: 16px;"></i> Schedule Program
+          </button>
+          {% endif %}
+          <a href="{% url 'dashboard:about' %}" class="btn btn-link text-white-50 text-decoration-none px-2 d-flex align-items-center gap-1">
+            <i data-lucide="arrow-left" style="width: 16px;"></i> Back to All Zones
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="col-xl-4 col-md-6">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Total Cardio Fleet</div>
+          <div class="fn-stat-value">{{ total_machines }} Units</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(239, 68, 68, 0.1); color: #EF4444;">
+          <i data-lucide="activity"></i>
+        </div>
+      </div>
+      <div class="fn-stat-footer text-muted small">Woodway • Concept2 • Assault Fitness</div>
+    </div>
+  </div>
+
+  <div class="col-xl-4 col-md-6">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Available Decks Now</div>
+          <div class="fn-stat-value text-success">{{ available_machines }} Units</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.1); color: #10B981;">
+          <i data-lucide="check-circle"></i>
+        </div>
+      </div>
+      <div class="fn-stat-footer text-success small">Ready for warm-ups or sprints</div>
+    </div>
+  </div>
+
+  <div class="col-xl-4 col-md-6">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">In-Session / Active</div>
+          <div class="fn-stat-value text-warning">{{ in_use_machines }} Units</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(245, 158, 11, 0.1); color: #F59E0B;">
+          <i data-lucide="flame"></i>
+        </div>
+      </div>
+      <div class="fn-stat-footer text-muted small">HIIT interval rotations active</div>
+    </div>
+  </div>
+
+  <!-- Section 1: Cardio Machine Fleet -->
+  <div class="col-12" id="machinesSection">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h4 class="fw-bold text-dark mb-1">Cardio Fleet & Equipment Status</h4>
+        <p class="text-muted small mb-0">Live availability of curve running decks, rowers, and upper body ergometers.</p>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      {% for machine in machines %}
+      <div class="col-lg-4 col-md-6">
+        <div class="fn-card h-100 p-4 d-flex flex-column" style="border-top: 4px solid {% if machine.status == 'AVAILABLE' %}#10B981{% elif machine.status == 'IN_USE' %}#F59E0B{% else %}#EF4444{% endif %};">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="badge bg-light text-muted border small">{{ machine.category }}</span>
+            {% if machine.status == 'AVAILABLE' %}
+              <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3);">
+                <i data-lucide="check" style="width: 12px; margin-right: 2px;"></i> Available
+              </span>
+            {% elif machine.status == 'IN_USE' %}
+              <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #D97706; border: 1px solid rgba(245, 158, 11, 0.3);">
+                <i data-lucide="clock" style="width: 12px; margin-right: 2px;"></i> In Use
+              </span>
+            {% else %}
+              <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.3);">
+                <i data-lucide="alert-circle" style="width: 12px; margin-right: 2px;"></i> Maintenance
+              </span>
+            {% endif %}
+          </div>
+
+          <h5 class="fw-bold text-dark mb-1">{{ machine.name }}</h5>
+          <div class="text-danger small fw-semibold mb-2 d-flex align-items-center gap-1">
+            <i data-lucide="map-pin" style="width: 14px;"></i> {{ machine.location_bay }} • {{ machine.brand }} (Qty: {{ machine.quantity }})
+          </div>
+
+          <p class="text-muted small mb-3 flex-grow-1">{{ machine.description }}</p>
+
+          {% if machine.specs %}
+          <div class="p-2 px-3 rounded-2 mb-3" style="background: #F8FAFC; border: 1px solid #E2E8F0; font-size: 0.78rem;">
+            <strong class="text-dark d-block mb-1"><i data-lucide="cpu" style="width: 13px; margin-right: 2px;"></i> Metrics & Connectivity:</strong>
+            <span class="text-muted">{{ machine.specs }}</span>
+          </div>
+          {% endif %}
+
+          {% if machine.instructions %}
+          <div class="p-2 px-3 rounded-2 mb-3" style="background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.15); font-size: 0.77rem;">
+            <strong class="text-danger d-block mb-1"><i data-lucide="heart" style="width: 13px; margin-right: 2px;"></i> Quick Start Protocol:</strong>
+            <span class="text-muted">{{ machine.instructions }}</span>
+          </div>
+          {% endif %}
+
+          {% if is_staff %}
+          <div class="mt-auto pt-2 border-top">
+            <form method="POST" action="{% url 'facilities:toggle_equipment_status' machine.id %}" class="d-flex align-items-center justify-content-between gap-2">
+              {% csrf_token %}
+              <span class="small text-muted">Update:</span>
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="submit" name="status" value="AVAILABLE" class="btn btn-outline-success {% if machine.status == 'AVAILABLE' %}active{% endif %}">Free</button>
+                <button type="submit" name="status" value="IN_USE" class="btn btn-outline-warning {% if machine.status == 'IN_USE' %}active{% endif %}">In Use</button>
+                <button type="submit" name="status" value="MAINTENANCE" class="btn btn-outline-danger {% if machine.status == 'MAINTENANCE' %}active{% endif %}">Service</button>
+              </div>
+            </form>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Section 2: HIIT Workout Programs & Schedules -->
+  <div class="col-12 mt-5" id="programsSection">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h4 class="fw-bold text-dark mb-1">Scheduled Cardio & HIIT Protocols</h4>
+        <p class="text-muted small mb-0">Coach-led conditioning programs designed to elevate VO2 max and burn caloric volume.</p>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      {% for prog in programs %}
+      <div class="col-lg-6">
+        <div class="fn-card p-4 h-100 d-flex flex-column" style="background: #FFFFFF; border-left: 5px solid #EF4444;">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <span class="fn-badge fn-badge-danger mb-2">{{ prog.difficulty }}</span>
+              <h5 class="fw-bold text-dark mb-1">{{ prog.title }}</h5>
+            </div>
+            <div class="text-end">
+              <span class="badge bg-light text-dark border fw-bold p-2">
+                <i data-lucide="flame" class="text-danger" style="width: 14px;"></i> {{ prog.calories_burn }} kcal
+              </span>
+            </div>
+          </div>
+
+          <div class="text-muted small mb-3 d-flex flex-wrap gap-3">
+            <span><i data-lucide="clock" class="text-danger" style="width: 14px;"></i> {{ prog.duration_minutes }} Mins</span>
+            <span><i data-lucide="heart" class="text-danger" style="width: 14px;"></i> {{ prog.target_hr_zone }}</span>
+            <span><i data-lucide="calendar" class="text-danger" style="width: 14px;"></i> {{ prog.schedule_time }}</span>
+          </div>
+
+          <p class="text-muted small mb-3 flex-grow-1">{{ prog.description }}</p>
+
+          {% if prog.workout_breakdown %}
+          <div class="p-3 rounded-2 mb-3" style="background: rgba(239, 68, 68, 0.04); border: 1px dashed rgba(239, 68, 68, 0.2); font-size: 0.8rem;">
+            <strong class="text-danger d-block mb-1">Interval Circuit Breakdown:</strong>
+            <span class="text-muted">{{ prog.workout_breakdown }}</span>
+          </div>
+          {% endif %}
+
+          <div class="mt-auto d-flex justify-content-between align-items-center pt-2 border-top">
+            <span class="small text-muted">
+              Coach: <strong>{{ prog.trainer.full_name|default:"Head Conditioning Coach" }}</strong>
+            </span>
+            <a href="{% url 'classes:class_list' %}" class="btn btn-sm btn-fn-outline">
+              <i data-lucide="calendar-plus" style="width: 14px;"></i> View Full Class Calendar
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Schedule Cardio Program (Staff) -->
+{% if is_staff %}
+<div class="modal fade" id="addProgramModal" tabindex="-1" aria-labelledby="addProgramModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: var(--fn-radius-lg);">
+      <div class="modal-header border-bottom p-4">
+        <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="addProgramModalLabel">
+          <i data-lucide="activity" class="text-danger"></i> Schedule Cardio / HIIT Protocol
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{% url 'facilities:add_cardio_program' %}">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Program Title *</label>
+            <input type="text" name="title" class="form-control" placeholder="e.g., Tabata MetCon 45" required>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark">Target Heart Rate</label>
+              <input type="text" name="target_hr_zone" class="form-control" value="Zone 4 (80-90% HRmax)">
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark">Estimated Burn</label>
+              <input type="number" name="calories_burn" class="form-control" value="550">
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark">Duration (Minutes)</label>
+              <input type="number" name="duration_minutes" class="form-control" value="45">
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark">Difficulty</label>
+              <select name="difficulty" class="form-select">
+                <option value="All Levels">All Levels</option>
+                <option value="Intermediate" selected>Intermediate</option>
+                <option value="Advanced / High Intensity">Advanced / High Intensity</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Schedule & Frequency</label>
+            <input type="text" name="schedule_time" class="form-control" placeholder="e.g., Mon, Wed, Fri • 07:00 AM">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Assigned Conditioning Coach</label>
+            <select name="trainer_id" class="form-select">
+              <option value="">Select Trainer</option>
+              {% for t in trainers %}
+              <option value="{{ t.id }}">{{ t.full_name }} ({{ t.specialization }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Program Description</label>
+            <textarea name="description" class="form-control" rows="2" placeholder="Summary of athletic goals..."></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Interval Circuit Breakdown</label>
+            <textarea name="workout_breakdown" class="form-control" rows="2" placeholder="Warmup -> Block 1 -> Sprints -> Cooldown"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer border-top p-3">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-fn-primary">Publish HIIT Program</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

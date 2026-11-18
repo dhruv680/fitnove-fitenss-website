@@ -1678,3 +1678,19 @@ body.sidebar-collapsed .fn-nav-link i {
   }
 }
 
+/* Feature Cards & Performance Zone Links */
+.fn-feature-card {
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+  cursor: pointer;
+}
+.fn-feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 35px -8px rgba(0, 0, 0, 0.12);
+  border-color: rgba(118, 87, 232, 0.45);
+}
+.fn-feature-card:hover .fn-empty-icon {
+  transform: scale(1.08);
+  transition: transform 0.22s ease;
+}
+
+

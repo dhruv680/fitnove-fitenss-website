@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Functional Sprint Turf – FitNova Facilities{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-5">
+  <!-- Hero Section -->
+  <div class="col-12">
+    <div class="fn-card p-4 p-md-5" style="background: linear-gradient(135deg, #064E3B 0%, #1E1B4B 60%, #0F172A 100%); color: #FFFFFF; position: relative; overflow: hidden; border: 1px solid rgba(16, 185, 129, 0.3);">
+      <div style="position: absolute; right: -20px; bottom: -30px; opacity: 0.08; pointer-events: none;">
+        <i data-lucide="compass" style="width: 280px; height: 280px;"></i>
+      </div>
+      <div class="position-relative" style="z-index: 2; max-width: 820px;">
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3" style="background: rgba(16, 185, 129, 0.25); border: 1px solid rgba(16, 185, 129, 0.5); color: #A7F3D0; font-size: 0.82rem; font-weight: 700;">
+          <i data-lucide="zap" style="width: 14px; height: 14px;"></i>
+          <span>ATHLETIC VELOCITY & AGILITY PERFORMANCE</span>
+        </div>
+        <h1 class="display-6 fw-bold mb-3 text-white">Functional Sprint Turf</h1>
+        <p class="lead mb-4 text-white-50" style="font-size: 1.05rem;">
+          40-meter indoor competition astroturf lane, magnetic sled pushes, plyometric soft vaults, kettlebell arrays, and agility sprint tracks engineered for acceleration and multi-directional athleticism.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+          <a href="#sessionsSection" class="btn btn-fn-accent px-4 py-2">
+            <i data-lucide="calendar-check" style="width: 18px;"></i> Reserve Turf Training Spot
+          </a>
+          <a href="#turfEquipmentSection" class="btn btn-outline-light px-4 py-2" style="border-radius: var(--fn-radius-md);">
+            <i data-lucide="compass" style="width: 18px;"></i> View Track Features & Sleds
+          </a>
+          {% if is_trainer or is_staff %}
+          <button type="button" class="btn btn-sm btn-outline-light px-3 py-2" data-bs-toggle="modal" data-bs-target="#addTurfSessionModal" style="border-radius: var(--fn-radius-md);">
+            <i data-lucide="plus-circle" style="width: 16px;"></i> Schedule Session
+          </button>
+          {% endif %}
+          <a href="{% url 'dashboard:about' %}" class="btn btn-link text-white-50 text-decoration-none px-2 d-flex align-items-center gap-1">
+            <i data-lucide="arrow-left" style="width: 16px;"></i> Back to All Zones
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Track Specs Ribbon -->
+  <div class="col-xl-3 col-md-6">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Track Length</div>
+          <div class="fn-stat-value">40 Meters</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.1); color: #10B981;">
+          <i data-lucide="compass"></i>
+        </div>
+      </div>
+      <div class="fn-stat-footer text-muted small">High-density shock-absorbing turf</div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Sprint Lanes</div>
+          <div class="fn-stat-value text-success">Dual Lanes</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(118, 87, 232, 0.1); color: #7657E8;">
+          <i data-lucide="layers"></i>
+        </div>
+      </div>
+      <div class="fn-stat-footer text-muted small">Sled lane + Agility sprint lane</div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Weekly Drills</div>
+          <div class="fn-stat-value">{{ sessions.count }} Sessions</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(59, 130, 246, 0.1); color: #3B82F6;">
+          <i data-lucide="calendar"></i>
+        </div>
+      </div>
+      <div class="fn-stat-footer text-muted small">Speed, agility & plyometrics</div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Resistance Sleds</div>
+          <div class="fn-stat-value">5 Prowlers</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(245, 158, 11, 0.1); color: #F59E0B;">
+          <i data-lucide="move-right"></i>
+        </div>
+      </div>
+      <div class="fn-stat-footer text-muted small">Torque M4 Magnetic & Rogue Dogsleds</div>
+    </div>
+  </div>
+
+  <!-- Member Bookings Badge Notice -->
+  {% if my_turf_bookings %}
+  <div class="col-12">
+    <div class="fn-card p-3" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25);">
+      <div class="d-flex align-items-center gap-2">
+        <i data-lucide="check-circle" class="text-success" style="width: 20px;"></i>
+        <div>
+          <span class="fw-bold text-dark">Your Active Turf Reservations:</span>
+          {% for b in my_turf_bookings %}
+          <span class="badge bg-success ms-2">{{ b.session.title }} ({{ b.booking_date }})</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Section 1: Scheduled Turf Sessions & Sign-Up -->
+  <div class="col-12" id="sessionsSection">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h4 class="fw-bold text-dark mb-1">Coach-Led Sprint Turf Sessions</h4>
+        <p class="text-muted small mb-0">Reserve your lane spot for acceleration, sled drives, and plyometric drills.</p>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      {% for sess in sessions %}
+      <div class="col-lg-6">
+        <div class="fn-card p-4 h-100 d-flex flex-column" style="border-left: 5px solid #10B981;">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <span class="fn-badge fn-badge-accent mb-2">{{ sess.intensity }}</span>
+              <h5 class="fw-bold text-dark mb-1">{{ sess.title }}</h5>
+              <div class="text-muted small"><i data-lucide="target" style="width: 14px; margin-right: 2px;"></i> Focus: {{ sess.focus }}</div>
+            </div>
+            <div class="text-end">
+              <span class="badge {% if sess.available_slots > 0 %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} border fw-bold p-2">
+                {{ sess.available_slots }} / {{ sess.capacity }} Spots Free
+              </span>
+            </div>
+          </div>
+
+          <div class="text-muted small my-3 d-flex flex-wrap gap-3">
+            <span><i data-lucide="clock" class="text-success" style="width: 14px;"></i> {{ sess.duration_minutes }} Mins</span>
+            <span><i data-lucide="calendar" class="text-success" style="width: 14px;"></i> {{ sess.schedule_info }}</span>
+            <span><i data-lucide="user" class="text-success" style="width: 14px;"></i> Coach: <strong>{{ sess.trainer.full_name|default:"Master Trainer" }}</strong></span>
+          </div>
+
+          <p class="text-muted small mb-3 flex-grow-1">{{ sess.description }}</p>
+
+          {% if sess.drills_overview %}
+          <div class="p-3 rounded-2 mb-3" style="background: rgba(16, 185, 129, 0.05); border: 1px dashed rgba(16, 185, 129, 0.25); font-size: 0.8rem;">
+            <strong class="text-success d-block mb-1">Drills Overview:</strong>
+            <span class="text-muted">{{ sess.drills_overview }}</span>
+          </div>
+          {% endif %}
+
+          <div class="mt-auto d-flex justify-content-between align-items-center pt-2 border-top">
+            <span class="small text-muted">
+              Capacity: <strong>{{ sess.capacity }} athletes per session</strong>
+            </span>
+            {% if sess.id in my_booked_session_ids %}
+              <button class="btn btn-sm btn-success" disabled>
+                <i data-lucide="check" style="width: 14px;"></i> Spot Reserved
+              </button>
+            {% elif sess.available_slots > 0 %}
+              <form method="POST" action="{% url 'facilities:book_turf_session' sess.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-fn-primary">
+                  <i data-lucide="user-check" style="width: 14px;"></i> Reserve My Lane Spot
+                </button>
+              </form>
+            {% else %}
+              <button class="btn btn-sm btn-secondary" disabled>Fully Booked</button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Section 2: Turf Gear & Equipment Roster -->
+  <div class="col-12 mt-5" id="turfEquipmentSection">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h4 class="fw-bold text-dark mb-1">Turf Equipment & Sled Inventory</h4>
+        <p class="text-muted small mb-0">Hardware available for athlete conditioning and velocity work.</p>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      {% for eq in turf_equipment %}
+      <div class="col-lg-3 col-md-6">
+        <div class="fn-card h-100 p-3 d-flex flex-column">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="badge bg-light text-muted border small">{{ eq.category }}</span>
+            <span class="badge bg-success-subtle text-success small">Available</span>
+          </div>
+          <h6 class="fw-bold text-dark mb-1">{{ eq.name }}</h6>
+          <div class="text-muted small mb-2">{{ eq.location_bay }} • {{ eq.brand }}</div>
+          <p class="text-muted small mb-2 flex-grow-1" style="font-size: 0.8rem;">{{ eq.description|truncatechars:90 }}</p>
+          {% if eq.specs %}
+          <div class="small text-muted border-top pt-2" style="font-size: 0.75rem;">
+            {{ eq.specs }}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Schedule Turf Session (Trainers/Staff) -->
+{% if is_trainer or is_staff %}
+<div class="modal fade" id="addTurfSessionModal" tabindex="-1" aria-labelledby="addTurfSessionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: var(--fn-radius-lg);">
+      <div class="modal-header border-bottom p-4">
+        <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="addTurfSessionModalLabel">
+          <i data-lucide="compass" class="text-success"></i> Schedule Functional Turf Session
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{% url 'facilities:add_turf_session' %}">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Session Title *</label>
+            <input type="text" name="title" class="form-control" placeholder="e.g., Sled Velocity & Footwork Drills" required>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark">Schedule & Days</label>
+              <input type="text" name="schedule_info" class="form-control" value="Tue, Thu • 06:30 PM">
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark">Athlete Capacity</label>
+              <input type="number" name="capacity" class="form-control" value="15" min="1">
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark">Duration (Minutes)</label>
+              <input type="number" name="duration_minutes" class="form-control" value="50">
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark">Intensity</label>
+              <select name="intensity" class="form-select">
+                <option value="Moderate">Moderate</option>
+                <option value="High Intensity Athletic" selected>High Intensity Athletic</option>
+                <option value="Elite Conditioning">Elite Conditioning</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Primary Focus</label>
+            <input type="text" name="focus" class="form-control" value="Acceleration, Deceleration & Lateral Agility">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Session Description</label>
+            <textarea name="description" class="form-control" rows="2" placeholder="Athletic focus and outcomes..."></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Drills Overview</label>
+            <textarea name="drills_overview" class="form-control" rows="2" placeholder="e.g., 10m Sled Drives • Shuttle Runs • 24in Box Jumps"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer border-top p-3">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-fn-primary">Schedule Session</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

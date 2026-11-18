@@ -109,68 +109,98 @@
   <div class="col-12 mt-4">
     <div class="text-center mb-4">
       <h3 class="fw-bold text-dark mb-1">State-of-the-Art Training Facilities</h3>
-      <p class="text-muted small">Meticulously curated zones designed for Olympic power, high-output conditioning, and deep recovery.</p>
+      <p class="text-muted small">Meticulously curated zones designed for Olympic power, high-output conditioning, and deep recovery. Click any zone to explore available equipment, schedules, and access.</p>
     </div>
 
     <div class="row g-4">
+      <!-- 1. Olympic Free-Weight Zone -->
       <div class="col-md-4">
-        <div class="fn-card h-100 p-4 text-center">
+        <a href="{% url 'facilities:free_weights' %}" class="fn-card h-100 p-4 text-center text-decoration-none d-flex flex-column fn-feature-card">
           <div class="fn-empty-icon mb-3" style="background: rgba(118, 87, 232, 0.1); color: #7657E8;">
             <i data-lucide="dumbbell"></i>
           </div>
           <h5 class="fw-bold text-dark mb-2">Olympic Free-Weight Zone</h5>
-          <p class="text-muted small mb-0">Custom Eleiko competition barbells, calibrated steel bumper plates, rubberized power racks, and dumbbells from 5 to 150 lbs.</p>
-        </div>
+          <p class="text-muted small mb-3 flex-grow-1">Custom Eleiko competition barbells, calibrated steel bumper plates, rubberized power racks, and dumbbells from 5 to 150 lbs.</p>
+          <div class="mt-auto pt-2 text-primary small fw-semibold d-inline-flex align-items-center justify-content-center gap-1">
+            <span>Explore Zone & Equipment</span>
+            <i data-lucide="arrow-right" style="width: 14px;"></i>
+          </div>
+        </a>
       </div>
 
+      <!-- 2. Cardio Theater & HIIT Lab -->
       <div class="col-md-4">
-        <div class="fn-card h-100 p-4 text-center">
+        <a href="{% url 'facilities:cardio_hiit' %}" class="fn-card h-100 p-4 text-center text-decoration-none d-flex flex-column fn-feature-card">
           <div class="fn-empty-icon mb-3" style="background: rgba(239, 68, 68, 0.1); color: #EF4444;">
             <i data-lucide="activity"></i>
           </div>
           <h5 class="fw-bold text-dark mb-2">Cardio Theater & HIIT Lab</h5>
-          <p class="text-muted small mb-0">Woodway curve treadmills, Concept2 rowers and SkiErgs, assault air bikes, and live heart rate monitor connectivity.</p>
-        </div>
+          <p class="text-muted small mb-3 flex-grow-1">Woodway curve treadmills, Concept2 rowers and SkiErgs, assault air bikes, and live heart rate monitor connectivity.</p>
+          <div class="mt-auto pt-2 text-danger small fw-semibold d-inline-flex align-items-center justify-content-center gap-1">
+            <span>View Decks & Schedules</span>
+            <i data-lucide="arrow-right" style="width: 14px;"></i>
+          </div>
+        </a>
       </div>
 
+      <!-- 3. Functional Sprint Turf -->
       <div class="col-md-4">
-        <div class="fn-card h-100 p-4 text-center">
+        <a href="{% url 'facilities:sprint_turf' %}" class="fn-card h-100 p-4 text-center text-decoration-none d-flex flex-column fn-feature-card">
           <div class="fn-empty-icon mb-3" style="background: rgba(16, 185, 129, 0.1); color: #10B981;">
             <i data-lucide="compass"></i>
           </div>
           <h5 class="fw-bold text-dark mb-2">Functional Sprint Turf</h5>
-          <p class="text-muted small mb-0">40-meter indoor astroturf lane, sled pushes, plyometric boxes, kettlebell arrays, and agility ladder sprint tracks.</p>
-        </div>
+          <p class="text-muted small mb-3 flex-grow-1">40-meter indoor astroturf lane, sled pushes, plyometric boxes, kettlebell arrays, and agility ladder sprint tracks.</p>
+          <div class="mt-auto pt-2 text-success small fw-semibold d-inline-flex align-items-center justify-content-center gap-1">
+            <span>Reserve Lane & Drills</span>
+            <i data-lucide="arrow-right" style="width: 14px;"></i>
+          </div>
+        </a>
       </div>
 
+      <!-- 4. Smart Biometric Access -->
       <div class="col-md-4">
-        <div class="fn-card h-100 p-4 text-center">
+        <a href="{% url 'facilities:biometric_access' %}" class="fn-card h-100 p-4 text-center text-decoration-none d-flex flex-column fn-feature-card">
           <div class="fn-empty-icon mb-3" style="background: rgba(59, 130, 246, 0.1); color: #3B82F6;">
             <i data-lucide="scan-face"></i>
           </div>
           <h5 class="fw-bold text-dark mb-2">Smart Biometric Access</h5>
-          <p class="text-muted small mb-0">Frictionless 0.5-second live face recognition check-in turnstiles and offline digital QR attendance passes.</p>
-        </div>
+          <p class="text-muted small mb-3 flex-grow-1">Frictionless 0.5-second live face recognition check-in turnstiles and offline digital QR attendance passes.</p>
+          <div class="mt-auto pt-2 text-primary small fw-semibold d-inline-flex align-items-center justify-content-center gap-1">
+            <span>Open Turnstile Terminal</span>
+            <i data-lucide="arrow-right" style="width: 14px;"></i>
+          </div>
+        </a>
       </div>
 
+      <!-- 5. Recovery & Cryo Spa -->
       <div class="col-md-4">
-        <div class="fn-card h-100 p-4 text-center">
+        <a href="{% url 'facilities:recovery_spa' %}" class="fn-card h-100 p-4 text-center text-decoration-none d-flex flex-column fn-feature-card">
           <div class="fn-empty-icon mb-3" style="background: rgba(245, 158, 11, 0.1); color: #F59E0B;">
             <i data-lucide="heart-pulse"></i>
           </div>
           <h5 class="fw-bold text-dark mb-2">Recovery & Cryo Spa</h5>
-          <p class="text-muted small mb-0">Infrared cedar saunas, cold plunge immersion pools, Normatec pneumatic compression boots, and Theragun stations.</p>
-        </div>
+          <p class="text-muted small mb-3 flex-grow-1">Infrared cedar saunas, cold plunge immersion pools, Normatec pneumatic compression boots, and Theragun stations.</p>
+          <div class="mt-auto pt-2 text-warning small fw-semibold d-inline-flex align-items-center justify-content-center gap-1">
+            <span>Book Recovery Modality</span>
+            <i data-lucide="arrow-right" style="width: 14px;"></i>
+          </div>
+        </a>
       </div>
 
+      <!-- 6. Athlete Fuel Bar & Lounge -->
       <div class="col-md-4">
-        <div class="fn-card h-100 p-4 text-center">
+        <a href="{% url 'facilities:fuel_bar' %}" class="fn-card h-100 p-4 text-center text-decoration-none d-flex flex-column fn-feature-card">
           <div class="fn-empty-icon mb-3" style="background: rgba(139, 92, 246, 0.1); color: #8B5CF6;">
             <i data-lucide="coffee"></i>
           </div>
           <h5 class="fw-bold text-dark mb-2">Athlete Fuel Bar & Lounge</h5>
-          <p class="text-muted small mb-0">High-speed gigabit Wi-Fi workstations, private showers with Malin+Goetz toiletries, and organic protein smoothie bar.</p>
-        </div>
+          <p class="text-muted small mb-3 flex-grow-1">High-speed gigabit Wi-Fi workstations, private showers with Malin+Goetz toiletries, and organic protein smoothie bar.</p>
+          <div class="mt-auto pt-2 text-primary small fw-semibold d-inline-flex align-items-center justify-content-center gap-1">
+            <span>Order Shakes & Nutrition</span>
+            <i data-lucide="arrow-right" style="width: 14px;"></i>
+          </div>
+        </a>
       </div>
     </div>
   </div>

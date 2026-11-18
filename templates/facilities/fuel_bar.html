@@ -1,0 +1,337 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Athlete Fuel Bar & Lounge – FitNova Facilities{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-5">
+  <!-- Hero Section -->
+  <div class="col-12">
+    <div class="fn-card p-4 p-md-5" style="background: linear-gradient(135deg, #4C1D95 0%, #1E1B4B 60%, #0F172A 100%); color: #FFFFFF; position: relative; overflow: hidden; border: 1px solid rgba(139, 92, 246, 0.3);">
+      <div style="position: absolute; right: -20px; bottom: -30px; opacity: 0.08; pointer-events: none;">
+        <i data-lucide="coffee" style="width: 280px; height: 280px;"></i>
+      </div>
+      <div class="position-relative" style="z-index: 2; max-width: 820px;">
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3" style="background: rgba(139, 92, 246, 0.25); border: 1px solid rgba(139, 92, 246, 0.5); color: #DDD6FE; font-size: 0.82rem; font-weight: 700;">
+          <i data-lucide="utensils" style="width: 14px; height: 14px;"></i>
+          <span>POST-WORKOUT ANABOLIC NUTRITION & ATHLETE WORKSPACE</span>
+        </div>
+        <h1 class="display-6 fw-bold mb-3 text-white">Athlete Fuel Bar & Lounge</h1>
+        <p class="lead mb-4 text-white-50" style="font-size: 1.05rem;">
+          Cold-processed grass-fed whey isolate smoothies, organic raw cacao bowls, cold brew nitro tonics, and balanced macro-calculated nutrition crafted to replenish glycogen and accelerate muscle protein synthesis.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+          <a href="#menuSection" class="btn btn-fn-accent px-4 py-2">
+            <i data-lucide="menu" style="width: 18px;"></i> View Nutrition Menu
+          </a>
+          {% if is_staff %}
+          <button type="button" class="btn btn-outline-light px-4 py-2" data-bs-toggle="modal" data-bs-target="#addItemModal" style="border-radius: var(--fn-radius-md);">
+            <i data-lucide="plus-circle" style="width: 18px;"></i> Add Menu Item
+          </button>
+          {% endif %}
+          <a href="{% url 'dashboard:about' %}" class="btn btn-link text-white-50 text-decoration-none px-2 d-flex align-items-center gap-1">
+            <i data-lucide="arrow-left" style="width: 16px;"></i> Back to All Zones
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Member Active Orders Ribbon -->
+  {% if my_orders %}
+  <div class="col-12">
+    <div class="fn-card p-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+          <i data-lucide="shopping-bag" class="text-primary"></i> Your Recent Fuel Bar Orders
+        </h5>
+        <span class="badge bg-light text-muted border small">{{ my_orders.count }} Orders</span>
+      </div>
+      <div class="row g-3">
+        {% for ord in my_orders %}
+        <div class="col-md-6 col-lg-3">
+          <div class="p-3 rounded-3 border h-100" style="background: #F8FAFC; border-left: 4px solid {% if ord.status == 'READY' %}#10B981{% elif ord.status == 'PREPARING' %}#F59E0B{% else %}#7657E8{% endif %} !important;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="fw-bold text-dark small">{{ ord.order_number }}</span>
+              <span class="badge {% if ord.status == 'READY' %}bg-success text-white{% elif ord.status == 'PREPARING' %}bg-warning text-dark{% else %}bg-secondary text-white{% endif %} small">
+                {{ ord.get_status_display }}
+              </span>
+            </div>
+            <div class="text-muted small mb-2">
+              {% for itm in ord.items_list %}
+              <div>{{ itm.quantity }}x {{ itm.name }} (${{ itm.subtotal }})</div>
+              {% endfor %}
+            </div>
+            <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+              <span class="fw-bold text-primary">${{ ord.total_price }}</span>
+              <span class="text-muted" style="font-size: 0.72rem;">{{ ord.created_at|date:"h:i A" }}</span>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Staff Kitchen Order Queue -->
+  {% if is_staff and kitchen_orders %}
+  <div class="col-12">
+    <div class="fn-card p-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+          <i data-lucide="chef-hat" class="text-warning"></i> Fuel Bar Kitchen Queue (Live Orders)
+        </h5>
+        <span class="badge bg-warning text-dark">{{ kitchen_orders.count }} Active Orders</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr class="small text-muted">
+              <th>Order #</th>
+              <th>Member</th>
+              <th>Ordered Items</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ko in kitchen_orders %}
+            <tr>
+              <td><strong>{{ ko.order_number }}</strong></td>
+              <td>{{ ko.member.full_name }}</td>
+              <td>
+                {% for itm in ko.items_list %}
+                <span class="badge bg-light text-dark border">{{ itm.quantity }}x {{ itm.name }}</span>
+                {% endfor %}
+                {% if ko.notes %}<div class="small text-muted fst-italic">Note: {{ ko.notes }}</div>{% endif %}
+              </td>
+              <td><strong class="text-primary">${{ ko.total_price }}</strong></td>
+              <td>
+                <span class="badge {% if ko.status == 'READY' %}bg-success{% elif ko.status == 'PREPARING' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                  {{ ko.get_status_display }}
+                </span>
+              </td>
+              <td>
+                <form method="POST" action="{% url 'facilities:update_fuel_order_status' ko.id %}" class="d-inline-flex gap-1">
+                  {% csrf_token %}
+                  <button type="submit" name="status" value="READY" class="btn btn-sm btn-outline-success">Mark Ready</button>
+                  <button type="submit" name="status" value="COMPLETED" class="btn btn-sm btn-outline-primary">Completed</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Menu Category Filter Tabs -->
+  <div class="col-12" id="menuSection">
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      <a href="{% url 'facilities:fuel_bar' %}" class="btn btn-sm {% if not category_filter %}btn-fn-primary{% else %}btn-outline-secondary{% endif %}">
+        All Categories
+      </a>
+      {% for cat_code, cat_label in categories %}
+      <a href="{% url 'facilities:fuel_bar' %}?category={{ cat_code }}" class="btn btn-sm {% if category_filter == cat_code %}btn-fn-primary{% else %}btn-outline-secondary{% endif %}">
+        {{ cat_label }}
+      </a>
+      {% endfor %}
+    </div>
+
+    <!-- Menu Items Grid -->
+    <div class="row g-4">
+      {% for item in items %}
+      <div class="col-lg-4 col-md-6">
+        <div class="fn-card h-100 p-4 d-flex flex-column" style="border-top: 4px solid #8B5CF6;">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="badge bg-light text-muted border small">{{ item.get_category_display }}</span>
+            <span class="fw-bold text-primary fs-5">${{ item.price }}</span>
+          </div>
+
+          <h5 class="fw-bold text-dark mb-1">{{ item.name }}</h5>
+          <div class="d-flex gap-2 mb-3 flex-wrap">
+            <span class="badge bg-primary-subtle text-primary border small">{{ item.protein_grams }}g Protein</span>
+            <span class="badge bg-light text-muted border small">{{ item.calories }} kcal</span>
+            <span class="badge bg-light text-muted border small">{{ item.carbs_grams }}g Carbs</span>
+            <span class="badge bg-light text-muted border small">{{ item.fats_grams }}g Fats</span>
+          </div>
+
+          <p class="text-muted small mb-3 flex-grow-1">{{ item.description }}</p>
+
+          {% if item.ingredients %}
+          <div class="p-2 px-3 rounded-2 mb-3" style="background: #F8FAFC; border: 1px solid #E2E8F0; font-size: 0.78rem;">
+            <strong class="text-dark d-block mb-1">Key Ingredients:</strong>
+            <span class="text-muted">{{ item.ingredients }}</span>
+          </div>
+          {% endif %}
+
+          <div class="mt-auto pt-2 border-top d-flex justify-content-between align-items-center">
+            {% if item.is_available %}
+              <span class="badge bg-success-subtle text-success small"><i data-lucide="check" style="width: 12px;"></i> In Stock</span>
+              <button type="button" class="btn btn-sm btn-fn-primary" onclick="openOrderModal('{{ item.id }}', '{{ item.name|escapejs }}', '{{ item.price }}')">
+                <i data-lucide="plus" style="width: 14px;"></i> Order for Pickup
+              </button>
+            {% else %}
+              <span class="badge bg-danger-subtle text-danger small">Sold Out</span>
+              <button class="btn btn-sm btn-secondary" disabled>Unavailable</button>
+            {% endif %}
+          </div>
+
+          <!-- Staff Stock Toggle -->
+          {% if is_staff %}
+          <div class="mt-2 pt-2 border-top text-end">
+            <form method="POST" action="{% url 'facilities:toggle_fuel_item_availability' item.id %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-link p-0 text-muted small text-decoration-none">
+                Toggle: {% if item.is_available %}Mark Sold Out{% else %}Mark In Stock{% endif %}
+              </button>
+            </form>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Order Item -->
+<div class="modal fade" id="orderModal" tabindex="-1" aria-labelledby="orderModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: var(--fn-radius-lg);">
+      <div class="modal-header border-bottom p-4">
+        <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="orderModalLabel">
+          <i data-lucide="coffee" class="text-primary"></i> Order From Fuel Bar
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{% url 'facilities:create_fuel_order' %}">
+        {% csrf_token %}
+        <input type="hidden" name="item_id" id="modalItemId">
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Item</label>
+            <input type="text" id="modalItemName" class="form-control fw-bold" readonly>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark">Price per item</label>
+              <input type="text" id="modalItemPrice" class="form-control" readonly>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark">Quantity</label>
+              <input type="number" name="quantity" id="modalItemQty" class="form-control" value="1" min="1" max="10" onchange="calcTotal()">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Estimated Total</label>
+            <div class="fs-4 fw-bold text-primary" id="modalItemTotal">$8.50</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Customization / Dietary Notes</label>
+            <input type="text" name="notes" class="form-control" placeholder="e.g., Extra ice, oat milk instead of almond">
+          </div>
+        </div>
+        <div class="modal-footer border-top p-3">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-fn-primary">Place Pickup Order</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add Item (Staff/Admin) -->
+{% if is_staff %}
+<div class="modal fade" id="addItemModal" tabindex="-1" aria-labelledby="addItemModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: var(--fn-radius-lg);">
+      <div class="modal-header border-bottom p-4">
+        <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="addItemModalLabel">
+          <i data-lucide="plus-circle" class="text-primary"></i> Add Fuel Bar Item
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{% url 'facilities:add_fuel_item' %}">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Item Name *</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g., Berry Creatine Blast" required>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark">Category</label>
+              <select name="category" class="form-select">
+                {% for code, label in categories %}
+                <option value="{{ code }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark">Price ($) *</label>
+              <input type="number" step="0.50" name="price" class="form-control" value="8.50" required>
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-3">
+              <label class="form-label small fw-semibold text-dark">Calories</label>
+              <input type="number" name="calories" class="form-control" value="350">
+            </div>
+            <div class="col-3">
+              <label class="form-label small fw-semibold text-dark">Protein (g)</label>
+              <input type="number" name="protein_grams" class="form-control" value="35">
+            </div>
+            <div class="col-3">
+              <label class="form-label small fw-semibold text-dark">Carbs (g)</label>
+              <input type="number" name="carbs_grams" class="form-control" value="25">
+            </div>
+            <div class="col-3">
+              <label class="form-label small fw-semibold text-dark">Fats (g)</label>
+              <input type="number" name="fats_grams" class="form-control" value="8">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Description</label>
+            <textarea name="description" class="form-control" rows="2" placeholder="Flavor profile, benefits..."></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Ingredients</label>
+            <textarea name="ingredients" class="form-control" rows="2" placeholder="Key ingredients..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer border-top p-3">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-fn-primary">Save to Menu</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<script>
+  let currentUnitPrice = 0;
+
+  function openOrderModal(itemId, itemName, itemPrice) {
+    document.getElementById('modalItemId').value = itemId;
+    document.getElementById('modalItemName').value = itemName;
+    document.getElementById('modalItemPrice').value = '$' + itemPrice;
+    currentUnitPrice = parseFloat(itemPrice);
+    document.getElementById('modalItemQty').value = 1;
+    calcTotal();
+    const modal = new bootstrap.Modal(document.getElementById('orderModal'));
+    modal.show();
+  }
+
+  function calcTotal() {
+    const qty = parseInt(document.getElementById('modalItemQty').value) || 1;
+    const total = (currentUnitPrice * qty).toFixed(2);
+    document.getElementById('modalItemTotal').textContent = '$' + total;
+  }
+</script>
+{% endblock %}

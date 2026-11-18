@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Olympic Free-Weight Zone – FitNova Facilities{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-5">
+  <!-- Hero Section -->
+  <div class="col-12">
+    <div class="fn-card p-4 p-md-5" style="background: linear-gradient(135deg, #172554 0%, #1E1B4B 60%, #0F172A 100%); color: #FFFFFF; position: relative; overflow: hidden; border: 1px solid rgba(118, 87, 232, 0.3);">
+      <div style="position: absolute; right: -20px; bottom: -30px; opacity: 0.08; pointer-events: none;">
+        <i data-lucide="dumbbell" style="width: 280px; height: 280px;"></i>
+      </div>
+      <div class="position-relative" style="z-index: 2; max-width: 820px;">
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3" style="background: rgba(118, 87, 232, 0.25); border: 1px solid rgba(118, 87, 232, 0.5); color: #C4B5FD; font-size: 0.82rem; font-weight: 700;">
+          <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i>
+          <span>OLYMPIC POWER & STRENGTH ARCHITECTURE</span>
+        </div>
+        <h1 class="display-6 fw-bold mb-3 text-white">Olympic Free-Weight Zone</h1>
+        <p class="lead mb-4 text-white-50" style="font-size: 1.05rem;">
+          Calibrated competition steel, Olympic platforms, precision needle-bearing barbells, and commercial dumbbell arrays engineered for progressive overload and pure athletic output.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+          <a href="#equipmentGrid" class="btn btn-fn-accent px-4 py-2">
+            <i data-lucide="layers" style="width: 18px;"></i> View Available Equipment
+          </a>
+          {% if is_staff %}
+          <button type="button" class="btn btn-outline-light px-4 py-2" data-bs-toggle="modal" data-bs-target="#addEquipmentModal" style="border-radius: var(--fn-radius-md);">
+            <i data-lucide="plus-circle" style="width: 18px;"></i> Add Equipment
+          </button>
+          {% endif %}
+          <a href="{% url 'dashboard:about' %}" class="btn btn-link text-white-50 text-decoration-none px-2 d-flex align-items-center gap-1">
+            <i data-lucide="arrow-left" style="width: 16px;"></i> Back to All Zones
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Metrics Bar -->
+  <div class="col-xl-3 col-md-6">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Total Equipment</div>
+          <div class="fn-stat-value">{{ total_equipment }} Units</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(118, 87, 232, 0.1); color: #7657E8;">
+          <i data-lucide="dumbbell"></i>
+        </div>
+      </div>
+      <div class="fn-stat-footer text-muted small">Olympic standard certified</div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Available Now</div>
+          <div class="fn-stat-value text-success">{{ available_count }} Units</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.1); color: #10B981;">
+          <i data-lucide="check-circle-2"></i>
+        </div>
+      </div>
+      <div class="fn-stat-footer text-success small">Open for immediate sets</div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Currently In Use</div>
+          <div class="fn-stat-value text-warning">{{ in_use_count }} Units</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(245, 158, 11, 0.1); color: #F59E0B;">
+          <i data-lucide="users"></i>
+        </div>
+      </div>
+      <div class="fn-stat-footer text-muted small">Rotating between lifters</div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6">
+    <div class="fn-stat-card">
+      <div class="fn-stat-top">
+        <div>
+          <div class="fn-stat-label">Maintenance / Service</div>
+          <div class="fn-stat-value text-danger">{{ maintenance_count }} Units</div>
+        </div>
+        <div class="fn-stat-icon-wrapper" style="background: rgba(239, 68, 68, 0.1); color: #EF4444;">
+          <i data-lucide="wrench"></i>
+        </div>
+      </div>
+      <div class="fn-stat-footer text-muted small">Preventative inspection</div>
+    </div>
+  </div>
+
+  <!-- Filter & Search Toolbar -->
+  <div class="col-12" id="equipmentGrid">
+    <div class="fn-card p-3">
+      <form method="GET" class="row g-2 align-items-center">
+        <div class="col-md-5">
+          <div class="input-group">
+            <span class="input-group-text bg-transparent border-end-0 text-muted"><i data-lucide="search" style="width: 16px;"></i></span>
+            <input type="text" name="search" class="form-control border-start-0" placeholder="Search equipment, specs, brand..." value="{{ search_query }}">
+          </div>
+        </div>
+        <div class="col-md-3">
+          <select name="status" class="form-select" onchange="this.form.submit()">
+            <option value="">All Statuses</option>
+            <option value="AVAILABLE" {% if status_filter == 'AVAILABLE' %}selected{% endif %}>🟢 Available Only</option>
+            <option value="IN_USE" {% if status_filter == 'IN_USE' %}selected{% endif %}>🟠 Currently In Use</option>
+            <option value="MAINTENANCE" {% if status_filter == 'MAINTENANCE' %}selected{% endif %}>🔴 Under Maintenance</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <select name="category" class="form-select" onchange="this.form.submit()">
+            <option value="">All Categories</option>
+            {% for cat in categories %}
+            <option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>{{ cat }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-1 d-flex gap-1">
+          <button type="submit" class="btn btn-fn-primary w-100">Filter</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Equipment Cards Grid -->
+  {% if equipments %}
+  <div class="col-12">
+    <div class="row g-4">
+      {% for eq in equipments %}
+      <div class="col-lg-4 col-md-6">
+        <div class="fn-card h-100 p-4 d-flex flex-column" style="transition: all 0.25s ease; border-top: 4px solid {% if eq.status == 'AVAILABLE' %}#10B981{% elif eq.status == 'IN_USE' %}#F59E0B{% else %}#EF4444{% endif %};">
+          <!-- Top Row: Category & Status Badge -->
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="badge bg-light text-muted border small">{{ eq.category }}</span>
+            {% if eq.status == 'AVAILABLE' %}
+              <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3);">
+                <i data-lucide="check" style="width: 12px; margin-right: 2px;"></i> Available
+              </span>
+            {% elif eq.status == 'IN_USE' %}
+              <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #D97706; border: 1px solid rgba(245, 158, 11, 0.3);">
+                <i data-lucide="clock" style="width: 12px; margin-right: 2px;"></i> In Use
+              </span>
+            {% else %}
+              <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.3);">
+                <i data-lucide="alert-circle" style="width: 12px; margin-right: 2px;"></i> Maintenance
+              </span>
+            {% endif %}
+          </div>
+
+          <!-- Name & Brand -->
+          <h5 class="fw-bold text-dark mb-1">{{ eq.name }}</h5>
+          <div class="text-primary small fw-semibold mb-2 d-flex align-items-center gap-1">
+            <i data-lucide="map-pin" style="width: 14px;"></i> {{ eq.location_bay }} • {{ eq.brand }} (Qty: {{ eq.quantity }})
+          </div>
+
+          <!-- Description -->
+          <p class="text-muted small mb-3 flex-grow-1">{{ eq.description }}</p>
+
+          <!-- Specifications Box -->
+          {% if eq.specs %}
+          <div class="p-2 px-3 rounded-2 mb-3" style="background: #F8FAFC; border: 1px solid #E2E8F0; font-size: 0.78rem;">
+            <strong class="text-dark d-block mb-1"><i data-lucide="info" style="width: 13px; margin-right: 2px;"></i> Specifications:</strong>
+            <span class="text-muted">{{ eq.specs }}</span>
+          </div>
+          {% endif %}
+
+          <!-- Usage & Safety Instructions -->
+          {% if eq.instructions %}
+          <div class="p-2 px-3 rounded-2 mb-3" style="background: rgba(118, 87, 232, 0.05); border: 1px solid rgba(118, 87, 232, 0.15); font-size: 0.77rem;">
+            <strong class="text-primary d-block mb-1"><i data-lucide="shield-alert" style="width: 13px; margin-right: 2px;"></i> Safety & Usage:</strong>
+            <span class="text-muted">{{ eq.instructions }}</span>
+          </div>
+          {% endif %}
+
+          <!-- Staff Status Toggle Action -->
+          {% if is_staff %}
+          <div class="mt-auto pt-2 border-top">
+            <form method="POST" action="{% url 'facilities:toggle_equipment_status' eq.id %}" class="d-flex align-items-center justify-content-between gap-2">
+              {% csrf_token %}
+              <span class="small text-muted">Update Status:</span>
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="submit" name="status" value="AVAILABLE" class="btn btn-outline-success {% if eq.status == 'AVAILABLE' %}active{% endif %}" title="Mark Available">Free</button>
+                <button type="submit" name="status" value="IN_USE" class="btn btn-outline-warning {% if eq.status == 'IN_USE' %}active{% endif %}" title="Mark In Use">In Use</button>
+                <button type="submit" name="status" value="MAINTENANCE" class="btn btn-outline-danger {% if eq.status == 'MAINTENANCE' %}active{% endif %}" title="Mark Under Maintenance">Fix</button>
+              </div>
+            </form>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div class="col-12">
+    <div class="fn-card p-5 text-center">
+      <div class="fn-empty-icon mx-auto mb-3" style="background: rgba(118, 87, 232, 0.1); color: #7657E8;">
+        <i data-lucide="dumbbell"></i>
+      </div>
+      <h5 class="fw-bold text-dark">No Equipment Matching Filters</h5>
+      <p class="text-muted small mb-3">Try adjusting your keyword search or filter parameters.</p>
+      <a href="{% url 'facilities:free_weights' %}" class="btn btn-sm btn-fn-outline">Clear All Filters</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Modal: Add Equipment (Staff/Admin) -->
+{% if is_staff %}
+<div class="modal fade" id="addEquipmentModal" tabindex="-1" aria-labelledby="addEquipmentModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: var(--fn-radius-lg);">
+      <div class="modal-header border-bottom p-4">
+        <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="addEquipmentModalLabel">
+          <i data-lucide="dumbbell" class="text-primary"></i> Add Free-Weight Equipment
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{% url 'facilities:add_equipment' %}">
+        {% csrf_token %}
+        <input type="hidden" name="zone" value="FREE_WEIGHTS">
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Equipment Name *</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g., Eleiko 20kg Competition Barbell" required>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark">Category</label>
+              <input type="text" name="category" class="form-control" placeholder="e.g., Barbells, Racks">
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark">Brand / Manufacturer</label>
+              <input type="text" name="brand" class="form-control" placeholder="e.g., Eleiko, Rogue">
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark">Quantity</label>
+              <input type="number" name="quantity" class="form-control" value="1" min="1">
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark">Location Bay</label>
+              <input type="text" name="location_bay" class="form-control" placeholder="e.g., Platform 1">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Specifications</label>
+            <textarea name="specs" class="form-control" rows="2" placeholder="e.g., 20kg weight, 28mm grip diameter, needle bearing"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Usage & Safety Guidelines</label>
+            <textarea name="instructions" class="form-control" rows="2" placeholder="e.g., Always use collars, wipe knurling with chalk brush"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer border-top p-3">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-fn-primary">Save Equipment to Roster</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

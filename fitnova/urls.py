@@ -28,6 +28,7 @@ urlpatterns = [
     path('classes/', include('apps.classes.urls', namespace='classes')),
     path('crm/', include('apps.crm.urls', namespace='crm')),
     path('notifications/', include('apps.notifications.urls', namespace='notifications')),
+    path('facilities/', include('apps.facilities.urls', namespace='facilities')),
 ]
 
 if settings.DEBUG:

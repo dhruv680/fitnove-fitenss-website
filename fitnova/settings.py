@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     'apps.crm.apps.CrmConfig',
     'apps.notifications.apps.NotificationsConfig',
     'apps.dashboard.apps.DashboardConfig',
+    'apps.facilities.apps.FacilitiesConfig',
 ]
 
 MIDDLEWARE = [

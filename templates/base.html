@@ -119,6 +119,32 @@
         <span class="fn-nav-text">Classes & Bookings</span>
       </a>
 
+      <div class="fn-nav-header-title">Gym Facilities & Zones</div>
+      <a href="{% url 'facilities:free_weights' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'facilities' and request.resolver_match.url_name == 'free_weights' %}active{% endif %}">
+        <i data-lucide="dumbbell"></i>
+        <span class="fn-nav-text">Free-Weight Zone</span>
+      </a>
+      <a href="{% url 'facilities:cardio_hiit' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'facilities' and request.resolver_match.url_name == 'cardio_hiit' %}active{% endif %}">
+        <i data-lucide="activity"></i>
+        <span class="fn-nav-text">Cardio & HIIT Lab</span>
+      </a>
+      <a href="{% url 'facilities:sprint_turf' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'facilities' and request.resolver_match.url_name == 'sprint_turf' %}active{% endif %}">
+        <i data-lucide="compass"></i>
+        <span class="fn-nav-text">Sprint Turf</span>
+      </a>
+      <a href="{% url 'facilities:biometric_access' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'facilities' and request.resolver_match.url_name == 'biometric_access' %}active{% endif %}">
+        <i data-lucide="scan-face"></i>
+        <span class="fn-nav-text">Biometric Access</span>
+      </a>
+      <a href="{% url 'facilities:recovery_spa' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'facilities' and request.resolver_match.url_name == 'recovery_spa' %}active{% endif %}">
+        <i data-lucide="heart-pulse"></i>
+        <span class="fn-nav-text">Recovery & Spa</span>
+      </a>
+      <a href="{% url 'facilities:fuel_bar' %}" class="fn-nav-link {% if request.resolver_match.app_name == 'facilities' and request.resolver_match.url_name == 'fuel_bar' %}active{% endif %}">
+        <i data-lucide="coffee"></i>
+        <span class="fn-nav-text">Fuel Bar & Lounge</span>
+      </a>
+
       {% if not user.is_member %}
       <div class="fn-nav-header-title">Finance & Sales</div>
 
