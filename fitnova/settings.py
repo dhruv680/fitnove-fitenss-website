@@ -195,6 +195,6 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Authentication URLs
 LOGIN_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = 'dashboard:index'
-LOGOUT_REDIRECT_URL = 'accounts:login'
+LOGOUT_REDIRECT_URL = 'accounts:register'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

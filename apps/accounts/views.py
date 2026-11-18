@@ -498,7 +498,7 @@ def logout_view(request):
     request.session.pop('face_enroll_user_id', None)
     logout(request)
     messages.info(request, 'You have been successfully logged out.')
-    return redirect('accounts:login')
+    return redirect('accounts:register')
 
 
 

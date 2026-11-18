@@ -306,20 +306,73 @@
     {% endfor %}
   {% endif %}
 
-  <!-- Authentication Mode Switcher: Option 1 (Face Auth) First! -->
+  <!-- Authentication Mode Switcher -->
   <div class="fn-auth-tabs">
-    <button type="button" class="fn-auth-tab-btn active" id="tabFaceBtn" onclick="switchAuthMode('face')">
-      <i data-lucide="scan-face" style="width: 17px;"></i> Direct Face Auth
-    </button>
-    <button type="button" class="fn-auth-tab-btn" id="tabPwdBtn" onclick="switchAuthMode('password')">
+    <button type="button" class="fn-auth-tab-btn active" id="tabPwdBtn" onclick="switchAuthMode('password')">
       <i data-lucide="key-round" style="width: 16px;"></i> Password Sign In
+    </button>
+    <button type="button" class="fn-auth-tab-btn" id="tabFaceBtn" onclick="switchAuthMode('face')">
+      <i data-lucide="scan-face" style="width: 17px;"></i> Direct Face Auth
     </button>
   </div>
 
   <!-- ========================================== -->
-  <!-- OPTION 1 (FIRST): DIRECT FACE AUTHENTICATION -->
+  <!-- OPTION 1: PASSWORD SIGN IN (DEFAULT)       -->
   <!-- ========================================== -->
-  <div id="paneFaceAuth">
+  <div id="panePasswordAuth" style="display: block;">
+    <form method="POST" action="{% url 'accounts:login' %}" id="loginForm">
+      {% csrf_token %}
+
+      <!-- Username or Email -->
+      <div class="fn-input-wrapper">
+        <label class="fn-label" for="authUsername">Username or Email</label>
+        <div class="position-relative">
+          <input type="text" name="username" id="authUsername" class="fn-input-custom" placeholder="admin" required autofocus>
+          <span class="fn-input-icon">
+            <i data-lucide="mail" style="width: 18px;"></i>
+          </span>
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="fn-input-wrapper">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <label class="fn-label mb-0" for="authPassword">Password</label>
+          <a href="javascript:void(0)" onclick="forgotPasswordAlert()" class="small fn-subtext-link" style="font-size: 0.8rem;">Forgot Password?</a>
+        </div>
+        <div class="position-relative">
+          <input type="password" name="password" id="authPassword" class="fn-input-custom" placeholder="••••••••••••" required>
+          <button type="button" class="fn-btn-toggle-pwd" onclick="togglePasswordVisibility('authPassword', 'pwdEyeIcon')" title="Show / Hide Password">
+            <i data-lucide="eye" id="pwdEyeIcon" style="width: 18px;"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Remember Me (Clean, removed confusing secondary badge) -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="remember_me" id="rememberMe" checked style="cursor: pointer;">
+          <label class="form-check-label small text-muted user-select-none" for="rememberMe" style="font-size: 0.82rem; cursor: pointer;">
+            Remember Me
+          </label>
+        </div>
+        <span class="small text-muted" style="font-size: 0.78rem;">
+          <i data-lucide="shield-check" style="width: 13px; margin-top: -2px; color: #10B981;"></i> Secure SSL
+        </span>
+      </div>
+
+      <!-- Sign In Button -->
+      <button type="submit" class="fn-btn-primary">
+        <i data-lucide="log-in" style="width: 18px;"></i>
+        <span>Sign In to Dashboard</span>
+      </button>
+    </form>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- OPTION 2: DIRECT FACE AUTHENTICATION       -->
+  <!-- ========================================== -->
+  <div id="paneFaceAuth" style="display: none;">
     <div id="faceAlertContainer"></div>
 
     <!-- Webcam Container -->
@@ -363,59 +416,6 @@
       <i data-lucide="scan-face" style="width: 18px;"></i>
       <span id="btnScanText">Scan & Authenticate Now</span>
     </button>
-  </div>
-
-  <!-- ========================================== -->
-  <!-- OPTION 2: PASSWORD SIGN IN (SECONDARY)     -->
-  <!-- ========================================== -->
-  <div id="panePasswordAuth" style="display: none;">
-    <form method="POST" action="{% url 'accounts:login' %}" id="loginForm">
-      {% csrf_token %}
-
-      <!-- Username or Email -->
-      <div class="fn-input-wrapper">
-        <label class="fn-label" for="authUsername">Username or Email</label>
-        <div class="position-relative">
-          <input type="text" name="username" id="authUsername" class="fn-input-custom" placeholder="admin" required>
-          <span class="fn-input-icon">
-            <i data-lucide="mail" style="width: 18px;"></i>
-          </span>
-        </div>
-      </div>
-
-      <!-- Password -->
-      <div class="fn-input-wrapper">
-        <div class="d-flex justify-content-between align-items-center mb-1">
-          <label class="fn-label mb-0" for="authPassword">Password</label>
-          <a href="javascript:void(0)" onclick="forgotPasswordAlert()" class="small fn-subtext-link" style="font-size: 0.8rem;">Forgot Password?</a>
-        </div>
-        <div class="position-relative">
-          <input type="password" name="password" id="authPassword" class="fn-input-custom" placeholder="••••••••••••" required>
-          <button type="button" class="fn-btn-toggle-pwd" onclick="togglePasswordVisibility('authPassword', 'pwdEyeIcon')" title="Show / Hide Password">
-            <i data-lucide="eye" id="pwdEyeIcon" style="width: 18px;"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- Remember Me (Clean, removed confusing secondary badge) -->
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <div class="form-check">
-          <input class="form-check-input" type="checkbox" name="remember_me" id="rememberMe" checked style="cursor: pointer;">
-          <label class="form-check-label small text-muted user-select-none" for="rememberMe" style="font-size: 0.82rem; cursor: pointer;">
-            Remember Me
-          </label>
-        </div>
-        <span class="small text-muted" style="font-size: 0.78rem;">
-          <i data-lucide="shield-check" style="width: 13px; margin-top: -2px; color: #10B981;"></i> Secure SSL
-        </span>
-      </div>
-
-      <!-- Sign In Button -->
-      <button type="submit" class="fn-btn-primary">
-        <i data-lucide="log-in" style="width: 18px;"></i>
-        <span>Sign In with Password</span>
-      </button>
-    </form>
   </div>
 
   <!-- Registration Option -->
@@ -639,9 +639,12 @@
     alert("For password reset assistance, please contact your FitNova gym administrator or reception front desk (+1 555-749-2000).");
   }
 
-  // Start with Direct Face Authentication by default on page load!
+  // Default to password sign in so webcam does not activate without user clicking Direct Face Auth
   document.addEventListener('DOMContentLoaded', () => {
-    startCamera();
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('mode') === 'face') {
+      switchAuthMode('face');
+    }
   });
 
   window.addEventListener('beforeunload', () => {
