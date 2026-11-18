@@ -1536,117 +1536,255 @@ body.sidebar-collapsed .fn-nav-link i {
 }
 
 /* ==========================================================================
-   FitNova Global Footer & Social Media Hub
+   15. FitNova Enterprise SaaS Footer & Global Social Hub
    ========================================================================== */
 .fn-site-footer {
-  margin-top: 48px;
-  padding: 24px 32px;
+  width: 100%;
+  margin-top: 56px;
   background: #FFFFFF;
-  border-top: 1px solid var(--fn-border);
+  border: 1px solid #E2E8F0;
+  border-radius: 24px;
+  box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.05), 0 2px 8px rgba(15, 23, 42, 0.02);
+  padding: 48px 42px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.fn-footer-main {
+  display: grid;
+  grid-template-columns: 2.2fr 1fr 1fr 1fr 1.8fr;
+  gap: 36px;
+}
+
+.fn-footer-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.fn-footer-brand-col p {
+  color: #64748B;
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.fn-footer-heading {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #0F172A;
+  margin-bottom: 18px;
+  position: relative;
+}
+
+.fn-footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.fn-footer-links a {
+  color: #64748B;
+  font-size: 0.88rem;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.18s ease, transform 0.18s ease;
+  display: inline-block;
+}
+
+.fn-footer-links a:hover {
+  color: #6366F1;
+  transform: translateX(4px);
+}
+
+.fn-footer-contact-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.fn-contact-link,
+.fn-contact-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.fn-contact-link:hover {
+  transform: translateX(3px);
+}
+
+.fn-contact-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: #EEF2FF;
+  color: #6366F1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.fn-contact-icon i,
+.fn-contact-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.fn-contact-link:hover .fn-contact-icon {
+  background: #6366F1;
+  color: #FFFFFF;
+}
+
+.fn-contact-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #94A3B8;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+
+.fn-contact-val {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1E293B;
+  line-height: 1.35;
+  transition: color 0.18s ease;
+}
+
+.fn-contact-link:hover .fn-contact-val {
+  color: #6366F1;
+}
+
+/* Social Media Hub Section */
+.fn-footer-social-hub {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 20px;
+  padding: 24px 30px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  border-radius: 16px 16px 0 0;
-  box-shadow: 0 -2px 10px rgba(15, 23, 42, 0.02);
+  gap: 24px;
 }
 
-.fn-footer-brand {
+.fn-social-links-grid {
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-
-.fn-footer-copy {
-  color: var(--fn-text-muted);
-  font-size: 0.85rem;
-  margin: 0;
-}
-
-.fn-social-links {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .fn-social-btn {
   position: relative;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: #FFFFFF !important;
   text-decoration: none;
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, filter 0.2s ease;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.28s ease, filter 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
   cursor: pointer;
+  flex-shrink: 0;
 }
 
-.fn-social-btn i,
-.fn-social-btn svg {
-  width: 19px;
-  height: 19px;
-  stroke-width: 2.2;
+.fn-brand-svg {
+  width: 25px;
+  height: 25px;
+  fill: currentColor;
+  flex-shrink: 0;
 }
 
-/* Instagram Official Gradient */
+/* 1. Instagram Official Brand Gradient */
 .fn-social-btn.instagram {
   background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
 }
 .fn-social-btn.instagram:hover {
-  transform: translateY(-4px) scale(1.12);
-  box-shadow: 0 8px 20px rgba(214, 36, 159, 0.45);
+  transform: translateY(-5px) scale(1.08);
+  box-shadow: 0 12px 26px -2px rgba(214, 36, 159, 0.52);
 }
 
-/* LinkedIn Official Blue */
+/* 2. LinkedIn Official Brand Blue */
 .fn-social-btn.linkedin {
   background: #0A66C2;
 }
 .fn-social-btn.linkedin:hover {
-  transform: translateY(-4px) scale(1.12);
-  box-shadow: 0 8px 20px rgba(10, 102, 194, 0.45);
+  transform: translateY(-5px) scale(1.08);
+  box-shadow: 0 12px 26px -2px rgba(10, 102, 194, 0.52);
 }
 
-/* WhatsApp Official Green */
+/* 3. WhatsApp Official Brand Green */
 .fn-social-btn.whatsapp {
   background: #25D366;
 }
 .fn-social-btn.whatsapp:hover {
-  transform: translateY(-4px) scale(1.12);
-  box-shadow: 0 8px 20px rgba(37, 211, 102, 0.45);
+  transform: translateY(-5px) scale(1.08);
+  box-shadow: 0 12px 26px -2px rgba(37, 211, 102, 0.52);
 }
 
-/* Twitter / X Official Dark */
-.fn-social-btn.twitter {
+/* 4. X (Twitter) Official Dark */
+.fn-social-btn.x-twitter {
   background: #0F172A;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.14);
 }
-.fn-social-btn.twitter:hover {
-  transform: translateY(-4px) scale(1.12);
+.fn-social-btn.x-twitter:hover {
   background: #000000;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.45);
+  transform: translateY(-5px) scale(1.08);
+  box-shadow: 0 12px 26px -2px rgba(15, 23, 42, 0.55);
+}
+
+/* 5. YouTube Official Brand Red */
+.fn-social-btn.youtube {
+  background: #FF0000;
+}
+.fn-social-btn.youtube:hover {
+  transform: translateY(-5px) scale(1.08);
+  box-shadow: 0 12px 26px -2px rgba(255, 0, 0, 0.52);
+}
+
+/* 6. Facebook Official Brand Blue */
+.fn-social-btn.facebook {
+  background: #1877F2;
+}
+.fn-social-btn.facebook:hover {
+  transform: translateY(-5px) scale(1.08);
+  box-shadow: 0 12px 26px -2px rgba(24, 119, 242, 0.52);
 }
 
 /* Platform Name Tooltip on Hover */
 .fn-social-tooltip {
   position: absolute;
-  bottom: calc(100% + 8px);
+  bottom: calc(100% + 10px);
   left: 50%;
   transform: translateX(-50%) translateY(4px);
   background: #0F172A;
   color: #FFFFFF;
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 6px;
+  padding: 5px 12px;
+  border-radius: 8px;
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
   z-index: 100;
 }
 
@@ -1656,7 +1794,7 @@ body.sidebar-collapsed .fn-nav-link i {
   top: 100%;
   left: 50%;
   transform: translateX(-50%);
-  border-width: 4px;
+  border-width: 5px;
   border-style: solid;
   border-color: #0F172A transparent transparent transparent;
 }
@@ -1666,15 +1804,115 @@ body.sidebar-collapsed .fn-nav-link i {
   transform: translateX(-50%) translateY(0);
 }
 
+/* Bottom Bar */
+.fn-footer-bottom {
+  border-top: 1px solid #E2E8F0;
+  padding-top: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.fn-footer-bottom-copy p {
+  color: #64748B;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.fn-footer-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fn-footer-pill {
+  font-size: 0.72rem;
+  color: #64748B;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fn-btn-back-to-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #6366F1;
+  text-decoration: none;
+  padding: 7px 15px;
+  border-radius: 10px;
+  background: #EEF2FF;
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  transition: all 0.2s ease;
+}
+
+.fn-btn-back-to-top:hover {
+  background: #6366F1;
+  color: #FFFFFF;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* Responsive Footer Adaptations */
+@media (max-width: 1200px) {
+  .fn-footer-main {
+    grid-template-columns: 1.8fr 1fr 1fr 1fr;
+  }
+  .fn-footer-contact-col {
+    grid-column: span 4;
+  }
+}
+
+@media (max-width: 992px) {
+  .fn-footer-main {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+  .fn-footer-brand-col {
+    grid-column: span 2;
+  }
+  .fn-footer-contact-col {
+    grid-column: span 2;
+  }
+  .fn-footer-social-hub {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 @media (max-width: 768px) {
   .fn-site-footer {
-    flex-direction: column;
-    text-align: center;
-    padding: 20px 16px;
-    gap: 14px;
+    padding: 32px 20px 20px;
+    border-radius: 20px;
+    gap: 28px;
   }
-  .fn-footer-brand {
-    justify-content: center;
+  .fn-footer-main {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .fn-footer-brand-col,
+  .fn-footer-contact-col {
+    grid-column: span 1;
+  }
+  .fn-social-links-grid {
+    gap: 12px;
+  }
+  .fn-social-btn {
+    width: 48px;
+    height: 48px;
+  }
+  .fn-footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 

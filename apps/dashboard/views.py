@@ -422,3 +422,25 @@ def apply_view(request):
         'plans': plans,
         'preselected_plan_id': preselected_plan_id
     })
+
+
+def help_center_view(request):
+    org = getattr(request.user, 'organization', None) if request.user.is_authenticated else None
+    if not org:
+        org = GymOrganization.objects.first()
+    return render(request, 'dashboard/help_center.html', {'org': org})
+
+
+def privacy_policy_view(request):
+    org = getattr(request.user, 'organization', None) if request.user.is_authenticated else None
+    if not org:
+        org = GymOrganization.objects.first()
+    return render(request, 'dashboard/privacy_policy.html', {'org': org})
+
+
+def terms_conditions_view(request):
+    org = getattr(request.user, 'organization', None) if request.user.is_authenticated else None
+    if not org:
+        org = GymOrganization.objects.first()
+    return render(request, 'dashboard/terms_conditions.html', {'org': org})
+

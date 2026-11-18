@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Terms & Conditions – FitNova Elite Fitness{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-5 justify-content-center">
+  <div class="col-lg-10">
+    <div class="fn-card p-4 p-md-5">
+      <div class="d-flex align-items-center gap-3 mb-4 border-bottom pb-3">
+        <div class="fn-stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.12); color: #10B981; width: 48px; height: 48px;">
+          <i data-lucide="file-text" style="width: 24px;"></i>
+        </div>
+        <div>
+          <h3 class="fw-bold text-dark mb-1">FitNova Terms of Service & Member Agreement</h3>
+          <p class="text-muted small mb-0">Enterprise Fitness Platform Guidelines & Etiquette</p>
+        </div>
+      </div>
+
+      <div class="text-secondary small leading-relaxed">
+        <h5 class="fw-bold text-dark mt-4 mb-2">1. Acceptance of Terms</h5>
+        <p>
+          By creating an account, acquiring a membership plan, or utilizing facility equipment at {{ current_org.name|default:"FitNova Elite Fitness" }}, you agree to comply with and be legally bound by these terms.
+        </p>
+
+        <h5 class="fw-bold text-dark mt-4 mb-2">2. Facility Safety & Equipment Etiquette</h5>
+        <p>
+          Athletes and members are expected to follow safety guidelines across all specialized zones (Olympic Free-Weights, Sprint Turf, Cardio Theater, and Recovery Spa).
+        </p>
+        <ul>
+          <li>Always rack barbells, bumper plates, and dumbbells after use.</li>
+          <li>Proper athletic attire and clean footwear are strictly required.</li>
+          <li>Turnstile credentials and facial templates are non-transferable. Tailgating is strictly prohibited.</li>
+        </ul>
+
+        <h5 class="fw-bold text-dark mt-4 mb-2">3. Subscription, Invoicing & Billing</h5>
+        <p>
+          Membership plans are billed in accordance with the chosen cycle (Monthly, Quarterly, or Annual). Official invoices include applicable GST and tax receipts accessible directly via the payments portal.
+        </p>
+
+        <h5 class="fw-bold text-dark mt-4 mb-2">4. Cancellations & Freezes</h5>
+        <p>
+          Membership cancellation or medical freeze requests may be initiated through the membership portal or submitted directly to front desk reception with 7 days advance notice.
+        </p>
+
+        <h5 class="fw-bold text-dark mt-4 mb-2">5. Liability Disclaimer</h5>
+        <p>
+          Members understand that physical exercise involves inherent risk. Members represent that they are medically cleared for high-intensity training.
+        </p>
+      </div>
+
+      <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
+        <a href="{% url 'dashboard:privacy_policy' %}" class="small text-decoration-none text-primary fw-semibold">&larr; Read Privacy Policy</a>
+        <a href="{% url 'dashboard:contact' %}" class="btn btn-sm btn-fn-outline">Inquire With Administration</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

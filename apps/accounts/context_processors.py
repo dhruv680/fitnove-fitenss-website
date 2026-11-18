@@ -37,7 +37,10 @@ def global_fitnova_context(request):
         'instagram': getattr(current_org, 'instagram_url', None) or 'https://www.instagram.com/fitnova_fitness/',
         'linkedin': getattr(current_org, 'linkedin_url', None) or 'https://www.linkedin.com/company/fitnova-fitness/',
         'whatsapp': whatsapp_url,
-        'twitter': getattr(current_org, 'twitter_url', None) or 'https://twitter.com/fitnovafit',
+        'twitter': getattr(current_org, 'twitter_url', None) or 'https://x.com/fitnovafit',
+        'x': getattr(current_org, 'twitter_url', None) or 'https://x.com/fitnovafit',
+        'youtube': getattr(current_org, 'youtube_url', None) or 'https://www.youtube.com/@fitnovafitness',
+        'facebook': getattr(current_org, 'facebook_url', None) or 'https://www.facebook.com/fitnovafitness',
     }
 
     return {

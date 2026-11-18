@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Privacy Policy – FitNova Elite Fitness{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-5 justify-content-center">
+  <div class="col-lg-10">
+    <div class="fn-card p-4 p-md-5">
+      <div class="d-flex align-items-center gap-3 mb-4 border-bottom pb-3">
+        <div class="fn-stat-icon-wrapper" style="background: rgba(118, 87, 232, 0.12); color: #7657E8; width: 48px; height: 48px;">
+          <i data-lucide="shield-check" style="width: 24px;"></i>
+        </div>
+        <div>
+          <h3 class="fw-bold text-dark mb-1">FitNova SaaS Privacy & Biometric Data Policy</h3>
+          <p class="text-muted small mb-0">Effective Date: January 1, 2026 | Last Updated: November 2026</p>
+        </div>
+      </div>
+
+      <div class="text-secondary small leading-relaxed">
+        <h5 class="fw-bold text-dark mt-4 mb-2">1. Overview & Commitment</h5>
+        <p>
+          At {{ current_org.name|default:"FitNova Elite Fitness" }}, we respect your privacy and are committed to safeguarding personal, physiological, and biometric data processed within our enterprise fitness management platform.
+        </p>
+
+        <h5 class="fw-bold text-dark mt-4 mb-2">2. Biometric Data Collection & Facial Vectors</h5>
+        <p>
+          Our Smart Biometric Turnstile system processes 128-point facial geometric landmarks strictly for identity verification, physical access control, and attendance logging.
+        </p>
+        <ul>
+          <li><strong>No Raw Photos Stored:</strong> Camera feeds are processed into mathematical facial landmark vectors (128-dimension floating-point arrays). Raw image streams are discarded immediately following vector extraction.</li>
+          <li><strong>Cryptographic Encryption:</strong> Stored facial profiles are hashed and encrypted at rest using AES-256 standards.</li>
+          <li><strong>Voluntary Enrollment:</strong> Members have full discretion to opt out of biometric access in favor of digital QR code passes.</li>
+        </ul>
+
+        <h5 class="fw-bold text-dark mt-4 mb-2">3. Information We Collect</h5>
+        <p>
+          We collect personal identification information including full name, email address, mobile number, emergency contacts, subscription details, and training schedules.
+        </p>
+
+        <h5 class="fw-bold text-dark mt-4 mb-2">4. Data Sharing & Third Parties</h5>
+        <p>
+          FitNova does not sell, license, or monetize member data to third-party advertisers. Information is only utilized to provide fitness facility services, generate tax-compliant invoices, and notify you of gym operations.
+        </p>
+
+        <h5 class="fw-bold text-dark mt-4 mb-2">5. Data Retention & Right to Erasure</h5>
+        <p>
+          Members can request deletion of their facial vectors and profile information upon subscription termination by contacting our Data Protection Officer at <a href="mailto:{{ current_org.email|default:'privacy@fitnova.com' }}" class="text-primary fw-semibold">{{ current_org.email|default:'privacy@fitnova.com' }}</a>.
+        </p>
+      </div>
+
+      <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
+        <a href="{% url 'dashboard:terms_conditions' %}" class="small text-decoration-none text-primary fw-semibold">View Terms & Conditions &rarr;</a>
+        <a href="{% url 'dashboard:contact' %}" class="btn btn-sm btn-fn-outline">Contact Privacy Team</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

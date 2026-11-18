@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}Help Center & FAQs – FitNova Elite Fitness{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-5 justify-content-center">
+  <!-- Header -->
+  <div class="col-12 text-center mb-3">
+    <div class="fn-badge fn-badge-accent mb-2">SUPPORT & KNOWLEDGE BASE</div>
+    <h2 class="display-6 fw-bold text-dark mb-2">How Can We Help You Today?</h2>
+    <p class="text-muted small mx-auto" style="max-width: 640px;">
+      Find answers to frequent inquiries regarding membership access, biometric face check-in, group workout bookings, and automated invoicing.
+    </p>
+  </div>
+
+  <!-- Quick Action Cards -->
+  <div class="col-md-4">
+    <div class="fn-card p-4 text-center h-100">
+      <div class="fn-stat-icon-wrapper mx-auto mb-3" style="background: rgba(118, 87, 232, 0.12); color: #7657E8; width: 48px; height: 48px;">
+        <i data-lucide="scan-face" style="width: 24px;"></i>
+      </div>
+      <h6 class="fw-bold text-dark mb-1">Biometric Face Check-in</h6>
+      <p class="text-muted small mb-3">Learn how our 0.5-second high-speed turnstiles verify registered members with encrypted facial vectors.</p>
+      <a href="{% url 'facilities:biometric_access' %}" class="btn btn-sm btn-fn-primary">Turnstile Terminal</a>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="fn-card p-4 text-center h-100">
+      <div class="fn-stat-icon-wrapper mx-auto mb-3" style="background: rgba(16, 185, 129, 0.12); color: #10B981; width: 48px; height: 48px;">
+        <i data-lucide="badge-percent" style="width: 24px;"></i>
+      </div>
+      <h6 class="fw-bold text-dark mb-1">Memberships & Plans</h6>
+      <p class="text-muted small mb-3">Explore tier benefits, automated renewals, GST invoices, and guest pass privileges.</p>
+      <a href="{% url 'memberships:plan_list' %}" class="btn btn-sm btn-fn-outline">Explore Plans</a>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="fn-card p-4 text-center h-100">
+      <div class="fn-stat-icon-wrapper mx-auto mb-3" style="background: rgba(59, 130, 246, 0.12); color: #3B82F6; width: 48px; height: 48px;">
+        <i data-lucide="message-square" style="width: 24px;"></i>
+      </div>
+      <h6 class="fw-bold text-dark mb-1">Direct Advisor Support</h6>
+      <p class="text-muted small mb-3">Need personalized assistance? Connect with our front-desk athletic concierge or submit a ticket.</p>
+      <a href="{% url 'dashboard:contact' %}" class="btn btn-sm btn-fn-outline">Contact Us</a>
+    </div>
+  </div>
+
+  <!-- Frequently Asked Questions Accordion -->
+  <div class="col-lg-10 mt-4">
+    <div class="fn-card p-4 p-md-5">
+      <h4 class="fw-bold text-dark mb-4 d-flex align-items-center gap-2">
+        <i data-lucide="help-circle" class="text-primary" style="width: 24px;"></i>
+        Frequently Asked Questions
+      </h4>
+
+      <div class="accordion accordion-flush" id="faqAccordion">
+        <!-- Q1 -->
+        <div class="accordion-item border-bottom py-2">
+          <h2 class="accordion-header" id="faqHead1">
+            <button class="accordion-button collapsed fw-bold text-dark bg-transparent shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse1">
+              How does the Smart Biometric Turnstile access work?
+            </button>
+          </h2>
+          <div id="faqCollapse1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body text-muted small pt-0">
+              When entering the facility, simply pause at the biometric scanner terminal. The AI camera detects your face geometry in under 0.5 seconds, matches it against your enrolled cryptographic face template in our database, and unlocks the entrance gate while logging your attendance.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q2 -->
+        <div class="accordion-item border-bottom py-2">
+          <h2 class="accordion-header" id="faqHead2">
+            <button class="accordion-button collapsed fw-bold text-dark bg-transparent shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse2">
+              Can I still check in if I haven't registered my face?
+            </button>
+          </h2>
+          <div id="faqCollapse2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body text-muted small pt-0">
+              Yes. You can use your digital QR pass from your Member Dashboard or mobile view. Present the QR code at the turnstile scanner for immediate access. Front desk staff can also enroll your face in less than 30 seconds at reception.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q3 -->
+        <div class="accordion-item border-bottom py-2">
+          <h2 class="accordion-header" id="faqHead3">
+            <button class="accordion-button collapsed fw-bold text-dark bg-transparent shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse3">
+              How do I upgrade or renew my membership subscription?
+            </button>
+          </h2>
+          <div id="faqCollapse3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body text-muted small pt-0">
+              Go to the <strong>Membership Plans</strong> page in the sidebar. Select your desired plan and click "Renew / Change Plan". Receipts with GST tax invoices are automatically generated and stored in your profile.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q4 -->
+        <div class="accordion-item py-2">
+          <h2 class="accordion-header" id="faqHead4">
+            <button class="accordion-button collapsed fw-bold text-dark bg-transparent shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse4">
+              How do I reserve slots for Cryo Spa or Sprint Turf sessions?
+            </button>
+          </h2>
+          <div id="faqCollapse4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body text-muted small pt-0">
+              Navigate to <strong>Gym Facilities & Zones</strong> in the sidebar. Choose the Recovery & Cryo Spa or Sprint Turf zone, select your preferred date and time slot, and confirm your reservation.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
