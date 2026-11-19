@@ -22,7 +22,7 @@ from .services import DashboardService
 
 def dashboard_index(request):
     if not request.user.is_authenticated:
-        return redirect('accounts:register')
+        return redirect('accounts:login')
 
     user = request.user
 

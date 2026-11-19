@@ -195,7 +195,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Authentication URLs
 LOGIN_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = 'dashboard:index'
-LOGOUT_REDIRECT_URL = 'accounts:register'
+LOGOUT_REDIRECT_URL = 'accounts:login'
 
 # High-Security Biometric Authentication Configuration
 FACE_BIOMETRIC_ENCRYPTION_KEY = os.environ.get(

@@ -352,6 +352,13 @@ def login_view(request):
                     return redirect(next_url)
                 return redirect('dashboard:index')
         else:
+            # If account does not exist in the system, redirect to Registration Page
+            account_exists = User.objects.filter(
+                Q(username__iexact=username) | Q(email__iexact=username)
+            ).exists()
+            if not account_exists:
+                messages.info(request, 'Your account is not registered. Please create a new account.')
+                return redirect('accounts:register')
             messages.error(request, 'Invalid email or password. Please try again.')
 
     return render(request, 'accounts/login.html', {'registered_flag': registered_flag})

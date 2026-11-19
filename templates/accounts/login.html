@@ -555,19 +555,24 @@
         </div>
         <h6 class="fw-bold text-danger mb-1">Face Not Recognized</h6>
         <p class="text-danger small mb-3" style="font-size: 0.84rem;">
-          Your account is not registered.
+          Your account is not registered. Redirecting to Registration...
         </p>
         <div class="d-grid gap-2">
-          <button type="button" class="btn btn-dark btn-sm rounded-3 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2" onclick="switchAuthMode('password')">
-            <i data-lucide="key-round" style="width: 15px;"></i> Login with Email and Password
-          </button>
-          <a href="{% url 'accounts:register' %}" class="btn btn-outline-danger btn-sm rounded-3 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2 text-decoration-none">
-            <i data-lucide="user-plus" style="width: 15px;"></i> Create New Account
+          <a href="{% url 'accounts:register' %}" class="btn btn-danger btn-sm rounded-3 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2 text-decoration-none">
+            <i data-lucide="user-plus" style="width: 15px;"></i> Go to Registration Page Now
           </a>
+          <button type="button" class="btn btn-outline-secondary btn-sm rounded-3 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2" onclick="switchAuthMode('password')">
+            <i data-lucide="key-round" style="width: 15px;"></i> Login with Password
+          </button>
         </div>
       </div>
     `;
     if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    // Auto-redirect unregistered visitor to Registration page after 2 seconds
+    setTimeout(() => {
+      window.location.href = "{% url 'accounts:register' %}";
+    }, 2000);
   }
 
   async function performDirectFaceScan(isManual = false) {

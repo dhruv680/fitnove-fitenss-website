@@ -40,11 +40,11 @@ class RoleBasedAccessControlTestCase(TestCase):
         self.admin = User.objects.create_user(username='admin_user', password='password123', organization=self.org, branch=self.branch, role=User.Role.GYM_ADMIN)
         self.member = User.objects.create_user(username='member_user', password='password123', organization=self.org, branch=self.branch, role=User.Role.MEMBER)
 
-    def test_unauthenticated_root_redirects_to_register(self):
-        # Homepage '/' must automatically redirect new unauthenticated visitors to Registration Page
+    def test_unauthenticated_root_redirects_to_login(self):
+        # Homepage '/' must automatically redirect unauthenticated visitors to Login Page
         response = self.client.get(reverse('dashboard:index'))
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse('accounts:register'))
+        self.assertEqual(response.url, reverse('accounts:login'))
 
     def test_unauthenticated_protected_page_redirects_to_login(self):
         # Internal role-protected page redirects to login
