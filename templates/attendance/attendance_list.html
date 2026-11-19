@@ -9,7 +9,11 @@
       <h2 class="fw-bold text-dark mb-1">Attendance & Daily Check-Ins</h2>
       <p class="text-muted small mb-0">Live gym floor attendance, QR verification records, and session durations.</p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex align-items-center gap-2">
+      <button type="button" class="btn btn-outline-danger d-flex align-items-center gap-2" onclick="triggerClearAllModal()" title="Permanently delete all attendance history">
+        <i data-lucide="trash-2" style="width: 17px; height: 17px;"></i>
+        <span>Clear All Logs</span>
+      </button>
       <a href="{% url 'attendance:scanner' %}" class="btn btn-fn-accent">
         <i data-lucide="scan-line" style="width: 18px;"></i>
         <span>Open QR Scanner</span>
@@ -78,11 +82,29 @@
   </form>
 </div>
 
+<!-- Floating / Inline Bulk Selection Bar -->
+<div id="bulkActionBar" class="alert alert-danger py-2 px-3 rounded-3 d-none align-items-center justify-content-between mb-3 shadow-sm border-danger-subtle bg-danger-subtle">
+  <div class="d-flex align-items-center gap-2 text-danger">
+    <i data-lucide="alert-circle" style="width: 20px; height: 20px; flex-shrink: 0;"></i>
+    <span class="fw-bold"><span id="selectedCountBadge">0</span> attendance log(s) selected</span>
+  </div>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="deselectAllRows()">Cancel Selection</button>
+    <button type="button" class="btn btn-sm btn-danger d-flex align-items-center gap-1 shadow-sm" onclick="triggerDeleteSelectedModal()">
+      <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+      <span>Delete Selected</span>
+    </button>
+  </div>
+</div>
+
 <!-- Table -->
 <div class="fn-table-responsive mb-4">
-  <table class="fn-table">
+  <table class="fn-table align-middle">
     <thead>
       <tr>
+        <th style="width: 40px;" class="text-center">
+          <input type="checkbox" class="form-check-input" id="masterSelectAll" onchange="toggleSelectAllRows(this)" title="Select all on this page" style="cursor: pointer;">
+        </th>
         <th>Athlete</th>
         <th>Member ID</th>
         <th>Date</th>
@@ -91,11 +113,15 @@
         <th>Duration</th>
         <th>Method</th>
         <th>Status</th>
+        <th class="text-end" style="min-width: 90px;">Action</th>
       </tr>
     </thead>
     <tbody>
       {% for att in page_obj %}
-      <tr>
+      <tr id="attendance-row-{{ att.id }}">
+        <td class="text-center">
+          <input type="checkbox" class="form-check-input attendance-item-check" value="{{ att.id }}" onchange="handleRowCheckboxChange()" style="cursor: pointer;">
+        </td>
         <td>
           <div class="d-flex align-items-center gap-2">
             <div class="fn-avatar" style="width: 32px; height: 32px; font-size: 0.8rem;">
@@ -123,10 +149,15 @@
           <span class="fn-badge fn-badge-accent">In Gym Now</span>
           {% endif %}
         </td>
+        <td class="text-end">
+          <button type="button" class="btn btn-sm btn-outline-danger p-1 px-2 rounded-2" onclick="triggerAttendanceDeleteModal('{{ att.id }}', '{{ att.member.full_name|escapejs }}', '{{ att.date|date:"M d, Y" }}', '{{ att.check_in_time|date:"h:i A" }}')" title="Delete this attendance record">
+            <i data-lucide="trash-2" style="width: 15px; height: 15px;"></i>
+          </button>
+        </td>
       </tr>
       {% empty %}
       <tr>
-        <td colspan="8">
+        <td colspan="10">
           <div class="fn-empty-state">
             <div class="fn-empty-icon"><i data-lucide="qr-code"></i></div>
             <h6 class="fw-bold">No Attendance Logs</h6>
@@ -153,5 +184,226 @@
   </ul>
 </nav>
 {% endif %}
+
+<!-- ==========================================================================
+     Single Attendance Record Delete Confirmation Modal
+     ========================================================================== -->
+<div class="modal fade" id="deleteAttendanceModal" tabindex="-1" aria-labelledby="deleteAttendanceModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header border-0 pb-0">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center pt-0 px-4">
+        <div class="mx-auto mb-3" style="width: 56px; height: 56px; background: rgba(239, 68, 68, 0.12); color: #EF4444; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="trash-2" style="width: 28px; height: 28px;"></i>
+        </div>
+        <h4 class="fw-bold text-dark mb-2">Delete Attendance Log?</h4>
+        <p class="text-muted small mb-3">
+          Are you sure you want to delete the attendance log for <strong class="text-dark" id="modalAthleteName">Athlete</strong> on <strong class="text-dark" id="modalRecordDate">Date</strong> (<span id="modalCheckInTime">Time</span>)?
+        </p>
+        <p class="small text-danger mb-0">This record will be permanently deleted from the database.</p>
+      </div>
+      <div class="modal-footer border-0 pt-2 px-4 pb-4 justify-content-center gap-2">
+        <button type="button" class="btn btn-fn-outline" data-bs-dismiss="modal">Cancel</button>
+        <form id="singleDeleteForm" method="POST" action="">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger d-flex align-items-center gap-1 shadow-sm">
+            <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+            <span>Confirm Delete</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==========================================================================
+     Bulk Delete Selected Attendance Modal
+     ========================================================================== -->
+<div class="modal fade" id="bulkDeleteAttendanceModal" tabindex="-1" aria-labelledby="bulkDeleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header border-0 pb-0">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center pt-0 px-4">
+        <div class="mx-auto mb-3" style="width: 56px; height: 56px; background: rgba(239, 68, 68, 0.12); color: #EF4444; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="alert-triangle" style="width: 28px; height: 28px;"></i>
+        </div>
+        <h4 class="fw-bold text-dark mb-2">Delete Selected Records?</h4>
+        <p class="text-muted small mb-2">
+          You are about to delete <strong class="text-danger fs-5" id="bulkDeleteCountText">0</strong> selected attendance logs.
+        </p>
+        <p class="small text-muted mb-0">These logs will be permanently removed and cannot be restored.</p>
+      </div>
+      <div class="modal-footer border-0 pt-2 px-4 pb-4 justify-content-center gap-2">
+        <button type="button" class="btn btn-fn-outline" data-bs-dismiss="modal">Cancel</button>
+        <form id="bulkDeleteForm" method="POST" action="{% url 'attendance:attendance_bulk_delete' %}">
+          {% csrf_token %}
+          <div id="bulkDeleteHiddenInputs"></div>
+          <button type="submit" class="btn btn-danger d-flex align-items-center gap-1 shadow-sm">
+            <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+            <span>Delete Selected Logs</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==========================================================================
+     Clear All Attendance Records Modal
+     ========================================================================== -->
+<div class="modal fade" id="clearAllAttendanceModal" tabindex="-1" aria-labelledby="clearAllModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header border-0 pb-0">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center pt-0 px-4">
+        <div class="mx-auto mb-3" style="width: 60px; height: 60px; background: rgba(239, 68, 68, 0.15); color: #DC2626; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="alert-octagon" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h4 class="fw-bold text-dark mb-2">Clear ALL Attendance History?</h4>
+        <p class="text-muted small mb-3">
+          This action will permanently delete <strong class="text-danger">ALL attendance records</strong> across your gym. This includes both past and current check-in sessions.
+        </p>
+        <div class="alert alert-warning py-2 px-3 small text-start rounded-3 mb-0">
+          <i data-lucide="info" style="width: 16px; margin-right: 4px; vertical-align: middle;"></i>
+          <strong>Notice:</strong> This action cannot be reversed. Member profiles and subscriptions will not be deleted.
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-2 px-4 pb-4 justify-content-center gap-2">
+        <button type="button" class="btn btn-fn-outline" data-bs-dismiss="modal">Cancel</button>
+        <form method="POST" action="{% url 'attendance:attendance_bulk_delete' %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="all">
+          <button type="submit" class="btn btn-danger fw-semibold d-flex align-items-center gap-1 shadow-sm">
+            <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+            <span>Yes, Delete All Attendance Logs</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+  }
+
+  // Single Delete Modal Handler
+  function triggerAttendanceDeleteModal(attId, athleteName, recordDate, checkInTime) {
+    const modalEl = document.getElementById('deleteAttendanceModal');
+    if (!modalEl) return;
+
+    const form = document.getElementById('singleDeleteForm');
+    const nameEl = document.getElementById('modalAthleteName');
+    const dateEl = document.getElementById('modalRecordDate');
+    const timeEl = document.getElementById('modalCheckInTime');
+
+    if (form) form.action = `/attendance/delete/${attId}/`;
+    if (nameEl) nameEl.textContent = athleteName;
+    if (dateEl) dateEl.textContent = recordDate;
+    if (timeEl) timeEl.textContent = checkInTime;
+
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  // Clear All Modal Handler
+  function triggerClearAllModal() {
+    const modalEl = document.getElementById('clearAllAttendanceModal');
+    if (!modalEl) return;
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  // Checkbox Selection & Bulk Delete Handlers
+  function getSelectedCheckboxValues() {
+    const checkboxes = document.querySelectorAll('.attendance-item-check:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
+  }
+
+  function handleRowCheckboxChange() {
+    const selected = getSelectedCheckboxValues();
+    const count = selected.length;
+    const bar = document.getElementById('bulkActionBar');
+    const badge = document.getElementById('selectedCountBadge');
+    const master = document.getElementById('masterSelectAll');
+    const allRowBoxes = document.querySelectorAll('.attendance-item-check');
+
+    if (badge) badge.textContent = count;
+
+    if (bar) {
+      if (count > 0) {
+        bar.classList.remove('d-none');
+        bar.classList.add('d-flex');
+      } else {
+        bar.classList.remove('d-flex');
+        bar.classList.add('d-none');
+      }
+    }
+
+    if (master && allRowBoxes.length > 0) {
+      master.checked = (count === allRowBoxes.length);
+      master.indeterminate = (count > 0 && count < allRowBoxes.length);
+    }
+  }
+
+  function toggleSelectAllRows(masterCheckbox) {
+    const isChecked = masterCheckbox.checked;
+    const checkboxes = document.querySelectorAll('.attendance-item-check');
+    checkboxes.forEach(cb => {
+      cb.checked = isChecked;
+    });
+    handleRowCheckboxChange();
+  }
+
+  function deselectAllRows() {
+    const master = document.getElementById('masterSelectAll');
+    if (master) {
+      master.checked = false;
+      master.indeterminate = false;
+    }
+    const checkboxes = document.querySelectorAll('.attendance-item-check');
+    checkboxes.forEach(cb => {
+      cb.checked = false;
+    });
+    handleRowCheckboxChange();
+  }
+
+  function triggerDeleteSelectedModal() {
+    const selected = getSelectedCheckboxValues();
+    if (selected.length === 0) return;
+
+    const modalEl = document.getElementById('bulkDeleteAttendanceModal');
+    const countText = document.getElementById('bulkDeleteCountText');
+    const container = document.getElementById('bulkDeleteHiddenInputs');
+
+    if (countText) countText.textContent = selected.length;
+
+    if (container) {
+      container.innerHTML = '';
+      selected.forEach(id => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'selected_ids';
+        input.value = id;
+        container.appendChild(input);
+      });
+    }
+
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+</script>
 {% endblock %}
 

@@ -314,5 +314,90 @@ class FaceRecognitionTestCase(TestCase):
         self.assertIn('Unregistered Face', data['message'])
 
 
+class AttendanceDeletionTestCase(TestCase):
+    def setUp(self):
+        from django.test import Client
+        from django.urls import reverse
+        self.client = Client()
+        self.org = GymOrganization.objects.create(name='Delete Test Gym', slug='del-gym', phone='1234567890')
+        self.branch = GymBranch.objects.create(organization=self.org, name='Main Branch', code='DEL-01', phone='1234567890')
+        self.admin = User.objects.create_user(username='del_admin', password='password123', organization=self.org, branch=self.branch, role=User.Role.GYM_ADMIN)
+        self.member_user = User.objects.create_user(username='del_member', password='password123', organization=self.org, branch=self.branch, role=User.Role.MEMBER)
+        self.member = Member.objects.create(
+            user=self.member_user,
+            organization=self.org,
+            branch=self.branch,
+            member_id='FN-DEL-001',
+            status=Member.Status.ACTIVE
+        )
+        # Create 3 attendance records
+        self.att1 = Attendance.objects.create(
+            member=self.member,
+            branch=self.branch,
+            date=timezone.now().date(),
+            check_in_time=timezone.now(),
+            status=Attendance.Status.PRESENT,
+            method=Attendance.CheckInMethod.QR_CODE
+        )
+        self.att2 = Attendance.objects.create(
+            member=self.member,
+            branch=self.branch,
+            date=timezone.now().date() - timezone.timedelta(days=1),
+            check_in_time=timezone.now() - timezone.timedelta(days=1),
+            status=Attendance.Status.CHECKED_OUT,
+            method=Attendance.CheckInMethod.QR_CODE
+        )
+        self.att3 = Attendance.objects.create(
+            member=self.member,
+            branch=self.branch,
+            date=timezone.now().date() - timezone.timedelta(days=2),
+            check_in_time=timezone.now() - timezone.timedelta(days=2),
+            status=Attendance.Status.CHECKED_OUT,
+            method=Attendance.CheckInMethod.FACE_RECOGNITION
+        )
+
+    def test_single_attendance_delete(self):
+        self.client.login(username='del_admin', password='password123')
+        att_id = self.att1.id
+        response = self.client.post(f'/attendance/delete/{att_id}/')
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Attendance.objects.filter(id=att_id).exists())
+        self.assertEqual(Attendance.objects.filter(member=self.member).count(), 2)
+
+    def test_single_attendance_delete_ajax(self):
+        self.client.login(username='del_admin', password='password123')
+        att_id = self.att2.id
+        response = self.client.post(
+            f'/attendance/delete/{att_id}/',
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['success'])
+        self.assertFalse(Attendance.objects.filter(id=att_id).exists())
+
+    def test_bulk_delete_selected_records(self):
+        self.client.login(username='del_admin', password='password123')
+        ids = [self.att1.id, self.att2.id]
+        response = self.client.post('/attendance/bulk-delete/', {'selected_ids': ids})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Attendance.objects.filter(member=self.member).count(), 1)
+        self.assertTrue(Attendance.objects.filter(id=self.att3.id).exists())
+
+    def test_clear_all_attendance_logs(self):
+        self.client.login(username='del_admin', password='password123')
+        self.assertEqual(Attendance.objects.filter(member=self.member).count(), 3)
+        response = self.client.post('/attendance/bulk-delete/', {'action': 'all'})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Attendance.objects.filter(member=self.member).count(), 0)
+
+    def test_unauthorized_member_cannot_delete(self):
+        # Gym members without staff/admin permissions cannot delete attendance
+        self.client.login(username='del_member', password='password123')
+        response = self.client.post(f'/attendance/delete/{self.att1.id}/')
+        self.assertEqual(response.status_code, 302)
+        # Verify record still exists
+        self.assertTrue(Attendance.objects.filter(id=self.att1.id).exists())
+
+
 
 

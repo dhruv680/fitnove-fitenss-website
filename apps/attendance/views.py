@@ -85,6 +85,88 @@ def attendance_list(request):
 
 @login_required
 @staff_or_admin
+def attendance_delete(request, pk):
+    """
+    Manually deletes a single attendance log.
+    Ensures permission scoping (only within user's organization unless super admin).
+    """
+    if request.method != 'POST':
+        messages.error(request, 'Invalid request method for record deletion.')
+        return redirect('attendance:attendance_list')
+
+    scoped_attendance = AttendanceService.get_scoped_attendance(request.user)
+    attendance = get_object_or_404(scoped_attendance, pk=pk)
+    member_name = attendance.member.full_name
+    record_date = attendance.date.strftime('%b %d, %Y')
+
+    attendance.delete()
+
+    is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or (
+        request.content_type and 'application/json' in request.content_type.lower()
+    )
+    if is_ajax:
+        return JsonResponse({
+            'success': True,
+            'message': f'Attendance log for {member_name} on {record_date} has been deleted successfully.'
+        })
+
+    messages.success(request, f'Attendance log for {member_name} on {record_date} has been deleted successfully.')
+    return redirect('attendance:attendance_list')
+
+
+@login_required
+@staff_or_admin
+def attendance_bulk_delete(request):
+    """
+    Bulk deletes selected attendance logs or all attendance logs for the organization.
+    Supports single-click 'Clear All Records' and multi-selected checkbox records.
+    """
+    if request.method != 'POST':
+        messages.error(request, 'Invalid request method.')
+        return redirect('attendance:attendance_list')
+
+    scoped_attendance = AttendanceService.get_scoped_attendance(request.user)
+    action = request.POST.get('action', '').strip()
+    is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or (
+        request.content_type and 'application/json' in request.content_type.lower()
+    )
+
+    if action == 'all':
+        count = scoped_attendance.count()
+        scoped_attendance.delete()
+        msg = f'All attendance records ({count} logs) have been permanently deleted.'
+        if is_ajax:
+            return JsonResponse({'success': True, 'message': msg, 'deleted_count': count})
+        messages.success(request, msg)
+        return redirect('attendance:attendance_list')
+
+    # Selected IDs
+    ids = request.POST.getlist('selected_ids')
+    if not ids:
+        raw_ids = request.POST.get('ids', '').strip()
+        if raw_ids:
+            ids = [i.strip() for i in raw_ids.split(',') if i.strip().isdigit()]
+
+    if not ids:
+        msg = 'No attendance records were selected for deletion.'
+        if is_ajax:
+            return JsonResponse({'success': False, 'message': msg}, status=400)
+        messages.warning(request, msg)
+        return redirect('attendance:attendance_list')
+
+    records_to_delete = scoped_attendance.filter(pk__in=ids)
+    count = records_to_delete.count()
+    records_to_delete.delete()
+
+    msg = f'{count} attendance record(s) deleted successfully.'
+    if is_ajax:
+        return JsonResponse({'success': True, 'message': msg, 'deleted_count': count})
+    messages.success(request, msg)
+    return redirect('attendance:attendance_list')
+
+
+@login_required
+@staff_or_admin
 def attendance_scanner(request):
     from apps.members.services import MemberService
     scoped_members = MemberService.get_scoped_members(request.user)
