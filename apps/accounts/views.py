@@ -273,15 +273,21 @@ def api_face_enroll(request):
 
     if success:
         # Clean up registration enrollment session
+        was_authenticated = request.user.is_authenticated
         request.session.pop('face_enroll_user_id', None)
-        # Log the user in directly with biometric verification flag
-        if not request.user.is_authenticated:
-            login(request, target_user, backend='django.contrib.auth.backends.ModelBackend')
-            request.session['face_authenticated'] = True
-        redirect_url = reverse('dashboard:index')
+
+        if was_authenticated:
+            # User was already logged in (e.g. updating biometrics from profile)
+            redirect_url = reverse('dashboard:index')
+            msg = 'Face Biometrics Enrolled & Encrypted! Welcome to FitNova.'
+        else:
+            # Registration complete: redirect user to Login Page so they authenticate with their face to enter
+            redirect_url = reverse('accounts:login') + '?registered=1'
+            msg = 'Face registered successfully! Please look at the camera to log in with Face ID.'
+
         return JsonResponse({
             'success': True,
-            'message': 'Face Biometrics Enrolled & Encrypted! Welcome to FitNova.',
+            'message': msg,
             'redirect_url': redirect_url
         })
     else:

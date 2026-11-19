@@ -109,11 +109,11 @@ class RegistrationAndFaceAuthTestCase(TestCase):
         self.assertEqual(user.role, 'MEMBER')
         self.assertEqual(user.gender, 'MALE')
 
-        # Direct face detection & enrollment immediately authenticates user to dashboard
+        # Direct face detection & enrollment redirects user to login page with registered flag
         img_b64 = generate_test_face_image_base64()
         enroll_resp = self.client.post(reverse('accounts:api_face_enroll'), data={'image': img_b64})
         self.assertEqual(enroll_resp.status_code, 200)
-        self.assertEqual(enroll_resp.json()['redirect_url'], reverse('dashboard:index'))
+        self.assertEqual(enroll_resp.json()['redirect_url'], reverse('accounts:login') + '?registered=1')
 
     def test_registration_duplicate_username_fails(self):
         User.objects.create_user(username='taken_user', email='first@fitnova.com', password='password123')
@@ -347,4 +347,4 @@ class RegistrationAndFaceAuthTestCase(TestCase):
         self.assertTrue(prof.encrypted_template.startswith('gAAAAA'))
         decrypted = FaceAuthService.decrypt_biometric_data(prof.encrypted_template)
         self.assertEqual(decrypted['user_id'], user.id)
-        self.assertEqual(len(decrypted['features']), 128)
+        self.assertEqual(len(decrypted['features']), 320)
