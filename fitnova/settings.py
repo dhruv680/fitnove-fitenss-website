@@ -137,8 +137,13 @@ DB_PASSWORD = os.environ.get('DB_PASSWORD', '').strip()
 USE_SQLITE = os.environ.get('USE_SQLITE', 'False').lower() in ('true', '1', 'yes')
 
 if DATABASE_URL:
+    is_cloud_db = 'render.com' in DATABASE_URL or 'neon.tech' in DATABASE_URL or 'supabase.co' in DATABASE_URL or bool(os.environ.get('RENDER_EXTERNAL_HOSTNAME'))
     DATABASES = {
-        'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
+        'default': dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=is_cloud_db
+        )
     }
 elif not USE_SQLITE and DB_PASSWORD:
     DATABASES = {
