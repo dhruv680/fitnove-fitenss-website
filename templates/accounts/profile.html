@@ -83,6 +83,131 @@
       </form>
     </div>
 
+    <!-- Biometric Face Authentication & Privacy Management -->
+    <div class="fn-card mb-4">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <div class="d-flex align-items-center gap-2">
+          <div class="p-2 rounded-3" style="background: rgba(118, 87, 232, 0.12); color: #7657E8;">
+            <i data-lucide="scan-face" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div>
+            <h5 class="fn-card-title mb-0">Biometric Face Authentication</h5>
+            <p class="text-muted small mb-0">Manage passwordless face login and encrypted biometric credentials.</p>
+          </div>
+        </div>
+        {% if profile_user.has_face_enrolled %}
+        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 small fw-semibold">
+          <i data-lucide="shield-check" style="width: 14px; margin-top: -2px;"></i> Active & Encrypted (AES-256)
+        </span>
+        {% else %}
+        <span class="badge bg-secondary-subtle text-secondary px-3 py-2 small fw-semibold">
+          <i data-lucide="shield-alert" style="width: 14px; margin-top: -2px;"></i> Not Enrolled
+        </span>
+        {% endif %}
+      </div>
+
+      <div class="p-3 rounded-3 mb-3" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
+        {% if profile_user.has_face_enrolled %}
+        <div class="row g-3 small">
+          <div class="col-sm-4">
+            <span class="text-muted d-block">Enrolled Date:</span>
+            <span class="fw-bold text-dark">{{ profile_user.face_auth_profile.enrolled_at|date:"M d, Y, h:i A" }}</span>
+          </div>
+          <div class="col-sm-4">
+            <span class="text-muted d-block">Last Authenticated:</span>
+            <span class="fw-bold text-dark">{{ profile_user.face_auth_profile.last_authenticated_at|date:"M d, Y, h:i A"|default:"Never" }}</span>
+          </div>
+          <div class="col-sm-4">
+            <span class="text-muted d-block">Liveness & Quality:</span>
+            <span class="fw-bold text-success">{{ profile_user.face_auth_profile.quality_score|floatformat:1 }}% Verified</span>
+          </div>
+        </div>
+        {% else %}
+        <p class="small text-muted mb-0">
+          You currently have no face biometric profile enrolled. Register your face to enable instant, 1-click passwordless login on FitNova.
+        </p>
+        {% endif %}
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div class="small text-muted d-flex align-items-center gap-1">
+          <i data-lucide="lock" style="width: 13px; color: #10B981;"></i> Biometric data is encrypted at rest using AES-256 Fernet.
+        </div>
+        <div class="d-flex gap-2">
+          {% if profile_user.has_face_enrolled %}
+          <button type="button" class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1" onclick="showRemoveFaceModal()">
+            <i data-lucide="trash-2" style="width: 14px;"></i> Remove Face
+          </button>
+          <a href="{% url 'accounts:face_enroll' %}" class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1">
+            <i data-lucide="refresh-cw" style="width: 14px;"></i> Re-Register Face
+          </a>
+          {% else %}
+          <a href="{% url 'accounts:face_enroll' %}" class="btn btn-fn-primary btn-sm d-flex align-items-center gap-1">
+            <i data-lucide="scan-face" style="width: 15px;"></i> Enroll Face Biometrics Now
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Remove Biometrics Confirmation Modal -->
+    <div class="modal fade" id="removeFaceModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 p-3">
+          <div class="modal-header border-0 pb-0">
+            <h5 class="fw-bold text-danger"><i data-lucide="alert-triangle" class="me-1"></i> Remove Biometric Profile?</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body small text-muted">
+            <p>Are you sure you want to permanently delete your facial biometric template from FitNova?</p>
+            <p class="mb-0">Once deleted, you will need to sign in using your username and password, or re-enroll a new face profile.</p>
+          </div>
+          <div class="modal-footer border-0 pt-0 d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm flex-fill" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-danger btn-sm flex-fill" onclick="confirmRemoveFace()">Permanently Delete Biometrics</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function showRemoveFaceModal() {
+        const modalEl = document.getElementById('removeFaceModal');
+        if (modalEl) {
+          const modal = new bootstrap.Modal(modalEl);
+          modal.show();
+        }
+      }
+
+      async function confirmRemoveFace() {
+        const match = document.cookie.match(/csrftoken=([^;]+)/);
+        const csrfToken = match ? decodeURIComponent(match[1]) : '{{ csrf_token }}';
+
+        try {
+          const resp = await fetch("{% url 'accounts:api_face_remove' %}", {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'X-CSRFToken': csrfToken
+            },
+            body: new URLSearchParams({
+              'csrfmiddlewaretoken': csrfToken
+            })
+          });
+          const data = await resp.json();
+          if (data.success) {
+            window.location.reload();
+          } else {
+            alert(data.message || 'Error deleting biometric profile.');
+          }
+        } catch (err) {
+          console.error(err);
+          alert('Network error while deleting biometric data.');
+        }
+      }
+    </script>
+
     <div class="fn-card">
       <h5 class="fn-card-title mb-3">Change Account Password</h5>
       <form method="POST" action="{% url 'accounts:change_password' %}">

@@ -422,12 +422,49 @@ def api_direct_face_login(request):
         except Exception:
             raw_desc = None
 
-    matched_user, confidence, message = FaceAuthService.identify_user_face(
-        image_data,
-        descriptor=raw_desc,
-        ip_address=ip_address,
-        user_agent=user_agent
-    )
+    identifier = request.POST.get('identifier', '').strip()
+    if not identifier:
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            identifier = data.get('identifier', '').strip()
+        except Exception:
+            identifier = ''
+
+    if identifier:
+        from django.db.models import Q
+        target_account = User.objects.filter(
+            Q(username__iexact=identifier) | Q(email__iexact=identifier)
+        ).first()
+        if not target_account:
+            return JsonResponse({
+                'success': False,
+                'unknown_user': True,
+                'message': 'Account not registered. Please create a new account or check your username/email.',
+                'register_url': reverse('accounts:register')
+            }, status=401)
+
+        matched, confidence, message = FaceAuthService.verify_user_face(
+            target_account,
+            image_data,
+            descriptor=raw_desc,
+            ip_address=ip_address,
+            user_agent=user_agent
+        )
+        if matched:
+            matched_user = target_account
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': message or 'Face verification failed for this account.',
+                'confidence': confidence
+            }, status=401)
+    else:
+        matched_user, confidence, message = FaceAuthService.identify_user_face(
+            image_data,
+            descriptor=raw_desc,
+            ip_address=ip_address,
+            user_agent=user_agent
+        )
 
     if matched_user:
         login(request, matched_user, backend='django.contrib.auth.backends.ModelBackend')
@@ -590,6 +627,39 @@ def logout_view(request):
     logout(request)
     messages.info(request, 'You have been successfully logged out.')
     return redirect('accounts:register')
+
+
+@login_required
+@never_cache
+def api_remove_face(request):
+    """
+    User Privacy & Control: Securely purges user's biometric face template.
+    Allows re-enrollment or pure password authentication.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid HTTP method.'}, status=405)
+
+    user = request.user
+    if hasattr(user, 'face_auth_profile'):
+        profile = user.face_auth_profile
+        # Secure biometric deletion: clean image file if present
+        if profile.face_image:
+            try:
+                profile.face_image.delete(save=False)
+            except Exception:
+                pass
+        profile.delete()
+
+        FaceAuthService.log_security_event(
+            FaceAuthenticationLog.EventType.SUCCESS,
+            status='DELETED',
+            user=user,
+            reason="Biometric face profile securely purged by user."
+        )
+        messages.success(request, 'Your biometric face profile has been permanently and securely deleted.')
+        return JsonResponse({'success': True, 'message': 'Biometric profile securely removed.'})
+    else:
+        return JsonResponse({'success': False, 'message': 'No face biometric profile found.'}, status=404)
 
 
 

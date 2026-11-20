@@ -322,6 +322,17 @@
   <div id="paneFaceAuth" style="display: block;">
     <div id="faceAlertContainer"></div>
 
+    <!-- Registered Account Identifier (Optional for direct scan, or enter email/username for targeted verification) -->
+    <div class="mb-3">
+      <label class="fn-label small mb-1" for="faceAuthIdentifier">Registered Email or Username <span class="text-muted fw-normal">(Optional for instant scan)</span></label>
+      <div class="position-relative">
+        <input type="text" id="faceAuthIdentifier" class="fn-input-custom" placeholder="e.g. jessica@example.com or admin">
+        <span class="fn-input-icon">
+          <i data-lucide="user-check" style="width: 17px;"></i>
+        </span>
+      </div>
+    </div>
+
     <!-- Webcam Container -->
     <div class="webcam-viewport mb-3 is-scanning" id="webcamBox">
       <video id="faceVideo" autoplay playsinline muted></video>
@@ -629,6 +640,7 @@
         },
         body: new URLSearchParams({
           'image': base64Image,
+          'identifier': document.getElementById('faceAuthIdentifier')?.value.trim() || '',
           'csrfmiddlewaretoken': csrfVal
         })
       });

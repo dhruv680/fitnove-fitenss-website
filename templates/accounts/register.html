@@ -279,11 +279,21 @@
     </div>
 
     <!-- Terms and Conditions Checkbox -->
-    <div class="mb-3">
+    <div class="mb-2">
       <div class="form-check">
         <input class="form-check-input" type="checkbox" name="terms" id="regTerms" required checked style="cursor: pointer;">
         <label class="form-check-label small text-muted user-select-none" for="regTerms" style="font-size: 0.82rem; cursor: pointer;">
           I agree to the <a href="javascript:void(0)" class="fn-subtext-link" onclick="showTermsModal()">Terms of Service</a> & <a href="javascript:void(0)" class="fn-subtext-link" onclick="showTermsModal()">Privacy Policy</a>.
+        </label>
+      </div>
+    </div>
+
+    <!-- Biometric Processing Consent Checkbox -->
+    <div class="mb-3">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="biometric_consent" id="regBiometricConsent" required checked style="cursor: pointer;">
+        <label class="form-check-label small text-muted user-select-none" for="regBiometricConsent" style="font-size: 0.82rem; cursor: pointer;">
+          I give explicit consent for FitNova to securely process and store encrypted biometric facial templates (AES-256) for authentication.
         </label>
       </div>
     </div>
@@ -399,8 +409,14 @@
       e.preventDefault();
       return false;
     }
+    const bioConsent = document.getElementById('regBiometricConsent')?.checked;
     if (!terms) {
       showClientError('You must accept the Terms of Service to create an account.');
+      e.preventDefault();
+      return false;
+    }
+    if (!bioConsent) {
+      showClientError('You must provide biometric consent for facial authentication to continue.');
       e.preventDefault();
       return false;
     }

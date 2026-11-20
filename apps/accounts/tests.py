@@ -353,3 +353,44 @@ class RegistrationAndFaceAuthTestCase(TestCase):
         decrypted = FaceAuthService.decrypt_biometric_data(prof.encrypted_template)
         self.assertEqual(decrypted['user_id'], user.id)
         self.assertEqual(len(decrypted['features']), 320)
+
+    def test_direct_face_login_with_specific_identifier(self):
+        # Scenario: User specifies email/username before face verification
+        user = User.objects.create_user(username='targeted_user', email='targeted@fitnova.com', password='password123')
+        img_b64 = generate_test_face_image_base64()
+
+        session = self.client.session
+        session['face_enroll_user_id'] = user.id
+        session.save()
+        self.client.post(reverse('accounts:api_face_enroll'), data={'image': img_b64})
+        self.client.logout()
+
+        # Submit face with registered email
+        resp = self.client.post(reverse('accounts:api_direct_face_login'), data={
+            'image': img_b64,
+            'identifier': 'targeted@fitnova.com'
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.json()['success'])
+        self.assertEqual(resp.json()['username'], 'targeted_user')
+
+    def test_api_remove_face_profile(self):
+        # Scenario: User removes biometric face profile from their account
+        user = User.objects.create_user(username='removal_user', email='removal@fitnova.com', password='password123')
+        img_b64 = generate_test_face_image_base64()
+
+        session = self.client.session
+        session['face_enroll_user_id'] = user.id
+        session.save()
+        self.client.post(reverse('accounts:api_face_enroll'), data={'image': img_b64})
+
+        # Login and call remove endpoint
+        self.client.login(username='removal_user', password='password123')
+        self.assertTrue(user.has_face_enrolled)
+
+        del_resp = self.client.post(reverse('accounts:api_face_remove'))
+        self.assertEqual(del_resp.status_code, 200)
+        self.assertTrue(del_resp.json()['success'])
+
+        user.refresh_from_db()
+        self.assertFalse(user.has_face_enrolled)

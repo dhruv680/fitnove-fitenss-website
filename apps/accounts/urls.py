@@ -21,6 +21,7 @@ urlpatterns = [
     path('face-verify/', views.face_verify_view, name='face_verify'),
     path('api/face-verify/', views.api_face_verify, name='api_face_verify'),
     path('face-fallback/', views.face_fallback_view, name='face_fallback'),
+    path('api/face-remove/', views.api_remove_face, name='api_face_remove'),
     path('logout/', views.logout_view, name='logout'),
     path('profile/', views.profile_view, name='profile'),
     path('profile/change-password/', views.change_password_view, name='change_password'),
