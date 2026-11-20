@@ -513,7 +513,7 @@
         // Auto trigger detection after camera stream initializes
         autoScanTimer = setTimeout(() => {
           performDirectFaceScan(false);
-        }, 400);
+        }, 800);
       };
     } catch (err) {
       console.warn('Camera access unavailable:', err);
@@ -640,23 +640,23 @@
         faceSpinner.className = 'spinner-grow text-danger spinner-grow-sm';
 
         if (data.unknown_user) {
-          // Allow up to 4 scanning attempts so registered users have time to position their face properly
-          if (attemptCount < 4 && !isManual) {
+          // Allow up to 3 scanning attempts with comfortable delay so registered users have time to position their face properly
+          if (attemptCount < 3 && !isManual) {
             scannerRing.className = 'face-scanner-frame scanning';
-            faceStatusMsg.textContent = `Scanning live (Attempt ${attemptCount}/4)... Looking for registered account`;
+            faceStatusMsg.textContent = `Scanning live (Attempt ${attemptCount}/3)... Looking for registered account`;
             faceSpinner.className = 'spinner-grow text-primary spinner-grow-sm';
             isScanning = false;
             btnScanFace.disabled = false;
             btnScanText.textContent = 'Scan & Authenticate Now';
 
-            // Auto-scan next frame quickly in 450ms
+            // Auto-scan next frame after 1200ms
             autoScanTimer = setTimeout(() => {
               performDirectFaceScan(false);
-            }, 450);
+            }, 1200);
             return;
           }
 
-          // If 4 attempts completed and still not recognized, user is genuinely unregistered
+          // If 3 attempts completed and still not recognized, user is genuinely unregistered
           clearTimeout(autoScanTimer);
           scannerRing.className = 'face-scanner-frame new-user';
           faceStatusMsg.textContent = 'New Athlete Detected! Redirecting to Registration Form...';
@@ -678,7 +678,7 @@
 
         if (data.locked) {
           clearTimeout(autoScanTimer);
-          showFaceAlert(data.message, 'warning');
+          showFaceAlert(`<strong>Access Temporarily Locked:</strong> ${data.message} <br><div class="mt-2"><button type="button" class="btn btn-sm btn-outline-dark" onclick="switchAuthMode('password')"><i data-lucide="key-round" style="width: 14px; margin-right: 4px;"></i> Sign in with Password</button></div>`, 'warning');
           btnScanFace.disabled = true;
           btnScanText.textContent = 'Locked Out';
           isScanning = false;

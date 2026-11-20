@@ -418,6 +418,22 @@
         }, 1100);
       } else {
         isCapturing = false;
+
+        if (data.is_duplicate) {
+          clearTimeout(autoCaptureTimer);
+          faceFrame.className = 'face-frame-overlay';
+          statusText.textContent = 'DUPLICATE FACE DETECTED!';
+          statusDot.style.background = '#EF4444';
+          captureBtn.disabled = true;
+          captureBtnText.textContent = 'Registration Blocked';
+          if (localStream) {
+            localStream.getTracks().forEach(t => t.stop());
+            localStream = null;
+          }
+          showAlert(`<strong>Duplicate Face Detected!</strong> ${data.message || 'This face is already registered with another account. One person cannot register multiple accounts.'} <br><div class="mt-2"><a href="${data.login_url || '{% url "accounts:login" %}'}" class="btn btn-sm btn-dark px-3 py-1 fw-semibold text-decoration-none">Go to Login Page</a></div>`, 'danger');
+          return;
+        }
+
         showAlert(data.message || 'Face detection check failed. Please ensure your face is inside the frame with good lighting.');
         captureBtn.disabled = false;
         captureBtnText.textContent = 'Capture Now (or wait for auto-capture)';

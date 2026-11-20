@@ -291,7 +291,13 @@ def api_face_enroll(request):
             'redirect_url': redirect_url
         })
     else:
-        return JsonResponse({'success': False, 'message': message}, status=400)
+        is_dup = 'already' in message.lower() or 'duplicate' in message.lower()
+        return JsonResponse({
+            'success': False,
+            'is_duplicate': is_dup,
+            'message': message,
+            'login_url': reverse('accounts:login')
+        }, status=400)
 
 
 def login_view(request):

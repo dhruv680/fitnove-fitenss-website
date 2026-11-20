@@ -36,9 +36,9 @@ class FaceAuthService:
 
     DESCRIPTOR_EUCLIDEAN_THRESHOLD = 0.58       # Max distance for client neural face descriptor
     VISUAL_COSINE_SIMILARITY_THRESHOLD = 0.52   # Fast, reliable threshold (same person > 0.55 to 0.99, strangers < 0.35)
-    DUPLICATE_SIMILARITY_THRESHOLD = 0.75       # Threshold to trigger duplicate face rejection
-    MIN_LAPLACIAN_VARIANCE = 20.0               # Minimum sharpness to reject blurry / paper printouts
-    MAX_GLARE_RATIO = 0.20                      # Max percentage of overexposed pixels (reject screen replays)
+    DUPLICATE_SIMILARITY_THRESHOLD = 0.50       # Prevent duplicate registration: strictly reject if face matches any account >= 50%
+    MIN_LAPLACIAN_VARIANCE = 10.0               # Minimum sharpness to reject blurry / paper printouts (tolerant for standard webcams)
+    MAX_GLARE_RATIO = 0.40                      # Max percentage of overexposed pixels (reject screen replays, tolerant of room background lighting)
 
     @staticmethod
     def crop_face_region(pil_image):
@@ -164,12 +164,18 @@ class FaceAuthService:
                 )
                 laplacian_score = float(np.var(lap))
 
-                # Check for screen glare (clamped whites)
-                white_pixels = np.sum(arr > 250)
-                glare_ratio = float(white_pixels) / float(arr.size)
+                # Check for screen glare on central facial region (clamped whites)
+                # Inspect central 60% of crop to avoid false alarms from bright background windows
+                ch, cw = arr.shape
+                y_start, y_end = int(ch * 0.2), int(ch * 0.8)
+                x_start, x_end = int(cw * 0.2), int(cw * 0.8)
+                center_arr = arr[y_start:y_end, x_start:x_end]
+
+                white_pixels = np.sum(center_arr > 250)
+                glare_ratio = float(white_pixels) / float(center_arr.size)
 
                 if glare_ratio > cls.MAX_GLARE_RATIO:
-                    return False, 30.0, 20.0, "Replay attack protection: Screen reflection/glare detected."
+                    return False, 30.0, 20.0, "Replay attack protection: Screen reflection/glare detected on face."
 
                 if laplacian_score < cls.MIN_LAPLACIAN_VARIANCE:
                     return False, 35.0, 25.0, "Liveness check failed: Image lacks 3D depth details (possible photo replay)."
@@ -364,11 +370,13 @@ class FaceAuthService:
         """
         Anti-Duplicate Security Check:
         Verifies that a face being registered does not already belong to an existing user.
+        Checks UserFaceProfile and MemberFaceProfile.
         Returns: (is_duplicate: bool, existing_username: str, similarity: float)
         """
         if not candidate_vector:
             return False, "", 0.0
 
+        # 1. Search UserFaceProfile records
         profiles = UserFaceProfile.objects.filter(is_active=True).select_related('user')
         if exclude_user_id:
             profiles = profiles.exclude(user_id=exclude_user_id)
@@ -391,9 +399,31 @@ class FaceAuthService:
                     if len(candidate_vector) == len(stored_vector):
                         sim = float(sum(a * b for a, b in zip(candidate_vector, stored_vector)))
                         if sim >= cls.DUPLICATE_SIMILARITY_THRESHOLD:
-                            return True, prof.user.username, round(sim * 100, 1)
+                            username = prof.user.get_full_name() or prof.user.username
+                            return True, username, round(sim * 100, 1)
                 except Exception:
                     pass
+
+        # 2. Search MemberFaceProfile records
+        try:
+            from apps.attendance.models import MemberFaceProfile
+            m_profiles = MemberFaceProfile.objects.filter(is_active=True).select_related('member', 'member__user')
+            if exclude_user_id:
+                m_profiles = m_profiles.exclude(member__user_id=exclude_user_id)
+
+            for mp in m_profiles:
+                if mp.feature_vector:
+                    try:
+                        stored_v = json.loads(mp.feature_vector)
+                        if len(candidate_vector) == len(stored_v):
+                            sim = float(sum(a * b for a, b in zip(candidate_vector, stored_v)))
+                            if sim >= cls.DUPLICATE_SIMILARITY_THRESHOLD:
+                                name = mp.member.user.username if (mp.member and mp.member.user) else mp.member.full_name
+                                return True, name, round(sim * 100, 1)
+                    except Exception:
+                        pass
+        except Exception:
+            pass
 
         return False, "", 0.0
 
@@ -441,7 +471,7 @@ class FaceAuthService:
                 agent=user_agent,
                 reason=f"Duplicate face detected matching account '{existing_user}' ({dup_sim}% match)"
             )
-            return False, "Security Notice: This face is already enrolled with an existing account. Duplicate face registration is prohibited."
+            return False, f"Security Notice: This face is already registered with account '{existing_user}'. Duplicate face registration is prohibited."
 
         # Save face image crop
         buf = io.BytesIO()
@@ -544,7 +574,9 @@ class FaceAuthService:
         # 3. Anti-Spoofing & Liveness
         is_valid, quality_score, liveness_score, liveness_reason = cls.check_liveness_and_anti_spoofing(pil_img)
         if not is_valid:
-            cls.record_failed_attempt(ip_address, "biometric_live")
+            # Only record failed attempt for explicit replay / attack, not for ambient lighting adjustments
+            if "attack" in liveness_reason.lower() or "replay" in liveness_reason.lower():
+                cls.record_failed_attempt(ip_address, "biometric_live")
             cls.log_security_event(
                 FaceAuthenticationLog.EventType.LIVENESS_FAILED,
                 status='DENIED',
