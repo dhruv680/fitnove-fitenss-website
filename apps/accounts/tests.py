@@ -318,6 +318,9 @@ class RegistrationAndFaceAuthTestCase(TestCase):
         resp2 = self.client.post(reverse('accounts:api_face_enroll'), data={'image': img_b64})
         self.assertEqual(resp2.status_code, 400)
         self.assertIn('Duplicate face registration is prohibited', resp2.json()['message'])
+        # Verify privacy protection: First person's account details/username must NEVER be leaked
+        self.assertNotIn('user_one', resp2.json()['message'])
+        self.assertNotIn('user1@fitnova.com', resp2.json()['message'])
 
     def test_rate_limiting_lockout_after_repeated_failures(self):
         # Scenario 7: Rate Limiting & Account Lockout

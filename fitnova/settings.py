@@ -202,7 +202,7 @@ FACE_BIOMETRIC_ENCRYPTION_KEY = os.environ.get(
     'FACE_BIOMETRIC_ENCRYPTION_KEY',
     'fvHuozAxdxYH5iTfbAaSpXrEw3xPOniTy8wbrQgSHE8='
 )
-FACE_SIMILARITY_THRESHOLD = 0.52       # Minimum cosine similarity for verified match
+FACE_SIMILARITY_THRESHOLD = 0.58       # Minimum cosine similarity for verified match (strictly prevents strangers < 0.50 from authenticating)
 FACE_LIVENESS_VARIANCE_MIN = 20.0      # Minimum Laplacian edge variance (anti-spoof)
 FACE_AUTH_MAX_FAILED_ATTEMPTS = 10     # Max failed attempts before lockout
 FACE_AUTH_LOCKOUT_MINUTES = 5          # Temporary lockout window

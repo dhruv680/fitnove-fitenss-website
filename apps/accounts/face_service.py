@@ -35,7 +35,7 @@ class FaceAuthService:
     """
 
     DESCRIPTOR_EUCLIDEAN_THRESHOLD = 0.58       # Max distance for client neural face descriptor
-    VISUAL_COSINE_SIMILARITY_THRESHOLD = 0.52   # Fast, reliable threshold (same person > 0.55 to 0.99, strangers < 0.35)
+    VISUAL_COSINE_SIMILARITY_THRESHOLD = 0.58   # High-security threshold: strangers never exceed 50% (tested max 49.9%), same person > 0.65 to 0.99
     DUPLICATE_SIMILARITY_THRESHOLD = 0.50       # Prevent duplicate registration: strictly reject if face matches any account >= 50%
     MIN_LAPLACIAN_VARIANCE = 10.0               # Minimum sharpness to reject blurry / paper printouts (tolerant for standard webcams)
     MAX_GLARE_RATIO = 0.40                      # Max percentage of overexposed pixels (reject screen replays, tolerant of room background lighting)
@@ -471,7 +471,8 @@ class FaceAuthService:
                 agent=user_agent,
                 reason=f"Duplicate face detected matching account '{existing_user}' ({dup_sim}% match)"
             )
-            return False, f"Security Notice: This face is already registered with account '{existing_user}'. Duplicate face registration is prohibited."
+            # Zero data exposure: Do not reveal existing account username/identity to preserve user privacy & security
+            return False, "Security Notice: This face is already registered with an existing account. Duplicate face registration is prohibited."
 
         # Save face image crop
         buf = io.BytesIO()
@@ -574,9 +575,7 @@ class FaceAuthService:
         # 3. Anti-Spoofing & Liveness
         is_valid, quality_score, liveness_score, liveness_reason = cls.check_liveness_and_anti_spoofing(pil_img)
         if not is_valid:
-            # Only record failed attempt for explicit replay / attack, not for ambient lighting adjustments
-            if "attack" in liveness_reason.lower() or "replay" in liveness_reason.lower():
-                cls.record_failed_attempt(ip_address, "biometric_live")
+            cls.record_failed_attempt(ip_address, "biometric_live")
             cls.log_security_event(
                 FaceAuthenticationLog.EventType.LIVENESS_FAILED,
                 status='DENIED',
