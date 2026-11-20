@@ -40,6 +40,10 @@ CSRF_TRUSTED_ORIGINS = [
     'https://*.onrender.com',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
+    'http://localhost:8080',
+    'http://127.0.0.1:8080',
+    'http://localhost',
+    'http://127.0.0.1',
 ]
 
 if not DEBUG:
@@ -209,7 +213,7 @@ FACE_AUTH_LOCKOUT_MINUTES = 5          # Temporary lockout window
 
 # Enterprise Session & Cookie Security
 SESSION_COOKIE_HTTPONLY = True
-CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False          # False allows client-side JS / AJAX to read fresh CSRF token from cookie
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_AGE = 1209600           # 2-week secure session persistence

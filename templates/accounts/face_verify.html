@@ -279,14 +279,23 @@
     const base64Image = canvas.toDataURL('image/jpeg', 0.90);
 
     try {
+      const csrfVal = (function() {
+        const match = document.cookie.match(/csrftoken=([^;]+)/);
+        if (match) return decodeURIComponent(match[1]);
+        const input = document.querySelector('input[name="csrfmiddlewaretoken"]');
+        if (input && input.value) return input.value;
+        return '{{ csrf_token }}';
+      })();
+
       const response = await fetch("{% url 'accounts:api_face_verify' %}", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'X-CSRFToken': '{{ csrf_token }}'
+          'X-CSRFToken': csrfVal
         },
         body: new URLSearchParams({
-          'image': base64Image
+          'image': base64Image,
+          'csrfmiddlewaretoken': csrfVal
         })
       });
 

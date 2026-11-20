@@ -473,6 +473,22 @@
 
   const faceAuthHeaderBadge = document.getElementById('faceAuthHeaderBadge');
 
+  function getCSRFToken() {
+    const match = document.cookie.match(/csrftoken=([^;]+)/);
+    if (match) return decodeURIComponent(match[1]);
+    const input = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    if (input && input.value) return input.value;
+    return '{{ csrf_token }}';
+  }
+
+  document.getElementById('loginForm')?.addEventListener('submit', function() {
+    const liveToken = getCSRFToken();
+    const csrfInput = this.querySelector('input[name="csrfmiddlewaretoken"]');
+    if (csrfInput && liveToken) {
+      csrfInput.value = liveToken;
+    }
+  });
+
   function switchAuthMode(mode) {
     if (mode === 'password') {
       paneFaceAuth.style.display = 'none';
@@ -604,14 +620,16 @@
     const base64Image = canvas.toDataURL('image/jpeg', 0.90);
 
     try {
+      const csrfVal = getCSRFToken();
       const response = await fetch("{% url 'accounts:api_direct_face_login' %}", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'X-CSRFToken': '{{ csrf_token }}'
+          'X-CSRFToken': csrfVal
         },
         body: new URLSearchParams({
-          'image': base64Image
+          'image': base64Image,
+          'csrfmiddlewaretoken': csrfVal
         })
       });
 

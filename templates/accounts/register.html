@@ -404,6 +404,17 @@
       e.preventDefault();
       return false;
     }
+
+    // Ensure live fresh CSRF token from cookie before submitting POST
+    const match = document.cookie.match(/csrftoken=([^;]+)/);
+    if (match) {
+      const liveToken = decodeURIComponent(match[1]);
+      const csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+      if (csrfInput && liveToken) {
+        csrfInput.value = liveToken;
+      }
+    }
+
     return true;
   }
 </script>

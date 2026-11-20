@@ -14,6 +14,8 @@ from django.utils.text import slugify
 from django.core.mail import send_mail
 from django.conf import settings
 from rest_framework import viewsets
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
+from django.views.decorators.cache import never_cache
 from .models import (
     User, GymOrganization, GymBranch, UserFaceProfile,
     FaceAuthenticationLog, FailedLoginAttempt, EmailVerificationOTP
@@ -22,6 +24,8 @@ from .face_service import FaceAuthService
 from .serializers import UserSerializer, GymOrganizationSerializer, GymBranchSerializer
 from .permissions import IsGymAdminUser, IsSuperAdminUser, admin_only
 
+@ensure_csrf_cookie
+@never_cache
 def register_view(request):
     """
     Step 1: User Registration with complete field validation.
@@ -172,6 +176,8 @@ def register_view(request):
     return render(request, 'accounts/register.html')
 
 
+@ensure_csrf_cookie
+@never_cache
 def face_enroll_view(request):
     """
     Step 2: Face Registration Page.
@@ -300,6 +306,8 @@ def api_face_enroll(request):
         }, status=400)
 
 
+@ensure_csrf_cookie
+@never_cache
 def login_view(request):
     """
     Login view supporting Email/Username + Password.
@@ -456,6 +464,8 @@ def api_direct_face_login(request):
         }, status=401)
 
 
+@ensure_csrf_cookie
+@never_cache
 def face_verify_view(request):
     """
     Step 2 of Login: Automatic Biometric Face Verification page.
