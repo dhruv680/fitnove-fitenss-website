@@ -35,7 +35,7 @@ class FaceAuthService:
     """
 
     DESCRIPTOR_EUCLIDEAN_THRESHOLD = 0.58       # Max distance for client neural face descriptor
-    VISUAL_COSINE_SIMILARITY_THRESHOLD = 0.60   # Strictly discriminative threshold (same person > 0.80, different < 0.35)
+    VISUAL_COSINE_SIMILARITY_THRESHOLD = 0.52   # Fast, reliable threshold (same person > 0.55 to 0.99, strangers < 0.35)
     DUPLICATE_SIMILARITY_THRESHOLD = 0.75       # Threshold to trigger duplicate face rejection
     MIN_LAPLACIAN_VARIANCE = 20.0               # Minimum sharpness to reject blurry / paper printouts
     MAX_GLARE_RATIO = 0.20                      # Max percentage of overexposed pixels (reject screen replays)

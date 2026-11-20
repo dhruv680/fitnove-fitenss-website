@@ -509,11 +509,11 @@
       video.onloadedmetadata = () => {
         video.play();
         camPrompt.style.display = 'none';
-        faceStatusMsg.textContent = 'Face centered! Authenticating...';
-        // Auto trigger detection immediately after 350ms stabilization
+        faceStatusMsg.textContent = 'Position your face in the oval. Scanning...';
+        // Auto trigger detection after camera stream initializes
         autoScanTimer = setTimeout(() => {
           performDirectFaceScan(false);
-        }, 350);
+        }, 400);
       };
     } catch (err) {
       console.warn('Camera access unavailable:', err);
@@ -582,6 +582,10 @@
   async function performDirectFaceScan(isManual = false) {
     if (isScanning || hasVerified || !localStream || !video.videoWidth) return;
 
+    if (isManual) {
+      attemptCount = 0;
+    }
+
     isScanning = true;
     attemptCount += 1;
     faceAttemptBadge.textContent = `Attempt ${attemptCount}`;
@@ -636,6 +640,23 @@
         faceSpinner.className = 'spinner-grow text-danger spinner-grow-sm';
 
         if (data.unknown_user) {
+          // Allow up to 4 scanning attempts so registered users have time to position their face properly
+          if (attemptCount < 4 && !isManual) {
+            scannerRing.className = 'face-scanner-frame scanning';
+            faceStatusMsg.textContent = `Scanning live (Attempt ${attemptCount}/4)... Looking for registered account`;
+            faceSpinner.className = 'spinner-grow text-primary spinner-grow-sm';
+            isScanning = false;
+            btnScanFace.disabled = false;
+            btnScanText.textContent = 'Scan & Authenticate Now';
+
+            // Auto-scan next frame quickly in 450ms
+            autoScanTimer = setTimeout(() => {
+              performDirectFaceScan(false);
+            }, 450);
+            return;
+          }
+
+          // If 4 attempts completed and still not recognized, user is genuinely unregistered
           clearTimeout(autoScanTimer);
           scannerRing.className = 'face-scanner-frame new-user';
           faceStatusMsg.textContent = 'New Athlete Detected! Redirecting to Registration Form...';
