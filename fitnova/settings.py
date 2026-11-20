@@ -34,10 +34,13 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 render_hostname = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if render_hostname:
     ALLOWED_HOSTS.append(render_hostname)
+if 'fitnove-fitenss-website-2.onrender.com' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('fitnove-fitenss-website-2.onrender.com')
 ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS if host.strip()]
 
 CSRF_TRUSTED_ORIGINS = [
     'https://*.onrender.com',
+    'https://fitnove-fitenss-website-2.onrender.com',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
     'http://localhost:8080',
@@ -45,9 +48,15 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost',
     'http://127.0.0.1',
 ]
+if render_hostname:
+    origin = f'https://{render_hostname}'
+    if origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(origin)
+
+# Always trust the X-Forwarded-Proto header from Render / load balancers for HTTPS detection
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 if not DEBUG:
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True

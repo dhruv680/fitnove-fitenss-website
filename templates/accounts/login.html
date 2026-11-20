@@ -492,14 +492,6 @@
     return '{{ csrf_token }}';
   }
 
-  document.getElementById('loginForm')?.addEventListener('submit', function() {
-    const liveToken = getCSRFToken();
-    const csrfInput = this.querySelector('input[name="csrfmiddlewaretoken"]');
-    if (csrfInput && liveToken) {
-      csrfInput.value = liveToken;
-    }
-  });
-
   function switchAuthMode(mode) {
     if (mode === 'password') {
       paneFaceAuth.style.display = 'none';
@@ -645,7 +637,20 @@
         })
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get('content-type') || '';
+      let data;
+      if (contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        console.error('Non-JSON response from biometric endpoint:', response.status, text.slice(0, 300));
+        showFaceAlert(`Biometric service temporarily unavailable (${response.status}). Please try again or sign in with password.`, 'danger');
+        faceStatusMsg.textContent = `Server responded with status ${response.status}.`;
+        btnScanFace.disabled = false;
+        btnScanText.textContent = 'Retry Face Scan';
+        isScanning = false;
+        return;
+      }
 
       if (data.success) {
         hasVerified = true;
@@ -729,7 +734,7 @@
       }
     } catch (err) {
       console.error('Direct face login error:', err);
-      faceStatusMsg.textContent = 'Connection error during biometric authentication.';
+      faceStatusMsg.textContent = 'Biometric scan error. Please try again or switch to password.';
       btnScanFace.disabled = false;
       btnScanText.textContent = 'Retry Face Scan';
       isScanning = false;

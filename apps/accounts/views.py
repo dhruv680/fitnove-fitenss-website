@@ -14,7 +14,7 @@ from django.utils.text import slugify
 from django.core.mail import send_mail
 from django.conf import settings
 from rest_framework import viewsets
-from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect, csrf_exempt
 from django.views.decorators.cache import never_cache
 from .models import (
     User, GymOrganization, GymBranch, UserFaceProfile,
@@ -214,6 +214,8 @@ def face_enroll_view(request):
     })
 
 
+@csrf_exempt
+@never_cache
 def api_face_enroll(request):
     """
     API endpoint: Securely saves AES-256 encrypted facial feature vectors and descriptors.
@@ -378,6 +380,8 @@ def login_view(request):
     return render(request, 'accounts/login.html', {'registered_flag': registered_flag})
 
 
+@csrf_exempt
+@never_cache
 def api_direct_face_login(request):
     """
     Direct Face Authentication API (Option 1):
@@ -520,6 +524,8 @@ def face_verify_view(request):
     })
 
 
+@csrf_exempt
+@never_cache
 def api_face_verify(request):
     """
     API endpoint: Verifies captured camera face against pending user's enrolled biometric template.
@@ -629,6 +635,7 @@ def logout_view(request):
     return redirect('accounts:register')
 
 
+@csrf_exempt
 @login_required
 @never_cache
 def api_remove_face(request):

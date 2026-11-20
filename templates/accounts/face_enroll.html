@@ -409,7 +409,19 @@
         })
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get('content-type') || '';
+      let data;
+      if (contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        console.error('Non-JSON response from enrollment endpoint:', response.status, text.slice(0, 300));
+        showAlert(`Enrollment service responded with error (${response.status}). Please try again.`);
+        statusText.textContent = `Server responded with status ${response.status}.`;
+        isCapturing = false;
+        btnSnap.disabled = false;
+        return;
+      }
 
       if (data.success) {
         statusText.textContent = 'FACE REGISTRATION SUCCESSFUL!';
