@@ -137,6 +137,10 @@
       border: 3px solid #10B981;
       box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.5), 0 0 35px rgba(16, 185, 129, 0.65);
     }
+    .face-scanner-frame.new-user {
+      border: 3px solid #7C3AED;
+      box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.5), 0 0 35px rgba(124, 58, 237, 0.65);
+    }
     .face-scanner-frame.mismatch {
       border: 3px solid #EF4444;
       box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.5), 0 0 35px rgba(239, 68, 68, 0.65);
@@ -633,10 +637,21 @@
 
         if (data.unknown_user) {
           clearTimeout(autoScanTimer);
-          showUnknownPersonModal(data.message);
-          btnScanFace.disabled = false;
-          btnScanText.textContent = 'Retry Face Scan';
-          isScanning = false;
+          scannerRing.className = 'face-scanner-frame new-user';
+          faceStatusMsg.textContent = 'New Athlete Detected! Redirecting to Registration Form...';
+          faceSpinner.className = 'spinner-grow text-primary spinner-grow-sm';
+          faceAttemptBadge.textContent = 'New User';
+          faceAttemptBadge.className = 'badge bg-primary-subtle text-primary small';
+
+          showFaceAlert('<strong>New Athlete Detected!</strong> Your face is not registered yet. Redirecting to registration form...', 'info');
+
+          // Stop camera stream cleanly
+          stopCamera();
+
+          // Smooth redirect to registration form
+          setTimeout(() => {
+            window.location.href = data.redirect_url || "{% url 'accounts:register' %}?new_user=1";
+          }, 850);
           return;
         }
 

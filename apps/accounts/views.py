@@ -436,14 +436,17 @@ def api_direct_face_login(request):
             'redirect_url': next_url
         })
     else:
-        # Unknown Person or Failed Liveness (Requirement 2)
+        # Unknown Person / New User: Redirect to Registration Form
+        register_url = reverse('accounts:register') + '?new_user=1'
         return JsonResponse({
             'success': False,
             'unknown_user': True,
+            'is_new_user': True,
             'message': message or 'Face Not Recognized. Your account is not registered.',
             'confidence': confidence,
             'login_url': reverse('accounts:login'),
-            'register_url': reverse('accounts:register')
+            'register_url': register_url,
+            'redirect_url': register_url
         }, status=401)
 
 

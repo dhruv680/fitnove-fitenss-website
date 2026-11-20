@@ -277,9 +277,11 @@ class RegistrationAndFaceAuthTestCase(TestCase):
         data = response.json()
         self.assertFalse(data['success'])
         self.assertTrue(data['unknown_user'])
+        self.assertTrue(data.get('is_new_user'))
         self.assertEqual(data['message'], "Face Not Recognized. Your account is not registered.")
         self.assertIn('login_url', data)
         self.assertIn('register_url', data)
+        self.assertIn('redirect_url', data)
 
     def test_anti_spoofing_rejects_dark_image(self):
         # Scenario 4: Extreme darkness / invalid contrast

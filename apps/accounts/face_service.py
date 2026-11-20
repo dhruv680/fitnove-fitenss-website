@@ -666,7 +666,6 @@ class FaceAuthService:
 
         # 7. Unknown Face Branch (Requirement 2)
         else:
-            cls.record_failed_attempt(ip_address, "biometric_live")
             cls.log_security_event(
                 FaceAuthenticationLog.EventType.UNKNOWN_FACE,
                 status='DENIED',
