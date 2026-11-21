@@ -370,11 +370,21 @@ class FaceAuthService:
         """
         Anti-Duplicate Security Check:
         Verifies that a face being registered does not already belong to an existing user.
-        Checks UserFaceProfile and MemberFaceProfile.
+        Checks UserFaceProfile and MemberFaceProfile across both visual gradients and neural embeddings.
         Returns: (is_duplicate: bool, existing_username: str, similarity: float)
         """
         if not candidate_vector:
             return False, "", 0.0
+
+        cand_desc_norm = None
+        if candidate_descriptor and isinstance(candidate_descriptor, (list, tuple)) and len(candidate_descriptor) >= 64:
+            try:
+                raw_c = [float(x) for x in candidate_descriptor]
+                norm_c = math.sqrt(sum(x * x for x in raw_c))
+                if norm_c > 1e-6:
+                    cand_desc_norm = [x / norm_c for x in raw_c]
+            except Exception:
+                cand_desc_norm = None
 
         # 1. Search UserFaceProfile records
         profiles = UserFaceProfile.objects.filter(is_active=True).select_related('user')
@@ -383,10 +393,12 @@ class FaceAuthService:
 
         for prof in profiles:
             stored_vector = None
+            stored_desc = None
             if prof.encrypted_template:
                 decrypted = cls.decrypt_biometric_data(prof.encrypted_template)
                 if decrypted:
                     stored_vector = decrypted.get('features')
+                    stored_desc = decrypted.get('descriptor')
 
             if not stored_vector and prof.feature_vector:
                 try:
@@ -394,6 +406,28 @@ class FaceAuthService:
                 except Exception:
                     stored_vector = None
 
+            if not stored_desc and prof.face_descriptor:
+                try:
+                    stored_desc = json.loads(prof.face_descriptor)
+                except Exception:
+                    stored_desc = None
+
+            # Neural face descriptor duplicate check
+            if cand_desc_norm and stored_desc:
+                try:
+                    s_raw = [float(x) for x in stored_desc]
+                    s_norm = math.sqrt(sum(x * x for x in s_raw))
+                    if s_norm > 1e-6:
+                        s_desc = [x / s_norm for x in s_raw]
+                        dist = math.sqrt(sum((a - b) ** 2 for a, b in zip(cand_desc_norm, s_desc)))
+                        if dist <= cls.DESCRIPTOR_EUCLIDEAN_THRESHOLD:
+                            username = prof.user.get_full_name() or prof.user.username
+                            sim = max(0.0, 1.0 - dist)
+                            return True, username, round(sim * 100, 1)
+                except Exception:
+                    pass
+
+            # Visual gradient cosine similarity check
             if stored_vector:
                 try:
                     if len(candidate_vector) == len(stored_vector):
@@ -412,6 +446,22 @@ class FaceAuthService:
                 m_profiles = m_profiles.exclude(member__user_id=exclude_user_id)
 
             for mp in m_profiles:
+                # Member neural descriptor check
+                if cand_desc_norm and mp.face_descriptor:
+                    try:
+                        m_raw = json.loads(mp.face_descriptor)
+                        m_norm = math.sqrt(sum(x * x for x in m_raw))
+                        if m_norm > 1e-6:
+                            m_desc = [x / m_norm for x in m_raw]
+                            dist = math.sqrt(sum((a - b) ** 2 for a, b in zip(cand_desc_norm, m_desc)))
+                            if dist <= cls.DESCRIPTOR_EUCLIDEAN_THRESHOLD:
+                                name = mp.member.user.username if (mp.member and mp.member.user) else mp.member.full_name
+                                sim = max(0.0, 1.0 - dist)
+                                return True, name, round(sim * 100, 1)
+                    except Exception:
+                        pass
+
+                # Member visual gradient check
                 if mp.feature_vector:
                     try:
                         stored_v = json.loads(mp.feature_vector)
@@ -760,6 +810,24 @@ class FaceAuthService:
         matched = False
         confidence = 0.0
 
+        # 1. Neural face descriptor distance check
+        if descriptor and stored_desc and isinstance(descriptor, (list, tuple)) and len(descriptor) >= 64:
+            try:
+                raw_d = [float(x) for x in descriptor]
+                norm_d = math.sqrt(sum(x * x for x in raw_d))
+                p_raw = [float(x) for x in stored_desc]
+                p_norm = math.sqrt(sum(x * x for x in p_raw))
+                if norm_d > 1e-6 and p_norm > 1e-6:
+                    q_d = [x / norm_d for x in raw_d]
+                    p_d = [x / p_norm for x in p_raw]
+                    dist = math.sqrt(sum((a - b) ** 2 for a, b in zip(q_d, p_d)))
+                    if dist <= cls.DESCRIPTOR_EUCLIDEAN_THRESHOLD:
+                        matched = True
+                        confidence = max(confidence, 1.0 - (dist / 1.0))
+            except Exception:
+                pass
+
+        # 2. Visual gradient cosine similarity check
         if stored_vec:
             try:
                 if len(query_visual_vec) == len(stored_vec):
