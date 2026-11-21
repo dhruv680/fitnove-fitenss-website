@@ -36,11 +36,14 @@ if render_hostname:
     ALLOWED_HOSTS.append(render_hostname)
 if 'fitnove-fitenss-website-2.onrender.com' not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append('fitnove-fitenss-website-2.onrender.com')
+if 'fitnove-fitenss-website-dg1m.onrender.com' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('fitnove-fitenss-website-dg1m.onrender.com')
 ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS if host.strip()]
 
 CSRF_TRUSTED_ORIGINS = [
     'https://*.onrender.com',
     'https://fitnove-fitenss-website-2.onrender.com',
+    'https://fitnove-fitenss-website-dg1m.onrender.com',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
     'http://localhost:8080',
